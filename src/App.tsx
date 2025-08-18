@@ -69,7 +69,6 @@ const App = () => (
           </Routes>
           <FullscreenButton />
           <Routes>
-            <Route path="/" element={null} />
             <Route path="/auth/*" element={null} />
             <Route path="*" element={<QRScannerButton />} />
           </Routes>
