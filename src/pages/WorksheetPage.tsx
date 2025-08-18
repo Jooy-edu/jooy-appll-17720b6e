@@ -114,7 +114,7 @@ const WorksheetPage: React.FC = () => {
           console.log('🔍 [DEBUG] Using location state - initialActiveRegion:', locationState.initialActiveRegion);
           setInitialActiveRegion(locationState.initialActiveRegion);
           setInitialCurrentStepIndex(locationState.initialCurrentStepIndex || 0);
-        } else if (parsedState.lastActiveRegionId && worksheetData?.meta?.regions) {
+        } else if (parsedState.lastActiveRegionId && worksheetData?.meta && 'regions' in worksheetData.meta && worksheetData.meta.regions) {
           // Find the last active region from the stored data
           const lastActiveRegion = worksheetData.meta.regions.find(
             region => region.id === parsedState.lastActiveRegionId

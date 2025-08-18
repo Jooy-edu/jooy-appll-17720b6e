@@ -80,7 +80,7 @@ const WorksheetViewer: React.FC<WorksheetViewerProps> = ({
 
   // Filter regions for current page and ensure description is properly split into paragraphs
   const regions = useMemo(() => {
-    if (!worksheetMeta?.regions) return [];
+    if (worksheetMeta?.mode === 'auto' || !('regions' in worksheetMeta) || !worksheetMeta?.regions) return [];
     return worksheetMeta.regions
       .filter((region: RegionData) => region.page === pageIndex)
       .map((region: RegionData) => {
@@ -95,7 +95,7 @@ const WorksheetViewer: React.FC<WorksheetViewerProps> = ({
           );
         } else if (typeof region.description === 'string') {
           // If it's a string, split by newlines
-          processedDescription = region.description
+          processedDescription = (region.description as string)
             .split('\n')
             .filter(paragraph => paragraph.trim() !== '');
         }

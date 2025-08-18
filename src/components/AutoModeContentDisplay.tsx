@@ -13,6 +13,9 @@ interface AutoModeContentDisplayProps {
   pdfUrl: string;
   onTextModeChange?: (isTextMode: boolean) => void;
   onGuidanceStateChange?: (guidance: GuidanceItem | null, stepIndex: number) => void;
+  initialActiveGuidance?: GuidanceItem | null;
+  initialGuidanceStepIndex?: number;
+  allGuidanceState?: Record<number, { currentStepIndex: number }>;
 }
 
 const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
@@ -21,7 +24,10 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   autoModePageData,
   pdfUrl,
   onTextModeChange,
-  onGuidanceStateChange
+  onGuidanceStateChange,
+  initialActiveGuidance,
+  initialGuidanceStepIndex = 0,
+  allGuidanceState = {}
 }) => {
   const { t } = useTranslation();
   
