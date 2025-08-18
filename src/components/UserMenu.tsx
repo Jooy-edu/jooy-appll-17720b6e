@@ -14,8 +14,18 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Settings, LogOut, CreditCard } from 'lucide-react';
 
 const UserMenu: React.FC = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, loading } = useAuth();
 
+  // Show loading state while auth is being checked
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
+  // Show login/signup only when definitely not authenticated
   if (!user || !profile) {
     return (
       <div className="flex items-center gap-2">
