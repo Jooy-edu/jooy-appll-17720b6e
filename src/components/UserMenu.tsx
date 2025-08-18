@@ -77,7 +77,9 @@ const UserMenu: React.FC = () => {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-gradient-orange-magenta text-white text-xs">
-              {user?.user_metadata?.full_name ? getInitials(user.user_metadata.full_name) : <User className="h-4 w-4" />}
+              {(profile?.full_name || user?.user_metadata?.full_name) ? 
+                getInitials(profile?.full_name || user?.user_metadata?.full_name || '') : 
+                <User className="h-4 w-4" />}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -86,10 +88,10 @@ const UserMenu: React.FC = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user?.user_metadata?.full_name || 'User'}
+              {profile?.full_name || user?.user_metadata?.full_name || 'User'}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
+              {profile?.email || user?.email}
             </p>
           </div>
         </DropdownMenuLabel>

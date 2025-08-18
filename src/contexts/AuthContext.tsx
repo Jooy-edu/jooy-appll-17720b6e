@@ -5,8 +5,15 @@ import { toast } from '@/components/ui/use-toast';
 
 interface UserProfile {
   id: string;
+  email: string | null;
+  full_name: string | null;
   role: 'admin' | 'user' | 'student';
   credits_remaining: number;
+  plan_id: string | null;
+  onboarding_completed: boolean;
+  preferences: any;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
@@ -39,12 +46,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch simplified user profile
+  // Fetch user profile
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, role, credits_remaining')
+        .select('*')
         .eq('id', userId)
         .maybeSingle();
       
@@ -366,11 +373,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      // Only allow updating role and credits_remaining
-      const allowedUpdates = {
-        ...(updates.role && { role: updates.role }),
-        ...(updates.credits_remaining !== undefined && { credits_remaining: updates.credits_remaining })
-      };
+      // Allow updating all profile fields except id
+      const allowedUpdates = { ...updates };
+      delete (allowedUpdates as any).id;
 
       const { error } = await supabase
         .from('profiles')

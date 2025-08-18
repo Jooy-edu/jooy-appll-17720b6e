@@ -16,7 +16,7 @@ const ProfilePage: React.FC = () => {
   const { user, profile, updateProfile, signOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
+  const [fullName, setFullName] = useState(profile?.full_name || user?.user_metadata?.full_name || '');
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +27,19 @@ const ProfilePage: React.FC = () => {
 
     setLoading(true);
     
-    // Update user metadata via Supabase Auth instead of profile
-    const { error } = await supabase.auth.updateUser({
+    // Update both user metadata and profile
+    const { error: authError } = await supabase.auth.updateUser({
       data: { full_name: fullName.trim() }
     });
 
-    if (!error) {
-      setIsEditing(false);
+    if (!authError && profile) {
+      const { error: profileError } = await updateProfile({
+        full_name: fullName.trim()
+      });
+      
+      if (!profileError) {
+        setIsEditing(false);
+      }
     }
 
     setLoading(false);
@@ -88,10 +94,10 @@ const ProfilePage: React.FC = () => {
                   <Input
                     id="email"
                     type="email"
-                    value={user.email || ''}
+                    value={profile?.email || user.email || ''}
                     disabled
                     className="bg-gray-50"
-                    dir={getTextDirection(user.email || '')}
+                    dir={getTextDirection(profile?.email || user.email || '')}
                   />
                   <p className="text-sm text-gray-500" dir={isRTL ? 'rtl' : 'ltr'}>
                     Email cannot be changed. Contact support if you need to update your email.
@@ -134,7 +140,7 @@ const ProfilePage: React.FC = () => {
                           size="sm"
                           onClick={() => {
                             setIsEditing(false);
-                            setFullName(user?.user_metadata?.full_name || '');
+                            setFullName(profile?.full_name || user?.user_metadata?.full_name || '');
                           }}
                           disabled={loading}
                         >
@@ -144,8 +150,8 @@ const ProfilePage: React.FC = () => {
                     </form>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-900" dir={getTextDirection(user?.user_metadata?.full_name || '')}>
-                        {user?.user_metadata?.full_name || 'Not set'}
+                      <span className="text-gray-900" dir={getTextDirection(profile?.full_name || user?.user_metadata?.full_name || '')}>
+                        {profile?.full_name || user?.user_metadata?.full_name || 'Not set'}
                       </span>
                       <Button
                         variant="outline"
@@ -167,7 +173,7 @@ const ProfilePage: React.FC = () => {
                     Member Since
                   </Label>
                   <p className="text-gray-900">
-                    {new Date(user?.created_at || '').toLocaleDateString('en-US', {
+                    {new Date(profile?.created_at || user?.created_at || '').toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'

@@ -284,19 +284,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          created_at: string
           credits_remaining: number
+          email: string | null
+          full_name: string | null
           id: string
+          onboarding_completed: boolean
+          plan_id: string | null
+          preferences: Json | null
           role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
         }
         Insert: {
+          created_at?: string
           credits_remaining?: number
+          email?: string | null
+          full_name?: string | null
           id: string
+          onboarding_completed?: boolean
+          plan_id?: string | null
+          preferences?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
         }
         Update: {
+          created_at?: string
           credits_remaining?: number
+          email?: string | null
+          full_name?: string | null
           id?: string
+          onboarding_completed?: boolean
+          plan_id?: string | null
+          preferences?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
         }
         Relationships: []
       }
