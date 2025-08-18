@@ -176,46 +176,8 @@ const ProfilePage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Account Summary */}
+          {/* Sign Out */}
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" dir={isRTL ? 'rtl' : 'ltr'}>
-                  <Settings className="h-5 w-5" />
-                  Account Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Role */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600" dir={isRTL ? 'rtl' : 'ltr'}>Role:</span>
-                  <Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>
-                    {profile.role === 'admin' ? 'Administrator' : 'User'}
-                  </Badge>
-                </div>
-
-                {/* Credits */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600 flex items-center gap-1" dir={isRTL ? 'rtl' : 'ltr'}>
-                    <CreditCard className="h-4 w-4" />
-                    Credits:
-                  </span>
-                  <span className="font-semibold text-gray-900">
-                    {profile.credits_remaining}
-                  </span>
-                </div>
-
-                {/* Onboarding Status */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600" dir={isRTL ? 'rtl' : 'ltr'}>Onboarding:</span>
-                  <Badge variant={profile.onboarding_completed ? 'default' : 'secondary'}>
-                    {profile.onboarding_completed ? 'Completed' : 'Pending'}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Sign Out */}
             <Card>
               <CardContent className="pt-6">
                 <Button

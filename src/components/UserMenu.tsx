@@ -100,10 +100,6 @@ const UserMenu: React.FC = () => {
             <span>Profile Settings</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <CreditCard className="mr-2 h-4 w-4" />
-          <span>Credits: {profile?.credits_remaining || 0}</span>
-        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
