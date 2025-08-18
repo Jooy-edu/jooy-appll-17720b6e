@@ -31,12 +31,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Redirect to login if not authenticated
-  if (!user || !profile) {
+  if (!user) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   // Check admin requirement
-  if (requireAdmin && profile.role !== 'admin') {
+  if (requireAdmin && (!profile || profile.role !== 'admin')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +16,7 @@ const ProfilePage: React.FC = () => {
   const { user, profile, updateProfile, signOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +27,9 @@ const ProfilePage: React.FC = () => {
 
     setLoading(true);
     
-    const { error } = await updateProfile({
-      full_name: fullName.trim()
+    // Update user metadata via Supabase Auth instead of profile
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: fullName.trim() }
     });
 
     if (!error) {
@@ -43,7 +45,7 @@ const ProfilePage: React.FC = () => {
 
   const isRTL = t('common.language') === 'العربية';
 
-  if (!user || !profile) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -132,7 +134,7 @@ const ProfilePage: React.FC = () => {
                           size="sm"
                           onClick={() => {
                             setIsEditing(false);
-                            setFullName(profile.full_name || '');
+                            setFullName(user?.user_metadata?.full_name || '');
                           }}
                           disabled={loading}
                         >
@@ -142,8 +144,8 @@ const ProfilePage: React.FC = () => {
                     </form>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-900" dir={getTextDirection(profile.full_name || '')}>
-                        {profile.full_name || 'Not set'}
+                      <span className="text-gray-900" dir={getTextDirection(user?.user_metadata?.full_name || '')}>
+                        {user?.user_metadata?.full_name || 'Not set'}
                       </span>
                       <Button
                         variant="outline"
@@ -165,7 +167,7 @@ const ProfilePage: React.FC = () => {
                     Member Since
                   </Label>
                   <p className="text-gray-900">
-                    {new Date(profile.created_at).toLocaleDateString('en-US', {
+                    {new Date(user?.created_at || '').toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'

@@ -5,13 +5,8 @@ import { toast } from '@/components/ui/use-toast';
 
 interface UserProfile {
   id: string;
-  email: string;
-  full_name?: string;
-  role: 'user' | 'admin';
-  plan_id?: string;
+  role: 'admin' | 'user' | 'student';
   credits_remaining: number;
-  onboarding_completed: boolean;
-  created_at: string;
 }
 
 interface AuthContextType {
@@ -44,74 +39,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user profile from profiles table with timeout and retry
-  const fetchProfile = async (userId: string, retryCount = 0): Promise<UserProfile | null> => {
-    const maxRetries = 2;
-    const timeout = 10000; // 10 seconds
-    
-    console.log(`🔍 [AUTH] Fetching profile for user ${userId} (attempt ${retryCount + 1})`);
-    
+  // Fetch simplified user profile
+  const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout')), timeout);
-      });
-      
-      // Race between the actual fetch and the timeout
-      const fetchPromise = supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, role, credits_remaining')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-
       if (error) {
-        console.error('🔍 [AUTH] Error fetching profile:', error);
-        
-        // If profile doesn't exist and this is the first attempt, create it
-        if (error.code === 'PGRST116' && retryCount === 0) {
-          console.log('🔍 [AUTH] Profile not found, attempting to create default profile');
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert([{
-              id: userId,
-              email: '',
-              role: 'user',
-              credits_remaining: 100,
-              onboarding_completed: false
-            }]);
-          
-          if (insertError) {
-            console.error('🔍 [AUTH] Failed to create profile:', insertError);
-          } else {
-            console.log('🔍 [AUTH] Created default profile, refetching');
-            return await fetchProfile(userId, retryCount + 1);
-          }
-        }
-        
-        // Retry on network errors
-        if (retryCount < maxRetries && (error.message.includes('timeout') || error.message.includes('network'))) {
-          console.log(`🔍 [AUTH] Retrying profile fetch (${retryCount + 1}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-          return await fetchProfile(userId, retryCount + 1);
-        }
-        
+        console.error('Profile fetch error:', error);
         return null;
       }
-
-      console.log('🔍 [AUTH] Successfully fetched profile:', data);
-      return data as UserProfile;
-    } catch (error) {
-      console.error('🔍 [AUTH] Exception in fetchProfile:', error);
       
-      // Retry on timeout or network errors
-      if (retryCount < maxRetries) {
-        console.log(`🔍 [AUTH] Retrying profile fetch after exception (${retryCount + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return await fetchProfile(userId, retryCount + 1);
-      }
-      
+      return data;
+    } catch (error: any) {
+      console.error('Profile fetch failed:', error);
       return null;
     }
   };
@@ -422,9 +366,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Only allow updating role and credits_remaining
+      const allowedUpdates = {
+        ...(updates.role && { role: updates.role }),
+        ...(updates.credits_remaining !== undefined && { credits_remaining: updates.credits_remaining })
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(allowedUpdates)
         .eq('id', user.id);
 
       if (error) {
