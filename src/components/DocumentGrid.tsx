@@ -1,0 +1,95 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, FileText, ArrowLeft } from 'lucide-react';
+import { useDocuments } from '@/hooks/useDocuments';
+
+interface DocumentGridProps {
+  folderId: string;
+  levelName: string;
+  onDocumentSelect: (documentId: string, documentName: string) => void;
+  onBack: () => void;
+}
+
+export const DocumentGrid: React.FC<DocumentGridProps> = ({ 
+  folderId, 
+  levelName, 
+  onDocumentSelect,
+  onBack 
+}) => {
+  const { data: documents, isLoading, error } = useDocuments(folderId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading documents...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive mb-4">Failed to load documents</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!documents?.length) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={onBack} size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Levels
+          </Button>
+          <h1 className="text-2xl font-bold text-foreground">Level {levelName}</h1>
+        </div>
+        
+        <div className="text-center py-8">
+          <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">No documents available in this level</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="outline" onClick={onBack} size="sm">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Levels
+        </Button>
+        <h1 className="text-2xl font-bold text-foreground">Level {levelName}</h1>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {documents.map((document) => (
+          <Card key={document.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-card-foreground">
+                <FileText className="h-5 w-5 text-primary" />
+                {document.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => onDocumentSelect(document.id, document.name)}
+                className="w-full bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white"
+              >
+                Select Document
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};

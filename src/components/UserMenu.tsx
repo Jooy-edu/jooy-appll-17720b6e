@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, LogOut, CreditCard } from 'lucide-react';
+import { User, Settings, LogOut, BookOpen } from 'lucide-react';
 
 const UserMenu: React.FC = () => {
   const { user, profile, signOut, loading } = useAuth();
@@ -94,6 +94,12 @@ const UserMenu: React.FC = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/library" className="cursor-pointer">
+            <BookOpen className="mr-2 h-4 w-4" />
+            <span>Library</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />

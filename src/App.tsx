@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import QrScannerPage from "./pages/QrScannerPage";
 import WorksheetPage from "./pages/WorksheetPage";
 import AIChatPage from "./pages/AIChatPage";
+import { LibraryPage } from "./pages/LibraryPage";
 import QRScannerButton from "./components/QRScannerButton";
 import FullscreenButton from "./components/FullscreenButton";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
@@ -30,7 +31,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<QrScannerPage />} />
+            <Route path="/qr-scanner" element={<QrScannerPage />} />
             <Route path="/auth/login" element={<LoginForm />} />
             <Route path="/auth/register" element={<RegisterForm />} />
             <Route path="/auth/forgot-password" element={<ForgotPasswordForm />} />
@@ -47,12 +48,17 @@ const App = () => (
                 <AIChatPage />
               </ProtectedRoute>
             } />
+            <Route path="/library" element={
+              <ProtectedRoute>
+                <LibraryPage />
+              </ProtectedRoute>
+            } />
             <Route path="/profile" element={
               <ProtectedRoute>
                 <ProfilePage />
               </ProtectedRoute>
             } />
-            <Route path="/home" element={
+            <Route path="/" element={
               <ProtectedRoute>
                 <Index />
               </ProtectedRoute>
