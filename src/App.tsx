@@ -10,7 +10,7 @@ import RegisterForm from "@/components/auth/RegisterForm";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import ProfilePage from "@/components/auth/ProfilePage";
-import Index from "./pages/Index";
+
 import NotFound from "./pages/NotFound";
 import QrScannerPage from "./pages/QrScannerPage";
 import WorksheetPage from "./pages/WorksheetPage";
@@ -60,7 +60,7 @@ const App = () => (
             } />
             <Route path="/" element={
               <ProtectedRoute>
-                <Index />
+                <LibraryPage />
               </ProtectedRoute>
             } />
             

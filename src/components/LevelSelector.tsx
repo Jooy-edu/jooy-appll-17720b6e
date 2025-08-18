@@ -2,14 +2,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, BookOpen } from 'lucide-react';
-import { useFolders } from '@/hooks/useFolders';
+import { useRealtimeFolders } from '@/hooks/useRealtimeFolders';
 
 interface LevelSelectorProps {
   onLevelSelect: (folderId: string, levelName: string) => void;
 }
 
 export const LevelSelector: React.FC<LevelSelectorProps> = ({ onLevelSelect }) => {
-  const { data: folders, isLoading, error } = useFolders();
+  const { data: folders, isLoading, error } = useRealtimeFolders();
 
   if (isLoading) {
     return (

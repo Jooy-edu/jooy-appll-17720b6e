@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, FileText, ArrowLeft } from 'lucide-react';
-import { useDocuments } from '@/hooks/useDocuments';
+import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
 
 interface DocumentGridProps {
   folderId: string;
@@ -17,7 +17,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   onDocumentSelect,
   onBack 
 }) => {
-  const { data: documents, isLoading, error } = useDocuments(folderId);
+  const { data: documents, isLoading, error } = useRealtimeDocuments(folderId);
 
   if (isLoading) {
     return (
