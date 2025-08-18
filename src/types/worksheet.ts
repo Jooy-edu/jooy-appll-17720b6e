@@ -3,13 +3,14 @@ export interface RegionData {
   document_id: string;
   user_id: string;
   page: number;
+  pageNumber?: number; // For backward compatibility
   x: number;
   y: number;
   width: number;
   height: number;
   type: string;
   name: string;
-  description: string[];
+  description: string[] | string;
   created_at: string;
 }
 

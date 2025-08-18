@@ -95,7 +95,7 @@ const WorksheetViewer: React.FC<WorksheetViewerProps> = ({
           );
         } else if (typeof region.description === 'string') {
           // If it's a string, split by newlines
-          processedDescription = (region.description as string)
+          processedDescription = region.description
             .split('\n')
             .filter(paragraph => paragraph.trim() !== '');
         }
@@ -450,7 +450,9 @@ const WorksheetViewer: React.FC<WorksheetViewerProps> = ({
     
     if (region.description && region.description.length > 0) {
       // Display messages up to the saved step index
-      const messagesToDisplay = region.description.slice(0, startingStepIndex + 1);
+      const messagesToDisplay = Array.isArray(region.description) 
+        ? region.description.slice(0, startingStepIndex + 1)
+        : [region.description];
       setDisplayedMessages(messagesToDisplay);
       
       if (videoRef.current && audioAvailable) {

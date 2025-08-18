@@ -251,10 +251,10 @@ const AIChatPage: React.FC = () => {
       if (worksheetMeta?.mode === 'auto' && pageDescriptionForAI) {
         worksheetContext = `\n\nPage Context: ${pageDescriptionForAI}`;
         if (activeGuidance) {
-          worksheetContext += `\n\nCurrent Guidance: ${activeGuidance.title}\nGuidance Content: ${activeGuidance.description.join(' ')}`;
+          worksheetContext += `\n\nCurrent Guidance: ${activeGuidance.title}\nGuidance Content: ${Array.isArray(activeGuidance.description) ? activeGuidance.description.join(' ') : activeGuidance.description}`;
         }
       } else if (activeRegion && activeRegion.description) {
-        worksheetContext = `\n\nRegion Context: ${activeRegion.description.join(' ')}`;
+        worksheetContext = `\n\nRegion Context: ${Array.isArray(activeRegion.description) ? activeRegion.description.join(' ') : activeRegion.description}`;
       }
 
       // Create the prompt with enhanced instructions for distinguishing question types
