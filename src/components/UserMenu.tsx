@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,15 @@ import { User, Settings, LogOut, CreditCard } from 'lucide-react';
 
 const UserMenu: React.FC = () => {
   const { user, profile, signOut, loading } = useAuth();
+  const [isInitialRender, setIsInitialRender] = useState(true);
 
-  // Show loading state while auth is being checked
-  if (loading) {
+  // Prevent flash by ensuring we don't show login buttons on initial render
+  useEffect(() => {
+    setIsInitialRender(false);
+  }, []);
+
+  // Show loading state while auth is being checked OR during initial render
+  if (loading || isInitialRender) {
     return (
       <div className="flex items-center gap-2">
         <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
@@ -25,8 +31,8 @@ const UserMenu: React.FC = () => {
     );
   }
 
-  // Show login/signup only when definitely not authenticated
-  if (!user || !profile) {
+  // Show login/signup only when definitely not authenticated AND not loading
+  if (!loading && !user) {
     return (
       <div className="flex items-center gap-2">
         <Link to="/auth/login">
