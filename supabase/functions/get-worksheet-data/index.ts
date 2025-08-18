@@ -101,39 +101,64 @@ serve(async (req) => {
         pdfUrl
       }
     } else {
-      // Regions Mode: Fetch regions from document_regions table (legacy behavior)
+      // Regions Mode: First try to fetch regions from document_regions table
       const { data: regions, error: regionsError } = await supabase
         .from('document_regions')
         .select('*')
         .eq('document_id', worksheetId)
         .order('page', { ascending: true })
 
-      if (regionsError) {
-        console.error('Document regions fetch error:', regionsError)
-        return new Response(
-          JSON.stringify({ error: 'Failed to fetch document regions' }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
+      let transformedRegions = []
+      
+      if (!regionsError && regions && regions.length > 0) {
+        // Transform regions data to match expected format
+        transformedRegions = regions.map(region => ({
+          id: region.id,
+          document_id: document.id,
+          user_id: region.user_id,
+          page: region.page,
+          x: region.x,
+          y: region.y,
+          width: region.width,
+          height: region.height,
+          type: region.type,
+          name: region.name,
+          description: region.description || [],
+          created_at: region.created_at
+        }))
+      } else {
+        // Fallback: Try to get JSON data from 'data' storage bucket
+        try {
+          const { data: jsonData, error: storageError } = await supabase.storage
+            .from('data')
+            .download(`${worksheetId}.json`)
 
-      // Transform regions data to match expected format
-      const transformedRegions = regions?.map(region => ({
-        id: region.id,
-        document_id: document.id,
-        user_id: region.user_id,
-        page: region.page,
-        x: region.x,
-        y: region.y,
-        width: region.width,
-        height: region.height,
-        type: region.type,
-        name: region.name,
-        description: region.description || [],
-        created_at: region.created_at
-      })) || []
+          if (!storageError && jsonData) {
+            const jsonText = await jsonData.text()
+            const jsonContent = JSON.parse(jsonText)
+            
+            // Transform JSON data to regions format
+            if (jsonContent.regions) {
+              transformedRegions = jsonContent.regions.map(region => ({
+                id: region.id,
+                document_id: document.id,
+                user_id: region.user_id,
+                page: region.page || region.pageNumber,
+                x: region.x,
+                y: region.y,
+                width: region.width,
+                height: region.height,
+                type: region.type,
+                name: region.name,
+                description: region.description || [],
+                created_at: region.created_at
+              }))
+            }
+          }
+        } catch (storageError) {
+          console.log('Storage fallback failed:', storageError)
+        }
+      }
 
       responseData = {
         meta: {

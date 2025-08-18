@@ -30,27 +30,8 @@ export const useWorksheetData = (worksheetId: string) => {
           pdfUrl: data.pdfUrl
         }
       } catch (supabaseError) {
-        // Fallback to JSON files if Supabase fails
-        console.log('Supabase failed, using JSON fallback:', supabaseError)
-        const response = await fetch(`/data/${worksheetId}.json`)
-        if (!response.ok) {
-          throw new Error(`Document "${worksheetId}" not found. Please check if the QR code is valid or try scanning a different document.`)
-        }
-        const jsonData = await response.json()
-        
-        // Cast JSON data to RegionsModeMetadata for local files (legacy format)
-        const regionsMetadata: RegionsModeMetadata = {
-          mode: 'regions',
-          documentName: jsonData.documentName,
-          documentId: jsonData.documentId,
-          drmProtectedPages: jsonData.drmProtectedPages || [],
-          regions: jsonData.regions || []
-        }
-        
-        return {
-          meta: regionsMetadata,
-          pdfUrl: `/pdfs/${worksheetId}.pdf`
-        }
+        // No more local fallback - all data must come from Supabase
+        throw new Error(`Document "${worksheetId}" not found. Please check if the QR code is valid or the document exists in the database.`)
       }
     },
     enabled: !!worksheetId,
@@ -84,14 +65,9 @@ export const useRegionsByPage = (worksheetId: string, pageNumber: number) => {
 
         return data || []
       } catch (supabaseError) {
-        // Fallback to JSON files if Supabase fails
-        console.log('Supabase failed, using JSON fallback for regions:', supabaseError)
-        const response = await fetch(`/data/${worksheetId}.json`)
-        if (!response.ok) {
-          throw new Error(`Failed to fetch worksheet data: ${response.status}`)
-        }
-        const data = await response.json()
-        return data.regions?.filter((region: any) => region.page === pageNumber) || []
+        // No more local fallback - all data must come from Supabase
+        console.log('Failed to fetch regions from Supabase:', supabaseError)
+        return []
       }
     },
     enabled: !!worksheetId && !!pageNumber,
