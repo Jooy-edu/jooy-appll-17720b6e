@@ -34,7 +34,7 @@ export const useWorksheetData = (worksheetId: string) => {
         console.log('Supabase failed, using JSON fallback:', supabaseError)
         const response = await fetch(`/data/${worksheetId}.json`)
         if (!response.ok) {
-          throw new Error(`Failed to fetch worksheet data: ${response.status}`)
+          throw new Error(`Document "${worksheetId}" not found. Please check if the QR code is valid or try scanning a different document.`)
         }
         const jsonData = await response.json()
         

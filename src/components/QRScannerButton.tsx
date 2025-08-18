@@ -7,7 +7,7 @@ const QRScannerButton: React.FC = () => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate("/");
+    navigate("/qr-scanner");
   };
 
   return (

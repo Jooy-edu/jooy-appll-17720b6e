@@ -33,7 +33,7 @@ const QrScannerPage: React.FC = () => {
         setError(t('qrScanner.invalidFormat'));
         toast({
           title: t('qrScanner.invalidFormat'),
-          description: t('qrScanner.invalidFormatDesc'),
+          description: `${t('qrScanner.invalidFormatDesc')} Expected format: DocumentID + PageNumber (e.g., ABCDE1)`,
           variant: "destructive"
         });
       }

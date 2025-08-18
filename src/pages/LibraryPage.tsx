@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LevelSelector } from '@/components/LevelSelector';
 import { DocumentGrid } from '@/components/DocumentGrid';
 import { PageSelector } from '@/components/PageSelector';
+import UserMenu from '@/components/UserMenu';
 
 type ViewState = 
   | { type: 'levels' }
@@ -48,6 +49,10 @@ export const LibraryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* User Menu */}
+      <div className="fixed top-4 right-4 z-50">
+        <UserMenu />
+      </div>
       <div className="container mx-auto px-4 py-8">
         {viewState.type === 'levels' && (
           <LevelSelector onLevelSelect={handleLevelSelect} />
