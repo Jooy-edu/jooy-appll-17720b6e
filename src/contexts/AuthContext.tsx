@@ -127,6 +127,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Initialize auth state
   useEffect(() => {
     console.log('🔍 [AUTH] Initializing auth state');
+    console.log('🔍 [AUTH] Supabase client:', supabase);
+    console.log('🔍 [AUTH] Supabase auth object:', supabase.auth);
+    console.log('🔍 [AUTH] onAuthStateChange type:', typeof supabase.auth.onAuthStateChange);
+    
     let mounted = true;
     
     // Set a maximum timeout for the entire auth initialization
@@ -180,6 +184,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       }
     });
+
+    // Check if onAuthStateChange exists and is a function
+    if (!supabase.auth.onAuthStateChange || typeof supabase.auth.onAuthStateChange !== 'function') {
+      console.error('🔍 [AUTH] onAuthStateChange is not available:', {
+        exists: !!supabase.auth.onAuthStateChange,
+        type: typeof supabase.auth.onAuthStateChange,
+        authMethods: Object.keys(supabase.auth)
+      });
+      return () => {
+        if (mounted) {
+          clearTimeout(authTimeout);
+        }
+      };
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
