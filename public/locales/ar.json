@@ -1,0 +1,49 @@
+{
+  "qrScanner": {
+    "title": "امسح الـ QR",
+    "invalidFormat": "تنسيق رمز استجابة سريعة غير صالح",
+    "invalidFormatDesc": "يرجى مسح رمز استجابة سريعة صالح لورقة العمل.",
+    "cameraError": "خطأ في الكاميرا",
+    "cameraErrorDesc": "غير قادر على الوصول إلى الكاميرا. يرجى التحقق من الأذونات.",
+    "errorAccessing": "خطأ في الوصول إلى الكاميرا: {{message}}",
+    "tryAgain": "حاول مرة أخرى"
+  },
+  "worksheet": {
+    "loading": "جاري التحميل...",
+    "notFound": "ورقة العمل غير موجودة",
+    "invalidPage": "رقم صفحة غير صالح",
+    "returnToScanner": "العودة إلى الماسح الضوئي",
+    "pageInfo": "صفحة {{current}} من {{total}}"
+  },
+  "virtualTutor": {
+    "selectTitle": "اختر المعلم الافتراضي",
+    "selectDescription": "اختر المعلم الافتراضي المفضل لديك",
+    "cancel": "إلغاء"
+  },
+  "aiChat": {
+    "title": "محادثة الذكاء الاصطناعي",
+    "placeholder": "اسألني",
+    "thinking": "أفكر...",
+    "welcome": "كيف يمكنني مساعدتك؟",
+    "apiKeyMissing": "مفتاح API مفقود",
+    "apiKeyMissingDesc": "يرجى تعيين مفتاح Gemini API أولاً.",
+    "aiError": "خطأ في الذكاء الاصطناعي",
+    "aiErrorDesc": "فشل في الحصول على استجابة من الذكاء الاصطناعي. يرجى التحقق من مفتاح API والمحاولة مرة أخرى.",
+    "pdfError": "خطأ في PDF",
+    "pdfErrorDesc": "بيانات PDF غير متاحة للمحادثة مع الذكاء الاصطناعي.",
+    "missingInfo": "معلومات ورقة العمل مفقودة",
+    "dataNotAvailable": "بيانات ورقة العمل غير متاحة",
+    "returnToWorksheet": "العودة إلى ورقة العمل",
+    "imageGenerationError": "فشل في إنشاء صورة الصفحة لتحليل الذكاء الاصطناعي."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "عذراً! الصفحة غير موجودة",
+    "returnHome": "العودة إلى الصفحة الرئيسية"
+  },
+  "common": {
+    "language": "اللغة",
+    "english": "English",
+    "arabic": "العربية"
+  }
+}

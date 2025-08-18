@@ -1,0 +1,408 @@
+.worksheet-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 0;
+  padding: 0.25rem;
+  position: relative;
+  transition: all 0.3s ease;
+  min-height: 100vh;
+}
+
+.worksheet-container.text-mode {
+  overflow: hidden;
+  padding: 0;
+  background-color: #f8f9fa;
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.worksheet-page {
+  max-width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* DRM styling */
+.worksheet-pdf-container.drm-active .worksheet-page.blurred {
+  filter: blur(8px) !important;
+  transition: filter 0.3s ease;
+  -webkit-filter: blur(8px) !important;
+}
+
+/* Target the canvas element directly for maximum compatibility */
+.worksheet-pdf-container.drm-active .worksheet-page.blurred .react-pdf__Page__canvas,
+.worksheet-pdf-container.drm-active .worksheet-page.blurred canvas {
+  filter: blur(8px) !important;
+  -webkit-filter: blur(8px) !important;
+  transition: filter 0.3s ease;
+}
+
+/* Fallback selectors with high specificity */
+.drm-active .react-pdf__Page canvas {
+  filter: blur(8px) !important;
+  -webkit-filter: blur(8px) !important;
+}
+
+.worksheet-page.blurred canvas {
+  filter: blur(8px) !important;
+  -webkit-filter: blur(8px) !important;
+}
+
+.worksheet-clear-region {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  pointer-events: none;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+/* Ensure clear regions are not blurred */
+.worksheet-clear-region .clear-document canvas,
+.worksheet-clear-region .clear-page canvas,
+.worksheet-clear-region .react-pdf__Page__canvas {
+  filter: none !important;
+  -webkit-filter: none !important;
+  transform: none !important;
+}
+
+/* High specificity override for clear regions */
+.worksheet-pdf-container.drm-active .worksheet-clear-region canvas,
+.worksheet-pdf-container.drm-active .worksheet-clear-region .react-pdf__Page__canvas,
+.drm-active .worksheet-clear-region canvas {
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.drm-notice {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: rgba(255, 87, 87, 0.9);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  z-index: 20;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.worksheet-loading,
+.worksheet-error {
+  width: 100%;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.worksheet-info {
+  margin-top: 0.5rem;
+  width: 100%;
+  text-align: center;
+}
+
+.worksheet-pdf-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: opacity 0.3s ease;
+}
+
+.worksheet-pdf-container.hidden {
+  display: none;
+}
+
+.worksheet-region {
+  border: 2px dashed rgba(0, 123, 255, 0.5);
+  background-color: rgba(0, 123, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  pointer-events: all;
+}
+
+.worksheet-region:hover {
+  background-color: rgba(0, 123, 255, 0.3);
+  border-color: rgba(0, 123, 255, 0.8);
+  border-width: 3px;
+  transform: scale(1.01);
+}
+
+.video-element {
+  width: 100%;
+  max-width: 400px;
+  margin: 0.5rem auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+  display: block;
+  z-index: 60;
+}
+
+@media (min-width: 768px) {
+  .video-element {
+    max-width: 500px;
+    margin: 0.75rem auto;
+  }
+}
+
+.worksheet-text-display-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 90%;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+  position: relative;
+  height: calc(100vh - 60px);
+  z-index: 65;
+}
+
+.worksheet-text-display-container.hidden {
+  display: none;
+}
+
+.worksheet-text-display-container.active {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.worksheet-text-display {
+  margin-top: 0.25rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  min-height: 150px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow-y: auto;
+  flex-grow: 1;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  scroll-behavior: smooth;
+  padding-bottom: 80px;
+}
+
+.worksheet-text-display-container.active .worksheet-text-display {
+  width: 90%;
+  max-width: 90%;
+  margin: 0 auto;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background-color: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.chat-message {
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease-in-out;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-message:hover {
+  background-color: #f0f4f8;
+  transform: translateX(2px);
+}
+
+.chat-message:active {
+  transform: translateX(0);
+}
+
+.message-highlight {
+  animation: highlight 0.2s ease-in-out;
+}
+
+@keyframes highlight {
+  0% {
+    background-color: #f8f9fa;
+  }
+  50% {
+    background-color: #e3f2fd;
+  }
+  100% {
+    background-color: #f8f9fa;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message p {
+  margin: 0;
+  color: #2c3e50;
+}
+
+@media (max-width: 768px) {
+  .worksheet-page {
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  .worksheet-text-display {
+    max-width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+  }
+  
+  .video-element {
+    max-width: 100%;
+  }
+  
+  .worksheet-text-display-container {
+    height: calc(100vh - 80px);
+  }
+  
+  .worksheet-text-display-container.active .worksheet-text-display {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 0.25rem;
+    padding: 1rem;
+  }
+
+  .chat-message {
+    padding: 0.75rem;
+  }
+}
+
+.react-pdf__Document {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.react-pdf__Page {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.react-pdf__Page__canvas {
+  max-width: 100%;
+  height: auto !important;
+}
+
+.clear-document {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.clear-page {
+  width: 100%;
+  height: auto;
+}
+
+.next-button {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  transition: all 0.3s ease;
+  width: 56px !important;
+  height: 56px !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #FF6600, #EE00FF);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.next-button:hover {
+  background: linear-gradient(135deg, #CC5200, #BB00CC);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.next-button:active {
+  transform: translateX(-50%) translateY(0);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .next-button {
+    bottom: 20px;
+    width: 48px !important;
+    height: 48px !important;
+  }
+  
+  .next-button svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+/* Virtual Tutor Selection Button Styling */
+.worksheet-container.text-mode .fixed.top-4.left-1\/2 {
+  z-index: 70;
+}
+
+/* Ensure virtual tutor button is properly positioned and visible */
+.virtual-tutor-button {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6600, #EE00FF);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.virtual-tutor-button:hover {
+  background: linear-gradient(135deg, #CC5200, #BB00CC);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}

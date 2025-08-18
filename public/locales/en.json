@@ -1,0 +1,49 @@
+{
+  "qrScanner": {
+    "title": "Scan QR Code",
+    "invalidFormat": "Invalid QR Format",
+    "invalidFormatDesc": "Please scan a valid worksheet QR code.",
+    "cameraError": "Camera Error",
+    "cameraErrorDesc": "Unable to access your camera. Please check your permissions.",
+    "errorAccessing": "Error accessing camera: {{message}}",
+    "tryAgain": "Try Again"
+  },
+  "worksheet": {
+    "loading": "Loading worksheet...",
+    "notFound": "Worksheet not found",
+    "invalidPage": "Invalid page number",
+    "returnToScanner": "Return to Scanner",
+    "pageInfo": "Page {{current}} of {{total}}"
+  },
+  "virtualTutor": {
+    "selectTitle": "Select Virtual Tutor",
+    "selectDescription": "Choose your preferred virtual tutor",
+    "cancel": "Cancel"
+  },
+  "aiChat": {
+    "title": "AI Chat",
+    "placeholder": "Ask about this worksheet page...",
+    "thinking": "Thinking...",
+    "welcome": "How can I help you with this worksheet page?",
+    "apiKeyMissing": "API Key Missing",
+    "apiKeyMissingDesc": "Please set your Gemini API key first.",
+    "aiError": "AI Error",
+    "aiErrorDesc": "Failed to get response from AI. Please check your API key and try again.",
+    "pdfError": "PDF Error",
+    "pdfErrorDesc": "PDF data not available for AI chat.",
+    "missingInfo": "Missing worksheet information",
+    "dataNotAvailable": "Worksheet data not available",
+    "returnToWorksheet": "Return to Worksheet",
+    "imageGenerationError": "Failed to generate page image for AI analysis."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Oops! Page not found",
+    "returnHome": "Return to Home"
+  },
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية"
+  }
+}
