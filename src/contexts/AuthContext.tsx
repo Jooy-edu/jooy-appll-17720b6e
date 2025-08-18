@@ -163,8 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('🔍 [AUTH] User authenticated, fetching profile');
           
           // Don't block the auth state change on profile fetching
-          fetchProfile(session.user.id)
-            .then((profileData) => {
+          Promise.all([
+            fetchProfile(session.user.id),
+            syncProfileIfNeeded(session.user)
+          ])
+            .then(([profileData]) => {
               if (mounted) {
                 setProfile(profileData);
                 console.log('🔍 [AUTH] Profile updated:', !!profileData);
@@ -366,6 +369,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Sync profile if needed
+  const syncProfileIfNeeded = async (authUser: any) => {
+    try {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        await supabase.from('profiles').insert({
+          id: authUser.id,
+          email: authUser.email,
+          full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name,
+          role: 'user',
+          credits_remaining: 100,
+          onboarding_completed: false
+        });
+      } else if (!existingProfile.email || !existingProfile.full_name) {
+        // Update missing fields
+        await supabase.from('profiles').update({
+          email: existingProfile.email || authUser.email,
+          full_name: existingProfile.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name
+        }).eq('id', authUser.id);
+      }
+    } catch (error) {
+      console.error('Error syncing profile:', error);
+    }
+  };
+
   // Update profile function
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) {
@@ -377,18 +411,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const allowedUpdates = { ...updates };
       delete (allowedUpdates as any).id;
 
-      const { error } = await supabase
+      // Update profiles table
+      const { error: profileError } = await supabase
         .from('profiles')
         .update(allowedUpdates)
         .eq('id', user.id);
 
-      if (error) {
+      if (profileError) {
         toast({
           title: "Profile Update Error",
-          description: error.message,
+          description: profileError.message,
           variant: "destructive"
         });
-        return { error };
+        return { error: profileError };
+      }
+
+      // Update auth metadata if full_name is being updated
+      if (updates.full_name) {
+        const { error: authError } = await supabase.auth.updateUser({
+          data: { full_name: updates.full_name }
+        });
+        
+        if (authError) {
+          console.warn('Could not update auth metadata:', authError);
+        }
       }
 
       // Refresh profile data
