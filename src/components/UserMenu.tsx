@@ -49,6 +49,15 @@ const UserMenu: React.FC = () => {
     );
   }
 
+  // Show loading state if user exists but profile is still loading
+  if (user && !profile) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -68,7 +77,7 @@ const UserMenu: React.FC = () => {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-gradient-orange-magenta text-white text-xs">
-              {profile.full_name ? getInitials(profile.full_name) : <User className="h-4 w-4" />}
+              {profile?.full_name ? getInitials(profile.full_name) : <User className="h-4 w-4" />}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -77,10 +86,10 @@ const UserMenu: React.FC = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {profile.full_name || 'User'}
+              {profile?.full_name || 'User'}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
+              {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -93,7 +102,7 @@ const UserMenu: React.FC = () => {
         </DropdownMenuItem>
         <DropdownMenuItem disabled>
           <CreditCard className="mr-2 h-4 w-4" />
-          <span>Credits: {profile.credits_remaining}</span>
+          <span>Credits: {profile?.credits_remaining || 0}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
