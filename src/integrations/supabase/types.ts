@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activation_codes: {
         Row: {
+          app_access_duration_days: number
           code: string
           created_at: string
           created_by: string
@@ -27,6 +28,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          app_access_duration_days?: number
           code: string
           created_at?: string
           created_by: string
@@ -38,6 +40,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          app_access_duration_days?: number
           code?: string
           created_at?: string
           created_by?: string
