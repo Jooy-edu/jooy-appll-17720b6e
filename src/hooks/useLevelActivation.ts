@@ -50,11 +50,11 @@ export const useLevelActivation = () => {
         return { success: false, error: 'You already have access to this level' };
       }
 
-      // Check if code exists and is valid (codes are now stored without hyphens)
+      // Check if code exists and is valid (codes are stored with dashes)
       const { data: codeData, error: codeError } = await supabase
         .from('activation_codes')
         .select('id, is_active, expires_at, max_uses, app_access_duration_days')
-        .eq('code', cleanCode)
+        .eq('code', activationCode.trim())
         .eq('is_active', true)
         .maybeSingle();
 
