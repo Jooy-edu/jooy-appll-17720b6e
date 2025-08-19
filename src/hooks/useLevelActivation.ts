@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -10,6 +11,7 @@ interface LevelActivationResult {
 
 export const useLevelActivation = () => {
   const { user, refreshProfile } = useAuth();
+  const queryClient = useQueryClient();
   const [isActivating, setIsActivating] = useState(false);
 
   const validateCodeFormat = (code: string): boolean => {
@@ -105,6 +107,10 @@ export const useLevelActivation = () => {
       }
 
       await refreshProfile();
+
+      // Invalidate level access cache to update UI immediately
+      await queryClient.invalidateQueries({ queryKey: ['level-access'] });
+      await queryClient.invalidateQueries({ queryKey: ['user-level-activations'] });
 
       return { 
         success: true, 
