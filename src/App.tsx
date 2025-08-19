@@ -63,9 +63,7 @@ const App = () => (
             } />
             <Route path="/" element={
               <ProtectedRoute>
-                <ActivationGuard>
-                  <LibraryPage />
-                </ActivationGuard>
+                <LibraryPage />
               </ProtectedRoute>
             } />
             

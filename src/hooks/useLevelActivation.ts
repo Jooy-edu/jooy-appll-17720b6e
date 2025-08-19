@@ -43,7 +43,7 @@ export const useLevelActivation = () => {
         .select('id, is_active, expires_at, max_uses, app_access_duration_days')
         .eq('code', cleanCode)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (codeError || !codeData) {
         return { success: false, error: 'Invalid or expired activation code' };
@@ -60,7 +60,7 @@ export const useLevelActivation = () => {
         .select('id')
         .eq('user_id', user.id)
         .eq('folder_id', folderId)
-        .single();
+        .maybeSingle();
 
       if (existingActivation) {
         return { success: false, error: 'Level already activated' };
