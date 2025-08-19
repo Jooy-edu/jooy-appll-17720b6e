@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Lock } from 'lucide-react';
 import { useLevelActivation } from '@/hooks/useLevelActivation';
+import { useUserActivatedLevels } from '@/hooks/useUserActivatedLevels';
 import { useTranslation } from 'react-i18next';
 
 interface Folder {
@@ -35,6 +36,10 @@ export const LevelActivationModal: React.FC<LevelActivationModalProps> = ({
   const [error, setError] = useState('');
   
   const { activateLevel, isActivating, validateCodeFormat, formatCode } = useLevelActivation();
+  const { data: activatedLevelIds = [], isLoading: loadingActivatedLevels } = useUserActivatedLevels();
+
+  // Filter out already activated levels
+  const availableFolders = folders.filter(folder => !activatedLevelIds.includes(folder.id));
 
   useEffect(() => {
     if (preselectedFolderId) {
@@ -97,26 +102,46 @@ export const LevelActivationModal: React.FC<LevelActivationModalProps> = ({
             Activate Level
           </DialogTitle>
           <DialogDescription>
-            Enter your activation code and select which level you want to unlock.
+            {loadingActivatedLevels ? (
+              "Loading available levels..."
+            ) : availableFolders.length === 0 ? (
+              "All levels are already activated! You have access to all available content."
+            ) : (
+              `Enter your activation code and select which level you want to unlock. ${availableFolders.length} level${availableFolders.length === 1 ? '' : 's'} available.`
+            )}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="level-select">Select Level</Label>
-            <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a level to unlock..." />
-              </SelectTrigger>
-              <SelectContent>
-                {folders.map((folder) => (
-                  <SelectItem key={folder.id} value={folder.id}>
-                    Level {folder.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {loadingActivatedLevels ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="ml-2">Loading available levels...</span>
           </div>
+        ) : availableFolders.length === 0 ? (
+          <div className="text-center py-8">
+            <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">All Levels Activated!</h3>
+            <p className="text-muted-foreground">
+              You already have access to all available levels. No activation needed.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="level-select">Select Level</Label>
+              <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a level to unlock..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableFolders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      Level {folder.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
           <div className="space-y-2">
             <Label htmlFor="activation-code">Activation Code</Label>
@@ -137,32 +162,33 @@ export const LevelActivationModal: React.FC<LevelActivationModalProps> = ({
             </Alert>
           )}
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1"
-              disabled={isActivating}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={isActivating || !selectedFolderId || !activationCode.trim()}
-            >
-              {isActivating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Activating...
-                </>
-              ) : (
-                'Activate Level'
-              )}
-            </Button>
-          </div>
-        </form>
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1"
+                disabled={isActivating}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={isActivating || !selectedFolderId || !activationCode.trim()}
+              >
+                {isActivating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Activating...
+                  </>
+                ) : (
+                  'Activate Level'
+                )}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
