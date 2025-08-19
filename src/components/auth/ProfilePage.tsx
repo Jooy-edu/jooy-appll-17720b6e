@@ -7,13 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, User, Mail, Calendar, CreditCard, Settings, LogOut } from 'lucide-react';
+import { Loader2, User, Mail, Calendar, Shield, Clock, AlertTriangle, LogOut } from 'lucide-react';
 import { getTextDirection } from '@/lib/textDirection';
 import { useTranslation } from 'react-i18next';
+import { useUserActivation } from '@/hooks/useUserActivation';
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
   const { user, profile, updateProfile, signOut } = useAuth();
+  const { activationData, loading: activationLoading } = useUserActivation();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || user?.user_metadata?.full_name || '');
@@ -51,6 +53,27 @@ const ProfilePage: React.FC = () => {
 
   const isRTL = t('common.language') === 'العربية';
 
+  const getStatusBadge = () => {
+    if (!activationData) return null;
+    
+    if (!activationData.isActivated) {
+      return <Badge variant="outline" className="text-muted-foreground">{t('profile.inactive')}</Badge>;
+    }
+    
+    if (activationData.daysRemaining === 0) {
+      return <Badge variant="destructive">{t('profile.expired')}</Badge>;
+    }
+    
+    return <Badge variant="default" className="bg-green-500">{t('profile.active')}</Badge>;
+  };
+
+  const getDaysRemainingColor = () => {
+    if (!activationData?.daysRemaining) return 'text-muted-foreground';
+    if (activationData.daysRemaining < 7) return 'text-destructive';
+    if (activationData.daysRemaining < 30) return 'text-yellow-600';
+    return 'text-green-600';
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -63,11 +86,11 @@ const ProfilePage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900" dir={isRTL ? 'rtl' : 'ltr'}>
-            Profile Settings
+          <h1 className="text-3xl font-bold text-foreground" dir={isRTL ? 'rtl' : 'ltr'}>
+            {t('profile.title')}
           </h1>
-          <p className="text-gray-600 mt-2" dir={isRTL ? 'rtl' : 'ltr'}>
-            Manage your account information and preferences
+          <p className="text-muted-foreground mt-2" dir={isRTL ? 'rtl' : 'ltr'}>
+            {t('profile.subtitle')}
           </p>
         </div>
 
@@ -78,10 +101,10 @@ const ProfilePage: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2" dir={isRTL ? 'rtl' : 'ltr'}>
                   <User className="h-5 w-5" />
-                  Personal Information
+                  {t('profile.personalInfo')}
                 </CardTitle>
                 <CardDescription dir={isRTL ? 'rtl' : 'ltr'}>
-                  Update your personal details here
+                  {t('profile.personalInfoDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -89,35 +112,35 @@ const ProfilePage: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />
-                    Email Address
+                    {t('profile.emailAddress')}
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={profile?.email || user.email || ''}
                     disabled
-                    className="bg-gray-50"
+                    className="bg-muted"
                     dir={getTextDirection(profile?.email || user.email || '')}
                   />
-                  <p className="text-sm text-gray-500" dir={isRTL ? 'rtl' : 'ltr'}>
-                    Email cannot be changed. Contact support if you need to update your email.
+                  <p className="text-sm text-muted-foreground" dir={isRTL ? 'rtl' : 'ltr'}>
+                    {t('profile.emailCannotChange')}
                   </p>
                 </div>
 
                 {/* Full Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="fullName">{t('profile.fullName')}</Label>
                   {isEditing ? (
                     <form onSubmit={handleUpdateProfile} className="space-y-3">
-                      <Input
-                        id="fullName"
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Enter your full name"
-                        disabled={loading}
-                        dir={getTextDirection(fullName)}
-                      />
+                        <Input
+                          id="fullName"
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder={t('profile.enterFullName')}
+                          disabled={loading}
+                          dir={getTextDirection(fullName)}
+                        />
                       <div className="flex gap-2">
                         <Button
                           type="submit"
@@ -128,10 +151,10 @@ const ProfilePage: React.FC = () => {
                           {loading ? (
                             <>
                               <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                              Saving...
+                              {t('profile.saving')}
                             </>
                           ) : (
-                            'Save'
+                            t('profile.save')
                           )}
                         </Button>
                         <Button
@@ -144,21 +167,21 @@ const ProfilePage: React.FC = () => {
                           }}
                           disabled={loading}
                         >
-                          Cancel
+                          {t('profile.cancel')}
                         </Button>
                       </div>
                     </form>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-900" dir={getTextDirection(profile?.full_name || user?.user_metadata?.full_name || '')}>
-                        {profile?.full_name || user?.user_metadata?.full_name || 'Not set'}
+                      <span className="text-foreground" dir={getTextDirection(profile?.full_name || user?.user_metadata?.full_name || '')}>
+                        {profile?.full_name || user?.user_metadata?.full_name || t('profile.notSet')}
                       </span>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setIsEditing(true)}
                       >
-                        Edit
+                        {t('profile.edit')}
                       </Button>
                     </div>
                   )}
@@ -170,9 +193,9 @@ const ProfilePage: React.FC = () => {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Member Since
+                    {t('profile.memberSince')}
                   </Label>
-                  <p className="text-gray-900">
+                  <p className="text-foreground">
                     {new Date(profile?.created_at || user?.created_at || '').toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -184,17 +207,114 @@ const ProfilePage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Sign Out */}
+          {/* Activation Status & Sign Out */}
           <div className="space-y-6">
+            {/* Activation Status Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2" dir={isRTL ? 'rtl' : 'ltr'}>
+                  <Shield className="h-5 w-5" />
+                  {t('profile.activationStatus')}
+                </CardTitle>
+                <CardDescription dir={isRTL ? 'rtl' : 'ltr'}>
+                  {t('profile.activationStatusDesc')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {activationLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    {/* Status */}
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        {t('profile.status')}
+                      </Label>
+                      {getStatusBadge()}
+                    </div>
+
+                    {activationData?.isActivated ? (
+                      <>
+                        {/* Activated Date */}
+                        <div className="space-y-1">
+                          <Label className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {t('profile.activatedOn')}
+                          </Label>
+                          <p className="text-foreground">
+                            {new Date(activationData.activatedAt!).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+
+                        {/* Expiration Date */}
+                        <div className="space-y-1">
+                          <Label className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            {t('profile.expiresOn')}
+                          </Label>
+                          <p className="text-foreground">
+                            {new Date(activationData.expiresAt!).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+
+                        {/* Days Remaining */}
+                        <div className="space-y-1">
+                          <Label className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            {t('profile.daysRemaining')}
+                          </Label>
+                          <p className={`font-medium ${getDaysRemainingColor()}`}>
+                            {activationData.daysRemaining} {activationData.daysRemaining === 1 ? t('profile.day') : t('profile.days')}
+                          </p>
+                        </div>
+
+                        {/* Warning Messages */}
+                        {activationData.daysRemaining === 0 && (
+                          <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="text-sm">{t('profile.expiredWarning')}</span>
+                          </div>
+                        )}
+                        
+                        {activationData.daysRemaining > 0 && activationData.daysRemaining < 7 && (
+                          <div className="flex items-center gap-2 p-3 bg-yellow-50 text-yellow-700 rounded-md">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="text-sm">{t('profile.expiringWarning')}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-2 p-3 bg-muted text-muted-foreground rounded-md">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="text-sm">{t('profile.notActivatedWarning')}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Sign Out Card */}
             <Card>
               <CardContent className="pt-6">
                 <Button
                   onClick={handleSignOut}
                   variant="outline"
-                  className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                  className="w-full text-destructive border-destructive/20 hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
+                  {t('profile.signOut')}
                 </Button>
               </CardContent>
             </Card>
