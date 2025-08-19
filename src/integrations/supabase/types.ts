@@ -599,12 +599,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_user_active_level_count: {
+        Args: { user_id_param: string }
+        Returns: number
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
       }
       is_owner: {
         Args: { requested_user_id: string; user_id: string }
+        Returns: boolean
+      }
+      user_has_any_level_access: {
+        Args: { user_id_param: string }
         Returns: boolean
       }
       user_has_level_access: {

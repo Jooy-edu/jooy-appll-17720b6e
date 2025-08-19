@@ -1,55 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useActivation } from '@/hooks/useActivation';
-import { Loader2 } from 'lucide-react';
-import ActivationScreen from './ActivationScreen';
+import { useHasAnyLevelAccess } from '@/hooks/useHasAnyLevelAccess';
+import { Loader2, Lock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ActivationGuardProps {
   children: React.ReactNode;
 }
 
 const ActivationGuard: React.FC<ActivationGuardProps> = ({ children }) => {
-  const { user, profile, loading: authLoading } = useAuth();
-  const { checkActivationStatus } = useActivation();
-  const [isActivated, setIsActivated] = useState<boolean | null>(null);
-  const [isChecking, setIsChecking] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const { data: levelAccessData, isLoading, error } = useHasAnyLevelAccess();
 
-  useEffect(() => {
-    const checkStatus = async () => {
-      if (!user || authLoading) {
-        setIsChecking(false);
-        return;
-      }
-
-      try {
-        // First check from profile if available
-        if (profile) {
-          setIsActivated(profile.jooy_app_activated);
-          setIsChecking(false);
-          return;
-        }
-
-        // Fallback to direct database check
-        const activated = await checkActivationStatus(user.id);
-        setIsActivated(activated);
-      } catch (error) {
-        console.error('Error checking activation status:', error);
-        setIsActivated(false);
-      } finally {
-        setIsChecking(false);
-      }
-    };
-
-    checkStatus();
-  }, [user, profile, authLoading, checkActivationStatus]);
-
-  // Show loading while checking authentication or activation status
-  if (authLoading || isChecking) {
+  // Show loading while checking authentication or level access status
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Checking account status...</p>
+          <p className="text-muted-foreground">Checking level access...</p>
         </div>
       </div>
     );
@@ -60,12 +29,49 @@ const ActivationGuard: React.FC<ActivationGuardProps> = ({ children }) => {
     return null; // This should be handled by ProtectedRoute
   }
 
-  // Show activation screen if user is not activated
-  if (isActivated === false) {
-    return <ActivationScreen />;
+  // Show error if there's an issue checking level access
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md mx-4">
+          <CardHeader>
+            <CardTitle className="text-center text-destructive">Access Check Failed</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-4">
+              Unable to check your level access. Please try refreshing the page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
-  // User is activated, show the protected content
+  // Show level activation required screen if user has no level activations
+  if (!levelAccessData?.hasAnyAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md mx-4">
+          <CardHeader>
+            <CardTitle className="text-center flex items-center justify-center gap-2">
+              <Lock className="h-6 w-6" />
+              Level Activation Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              Welcome! To access the application, you need to activate at least one level with an activation code.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Navigate to the library to select and activate your first level.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // User has level activations, show the protected content
   return <>{children}</>;
 };
 

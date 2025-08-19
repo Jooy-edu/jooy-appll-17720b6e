@@ -61,6 +61,7 @@ const App = () => (
                 </ActivationGuard>
               </ProtectedRoute>
             } />
+            {/* Library page - users without level access will be shown activation message */}
             <Route path="/" element={
               <ProtectedRoute>
                 <LibraryPage />
