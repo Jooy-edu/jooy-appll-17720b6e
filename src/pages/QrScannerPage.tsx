@@ -7,7 +7,6 @@ import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Languages } from "lucide-react";
-import UserMenu from "@/components/UserMenu";
 
 const QrScannerPage: React.FC = () => {
   const navigate = useNavigate();
@@ -74,11 +73,6 @@ const QrScannerPage: React.FC = () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-
-      {/* User Menu */}
-      <div className="fixed top-4 right-4 z-50">
-        <UserMenu />
       </div>
 
       <Card className="w-full max-w-md">

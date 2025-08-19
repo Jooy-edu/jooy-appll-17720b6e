@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { LibraryHeader } from '@/components/LibraryHeader';
 import { DocumentGrid } from '@/components/DocumentGrid';
 import { PageSelector } from '@/components/PageSelector';
-import UserMenu from '@/components/UserMenu';
 import { useRealtimeFolders } from '@/hooks/useRealtimeFolders';
 import { Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -86,9 +85,6 @@ export const LibraryPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="fixed top-4 right-4 z-50">
-          <UserMenu />
-        </div>
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
@@ -104,9 +100,6 @@ export const LibraryPage: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="fixed top-4 right-4 z-50">
-          <UserMenu />
-        </div>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
             <p className="text-destructive mb-4">Failed to load library</p>
@@ -122,9 +115,6 @@ export const LibraryPage: React.FC = () => {
   if (!folders?.length) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="fixed top-4 right-4 z-50">
-          <UserMenu />
-        </div>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
             <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -137,11 +127,6 @@ export const LibraryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* User Menu */}
-      <div className="fixed top-4 right-4 z-50">
-        <UserMenu />
-      </div>
-      
       <div className="container mx-auto px-4 py-8">
         <LibraryHeader
           folders={folders}
