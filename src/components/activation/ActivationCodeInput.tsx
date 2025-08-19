@@ -34,7 +34,7 @@ const ActivationCodeInput: React.FC<ActivationCodeInputProps> = ({ onSuccess }) 
     }
 
     if (!validateCodeFormat(code)) {
-      setError('Please enter a valid activation code in XXXX-XXXX-XXXX format');
+      setError('Please enter a valid activation code in XXXX-XXXX-XXXX-XXXX format');
       return;
     }
 
@@ -60,17 +60,17 @@ const ActivationCodeInput: React.FC<ActivationCodeInputProps> = ({ onSuccess }) 
           type="text"
           value={code}
           onChange={handleInputChange}
-          placeholder="XXXX-XXXX-XXXX"
+          placeholder="XXXX-XXXX-XXXX-XXXX"
           className={`text-center text-lg font-mono tracking-wider ${
             !isValidFormat ? 'border-destructive' : ''
           }`}
-          maxLength={14}
+          maxLength={19}
           disabled={isActivating}
         />
         {code.length > 0 && !isValidFormat && (
           <p className="text-sm text-destructive flex items-center gap-1">
             <AlertCircle className="h-4 w-4" />
-            Please use the format XXXX-XXXX-XXXX
+            Please use the format XXXX-XXXX-XXXX-XXXX
           </p>
         )}
       </div>

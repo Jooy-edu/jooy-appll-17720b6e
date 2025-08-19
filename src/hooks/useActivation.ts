@@ -15,7 +15,7 @@ export const useActivation = () => {
   const { user, refreshProfile } = useAuth();
 
   const validateCodeFormat = (code: string): boolean => {
-    return /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code);
+    return /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code);
   };
 
   const formatCode = (input: string): string => {
@@ -25,8 +25,8 @@ export const useActivation = () => {
     // Add dashes every 4 characters
     const formatted = cleaned.match(/.{1,4}/g)?.join('-') || cleaned;
     
-    // Limit to 14 characters (12 alphanumeric + 2 dashes)
-    return formatted.substring(0, 14);
+    // Limit to 19 characters (16 alphanumeric + 3 dashes)
+    return formatted.substring(0, 19);
   };
 
   const checkActivationStatus = async (userId: string): Promise<boolean> => {
@@ -63,7 +63,7 @@ export const useActivation = () => {
 
       // 1. Validate code format
       if (!validateCodeFormat(activationCode)) {
-        return { success: false, error: 'Invalid code format. Please use XXXX-XXXX-XXXX format.' };
+        return { success: false, error: 'Invalid code format. Please use XXXX-XXXX-XXXX-XXXX format.' };
       }
 
       // 2. Check if code exists and is valid
