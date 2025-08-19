@@ -23,7 +23,7 @@ const LoginForm: React.FC = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
   // Get the intended destination from location state
-  const from = location.state?.from?.pathname || '/library';
+  const from = location.state?.from?.pathname || '/';
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
