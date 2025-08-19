@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_tasks: {
         Row: {
           assigned_to: string | null
@@ -289,6 +325,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          jooy_app_activated: boolean
           onboarding_completed: boolean
           plan_id: string | null
           preferences: Json | null
@@ -301,6 +338,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          jooy_app_activated?: boolean
           onboarding_completed?: boolean
           plan_id?: string | null
           preferences?: Json | null
@@ -313,6 +351,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          jooy_app_activated?: boolean
           onboarding_completed?: boolean
           plan_id?: string | null
           preferences?: Json | null
@@ -459,6 +498,38 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_activations: {
+        Row: {
+          activated_at: string
+          activation_code_id: string
+          app_access_expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          activation_code_id: string
+          app_access_expires_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          activation_code_id?: string
+          app_access_expires_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activations_activation_code_id_fkey"
+            columns: ["activation_code_id"]
+            isOneToOne: false
+            referencedRelation: "activation_codes"
             referencedColumns: ["id"]
           },
         ]
