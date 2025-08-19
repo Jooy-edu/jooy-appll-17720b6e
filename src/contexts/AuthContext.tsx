@@ -14,6 +14,7 @@ interface UserProfile {
   preferences: any;
   created_at: string;
   updated_at: string;
+  jooy_app_activated: boolean;
 }
 
 interface AuthContextType {
@@ -386,7 +387,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name,
           role: 'user',
           credits_remaining: 100,
-          onboarding_completed: false
+          onboarding_completed: false,
+          jooy_app_activated: false
         });
       } else if (!existingProfile.email || !existingProfile.full_name) {
         // Update missing fields

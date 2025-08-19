@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ActivationGuard from "@/components/activation/ActivationGuard";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
@@ -41,22 +42,30 @@ const App = () => (
             {/* Protected routes */}
             <Route path="/worksheet/:id/:n" element={
               <ProtectedRoute>
-                <WorksheetPage />
+                <ActivationGuard>
+                  <WorksheetPage />
+                </ActivationGuard>
               </ProtectedRoute>
             } />
             <Route path="/chat/:worksheetId/:pageNumber" element={
               <ProtectedRoute>
-                <AIChatPage />
+                <ActivationGuard>
+                  <AIChatPage />
+                </ActivationGuard>
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
               <ProtectedRoute>
-                <ProfilePage />
+                <ActivationGuard>
+                  <ProfilePage />
+                </ActivationGuard>
               </ProtectedRoute>
             } />
             <Route path="/" element={
               <ProtectedRoute>
-                <LibraryPage />
+                <ActivationGuard>
+                  <LibraryPage />
+                </ActivationGuard>
               </ProtectedRoute>
             } />
             
