@@ -62,8 +62,8 @@
     "notSet": "Not set",
     "memberSince": "Member Since",
     "signOut": "Sign Out",
-    "activationStatus": "Activation Status",
-    "activationStatusDesc": "Your account activation details",
+    "activationStatus": "Account Activation",
+    "activationStatusDesc": "Your subscription and access details",
     "status": "Status",
     "active": "Active",
     "inactive": "Not Activated",
@@ -76,8 +76,8 @@
     "years": "years",
     "day": "day",
     "days": "days",
-    "expiringWarning": "Your access will expire soon",
-    "expiredWarning": "Your access has expired",
-    "notActivatedWarning": "Please activate your account to access all features"
+    "expiringWarning": "Your access will expire soon. Please renew to continue using all features.",
+    "expiredWarning": "Your access has expired. Please renew to continue using the app.",
+    "notActivatedWarning": "Please activate your account to access all features and content."
   }
 }
