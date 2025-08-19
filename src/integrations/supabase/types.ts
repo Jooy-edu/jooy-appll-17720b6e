@@ -537,6 +537,51 @@ export type Database = {
           },
         ]
       }
+      user_level_activations: {
+        Row: {
+          access_expires_at: string
+          activated_at: string
+          activation_code_id: string
+          created_at: string
+          folder_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          access_expires_at: string
+          activated_at?: string
+          activation_code_id: string
+          created_at?: string
+          folder_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          access_expires_at?: string
+          activated_at?: string
+          activation_code_id?: string
+          created_at?: string
+          folder_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_level_activations_activation_code_id_fkey"
+            columns: ["activation_code_id"]
+            isOneToOne: false
+            referencedRelation: "activation_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_level_activations_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -552,6 +597,10 @@ export type Database = {
       }
       is_owner: {
         Args: { requested_user_id: string; user_id: string }
+        Returns: boolean
+      }
+      user_has_level_access: {
+        Args: { folder_id_param: string; user_id_param: string }
         Returns: boolean
       }
     }

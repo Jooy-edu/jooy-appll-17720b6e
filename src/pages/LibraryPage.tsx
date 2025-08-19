@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { LibraryHeader } from '@/components/LibraryHeader';
+import { LibraryHeaderWithActivation } from '@/components/LibraryHeaderWithActivation';
 import { DocumentGrid } from '@/components/DocumentGrid';
 import { PageSelector } from '@/components/PageSelector';
+import { LevelAccessGuard } from '@/components/LevelAccessGuard';
+import { LevelActivationModal } from '@/components/LevelActivationModal';
 import { useRealtimeFolders } from '@/hooks/useRealtimeFolders';
+import { useLevelAccess } from '@/hooks/useLevelAccess';
 import { Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 
 interface SelectedLevel {
   folderId: string;
@@ -22,6 +26,8 @@ export const LibraryPage: React.FC = () => {
   const { data: folders, isLoading, error } = useRealtimeFolders();
   const [selectedLevel, setSelectedLevel] = useState<SelectedLevel | null>(null);
   const [pageSelectorState, setPageSelectorState] = useState<PageSelectorState | null>(null);
+  const [activationModalOpen, setActivationModalOpen] = useState(false);
+  const [preselectedFolderId, setPreselectedFolderId] = useState<string | null>(null);
 
   // Load saved level from localStorage on mount
   useEffect(() => {
@@ -72,6 +78,26 @@ export const LibraryPage: React.FC = () => {
     localStorage.setItem(SELECTED_LEVEL_KEY, JSON.stringify(newLevel));
     // Close page selector if open
     setPageSelectorState(null);
+  };
+
+  const handleLockedLevelSelect = (folderId: string, folderName: string) => {
+    setPreselectedFolderId(folderId);
+    setActivationModalOpen(true);
+  };
+
+  const handleActivationSuccess = (folderId: string, folderName: string) => {
+    handleLevelSelect(folderId, folderName);
+    toast({
+      title: "Level Activated!",
+      description: `You now have access to Level ${folderName}`,
+    });
+  };
+
+  const handleActivateRequired = () => {
+    if (selectedLevel) {
+      setPreselectedFolderId(selectedLevel.folderId);
+      setActivationModalOpen(true);
+    }
   };
 
   const handleDocumentSelect = (documentId: string, documentName: string) => {
@@ -128,18 +154,24 @@ export const LibraryPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <LibraryHeader
+        <LibraryHeaderWithActivation
           folders={folders}
           selectedFolderId={selectedLevel?.folderId || null}
           onFolderSelect={handleLevelSelect}
+          onLockedLevelSelect={handleLockedLevelSelect}
         />
         
         {selectedLevel && (
-          <DocumentGrid
+          <LevelAccessGuard
             folderId={selectedLevel.folderId}
-            levelName={selectedLevel.levelName}
-            onDocumentSelect={handleDocumentSelect}
-          />
+            onActivateRequired={handleActivateRequired}
+          >
+            <DocumentGrid
+              folderId={selectedLevel.folderId}
+              levelName={selectedLevel.levelName}
+              onDocumentSelect={handleDocumentSelect}
+            />
+          </LevelAccessGuard>
         )}
         
         {pageSelectorState && (
@@ -150,6 +182,14 @@ export const LibraryPage: React.FC = () => {
             documentName={pageSelectorState.documentName}
           />
         )}
+        
+        <LevelActivationModal
+          isOpen={activationModalOpen}
+          onClose={() => setActivationModalOpen(false)}
+          folders={folders}
+          preselectedFolderId={preselectedFolderId}
+          onSuccess={handleActivationSuccess}
+        />
       </div>
     </div>
   );

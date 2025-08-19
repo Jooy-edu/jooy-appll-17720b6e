@@ -1,6 +1,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Lock, Unlock } from 'lucide-react';
+import { useLevelAccess } from '@/hooks/useLevelAccess';
 
 interface Folder {
   id: string;
