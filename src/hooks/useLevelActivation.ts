@@ -110,6 +110,7 @@ export const useLevelActivation = () => {
 
       // Invalidate level access cache to update UI immediately
       await queryClient.invalidateQueries({ queryKey: ['level-access'] });
+      await queryClient.invalidateQueries({ queryKey: ['user-activated-levels'] });
       await queryClient.invalidateQueries({ queryKey: ['user-level-activations'] });
       await queryClient.invalidateQueries({ queryKey: ['has-any-level-access'] });
 
