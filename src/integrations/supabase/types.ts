@@ -587,6 +587,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_user_level_access_status: {
+        Args: { folder_id_param: string; user_id_param: string }
+        Returns: {
+          days_remaining: number
+          expires_at: string
+          has_access: boolean
+        }[]
+      }
       create_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: undefined

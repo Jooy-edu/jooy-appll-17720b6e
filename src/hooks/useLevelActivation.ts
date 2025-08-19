@@ -37,7 +37,18 @@ export const useLevelActivation = () => {
         return { success: false, error: 'Invalid activation code format' };
       }
 
-      // Check if code exists and is valid
+      // First check if user already has access to this level
+      const { data: accessStatus } = await supabase
+        .rpc('check_user_level_access_status', {
+          user_id_param: user.id,
+          folder_id_param: folderId
+        });
+
+      if (accessStatus && accessStatus.length > 0 && accessStatus[0].has_access) {
+        return { success: false, error: 'You already have access to this level' };
+      }
+
+      // Check if code exists and is valid (codes are now stored without hyphens)
       const { data: codeData, error: codeError } = await supabase
         .from('activation_codes')
         .select('id, is_active, expires_at, max_uses, app_access_duration_days')
@@ -45,25 +56,18 @@ export const useLevelActivation = () => {
         .eq('is_active', true)
         .maybeSingle();
 
-      if (codeError || !codeData) {
+      if (codeError) {
+        console.error('Code lookup error:', codeError);
+        return { success: false, error: 'Failed to validate activation code' };
+      }
+
+      if (!codeData) {
         return { success: false, error: 'Invalid or expired activation code' };
       }
 
       // Check if code has expired
       if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
         return { success: false, error: 'Activation code has expired' };
-      }
-
-      // Check if user already activated this level
-      const { data: existingActivation } = await supabase
-        .from('user_level_activations')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('folder_id', folderId)
-        .maybeSingle();
-
-      if (existingActivation) {
-        return { success: false, error: 'Level already activated' };
       }
 
       // Check code usage limit
@@ -73,6 +77,7 @@ export const useLevelActivation = () => {
         .eq('activation_code_id', codeData.id);
 
       if (usageError) {
+        console.error('Usage check error:', usageError);
         return { success: false, error: 'Failed to check code usage' };
       }
 
@@ -95,6 +100,7 @@ export const useLevelActivation = () => {
         });
 
       if (activationError) {
+        console.error('Activation creation error:', activationError);
         return { success: false, error: 'Failed to activate level' };
       }
 
