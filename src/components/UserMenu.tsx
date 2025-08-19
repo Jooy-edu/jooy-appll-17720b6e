@@ -97,7 +97,7 @@ const UserMenu: React.FC = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/" className="cursor-pointer">
+          <Link to="/library" className="cursor-pointer">
             <BookOpen className="mr-2 h-4 w-4" />
             <span>Library</span>
           </Link>

@@ -19,9 +19,10 @@ export const useFolders = () => {
       
       if (error) throw error;
       
-      // Filter folders: only user's own folders
+      // Filter folders: user's own folders OR folders with public documents
       const filteredData = data?.filter(folder => 
-        folder.user_id === user.user?.id
+        folder.user_id === user.user?.id ||
+        folder.documents?.some((doc: any) => !doc.is_private)
       ) || [];
       
       return filteredData;
