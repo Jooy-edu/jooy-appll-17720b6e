@@ -17,7 +17,7 @@ import QrScannerPage from "./pages/QrScannerPage";
 import WorksheetPage from "./pages/WorksheetPage";
 import AIChatPage from "./pages/AIChatPage";
 import { LibraryPage } from "./pages/LibraryPage";
-import QRScannerButton from "./components/QRScannerButton";
+import FloatingButtonGroup from "./components/FloatingButtonGroup";
 import FullscreenButton from "./components/FullscreenButton";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
@@ -66,7 +66,7 @@ const App = () => (
           <FullscreenButton />
           <Routes>
             <Route path="/auth/*" element={null} />
-            <Route path="*" element={<QRScannerButton />} />
+            <Route path="*" element={<FloatingButtonGroup />} />
           </Routes>
           <PWAInstallPrompt />
         </BrowserRouter>

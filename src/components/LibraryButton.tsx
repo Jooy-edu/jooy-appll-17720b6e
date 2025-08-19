@@ -1,13 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { QrCode } from "lucide-react";
+import { Home } from "lucide-react";
 
-const QRScannerButton: React.FC = () => {
+const LibraryButton: React.FC = () => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate("/qr-scanner");
+    navigate("/");
   };
 
   return (
@@ -15,11 +15,11 @@ const QRScannerButton: React.FC = () => {
       onClick={handleClick}
       className="rounded-full bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white shadow-lg"
       size="icon"
-      aria-label="Scan QR Code"
+      aria-label="Go to Library"
     >
-      <QrCode className="h-5 w-5" />
+      <Home className="h-5 w-5" />
     </Button>
   );
 };
 
-export default QRScannerButton;
+export default LibraryButton;
