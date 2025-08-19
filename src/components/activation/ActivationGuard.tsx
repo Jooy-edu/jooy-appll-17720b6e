@@ -9,8 +9,18 @@ interface ActivationGuardProps {
 }
 
 const ActivationGuard: React.FC<ActivationGuardProps> = ({ children }) => {
+  console.log('ActivationGuard: Component mounted with new logic');
+  
   const { user, loading: authLoading } = useAuth();
   const { data: levelAccessData, isLoading, error } = useHasAnyLevelAccess();
+  
+  console.log('ActivationGuard: Hook data', { 
+    user: user?.id, 
+    authLoading, 
+    isLoading, 
+    levelAccessData, 
+    error 
+  });
 
   // Show loading while checking authentication or level access status
   if (authLoading || isLoading) {

@@ -9,11 +9,16 @@ interface LevelAccessData {
 
 export const useHasAnyLevelAccess = () => {
   const { user } = useAuth();
+  
+  console.log('useHasAnyLevelAccess: Hook called with user:', user?.id);
 
   return useQuery({
     queryKey: ['has-any-level-access', user?.id],
     queryFn: async (): Promise<LevelAccessData> => {
+      console.log('useHasAnyLevelAccess: Query function executing for user:', user?.id);
+      
       if (!user) {
+        console.log('useHasAnyLevelAccess: No user, returning false');
         return { hasAnyAccess: false, activeLevelsCount: 0 };
       }
 
