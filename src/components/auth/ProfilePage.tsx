@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,40 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, User, Mail, Calendar, Shield, Clock, AlertTriangle, LogOut } from 'lucide-react';
 import { getTextDirection } from '@/lib/textDirection';
 import { useTranslation } from 'react-i18next';
-import { useUserActivation } from '@/hooks/useUserActivation';
+import { useUserLevelActivations } from '@/hooks/useLevelAccess';
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
   const { user, profile, updateProfile, signOut } = useAuth();
-  const { activationData, loading: activationLoading } = useUserActivation();
+  const { data: activationsData, isLoading } = useUserLevelActivations();
+  const [activationData, setActivationData] = useState<any>(null);
+
+  // Simulate loading and activation data structure
+  useEffect(() => {
+    if (activationsData && activationsData.length > 0) {
+      // Get the most recent activation
+      const recent = activationsData[0];
+      const expiresAt = new Date(recent.access_expires_at);
+      const now = new Date();
+      const daysRemaining = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      setActivationData({
+        isActivated: expiresAt > now,
+        activatedAt: recent.activated_at,
+        expiresAt: recent.access_expires_at,
+        daysRemaining: Math.max(0, daysRemaining)
+      });
+    } else {
+      setActivationData({
+        isActivated: false,
+        activatedAt: null,
+        expiresAt: null,
+        daysRemaining: null
+      });
+    }
+  }, [activationsData]);
+
+  const activationLoading = isLoading;
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || user?.user_metadata?.full_name || '');
