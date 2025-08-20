@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MessageSquareText } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import ApiKeyManager from "@/components/ApiKeyManager";
 import type { RegionData, WorksheetMetadata, GuidanceItem } from "@/types/worksheet";
 
 interface AIChatButtonProps {
@@ -30,34 +31,20 @@ const AIChatButton: React.FC<AIChatButtonProps> = ({
   pageDescriptionForAI
 }) => {
   const navigate = useNavigate();
+  const [showApiKeyManager, setShowApiKeyManager] = useState(false);
 
   const handleClick = () => {
     // Check if API key exists in localStorage
     const apiKey = localStorage.getItem('gemini-api-key');
     
     if (!apiKey) {
-      // Prompt user for API key
-      const userApiKey = prompt(
-        'Please enter your Google Gemini API key to use AI chat:\n\n' +
-        'You can get your API key from: https://aistudio.google.com/app/apikey'
-      );
-      
-      if (!userApiKey) {
-        toast({
-          title: "API Key Required",
-          description: "You need to provide a Gemini API key to use AI chat.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Save API key to localStorage
-      localStorage.setItem('gemini-api-key', userApiKey.trim());
-      
       toast({
-        title: "API Key Saved",
-        description: "Your Gemini API key has been saved successfully.",
+        title: "API Key Required",
+        description: "You need to set up your Gemini API key to use AI chat.",
+        variant: "destructive"
       });
+      setShowApiKeyManager(true);
+      return;
     }
     
     // DEBUG: Check session state before navigating to AI chat
@@ -90,13 +77,27 @@ const AIChatButton: React.FC<AIChatButtonProps> = ({
   );
 
   return (
-    <Button
-      onClick={handleClick}
-      className={buttonClasses}
-      aria-label="AI Chat"
-    >
-      <MessageSquareText className={isTextModeActive ? "h-5 w-5" : "h-8 w-8"} />
-    </Button>
+    <>
+      <Button
+        onClick={handleClick}
+        className={buttonClasses}
+        aria-label="AI Chat"
+      >
+        <MessageSquareText className={isTextModeActive ? "h-5 w-5" : "h-8 w-8"} />
+      </Button>
+      
+      {showApiKeyManager && (
+        <ApiKeyManager 
+          isOpen={showApiKeyManager}
+          onClose={() => setShowApiKeyManager(false)}
+          onApiKeySet={() => {
+            setShowApiKeyManager(false);
+            // Retry the chat navigation after API key is set
+            handleClick();
+          }}
+        />
+      )}
+    </>
   );
 };
 

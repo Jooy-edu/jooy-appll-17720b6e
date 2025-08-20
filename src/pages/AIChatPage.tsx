@@ -222,7 +222,7 @@ const AIChatPage: React.FC = () => {
     if (!apiKey) {
       toast({
         title: t('aiChat.apiKeyMissing'),
-        description: t('aiChat.apiKeyMissingDesc'),
+        description: "Please set up your Gemini API key in the settings to use AI chat.",
         variant: "destructive"
       });
       return;
