@@ -51,14 +51,17 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   // Initial audio availability check
   useEffect(() => {
     if (!audioCheckPerformed && autoModePageData.guidance.length > 0) {
+      console.log('🎵 [AUTO MODE] Starting audio availability check');
       const firstGuidance = autoModePageData.guidance[0];
       if (!firstGuidance || !firstGuidance.audioName) {
+        console.log('🎵 [AUTO MODE] No first guidance or audioName found, marking audio unavailable');
         setAudioAvailable(false);
         setAudioCheckPerformed(true);
         return;
       }
       
       const audioPath = `/audio/${worksheetId}/${firstGuidance.audioName}_1.mp3`;
+      console.log('🎵 [AUTO MODE] Testing audio path:', audioPath);
       
       const testAudio = new Audio();
       let checkCompleted = false;
@@ -67,6 +70,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
         if (checkCompleted) return;
         checkCompleted = true;
         
+        console.log('🎵 [AUTO MODE] Audio availability check result:', available);
         setAudioAvailable(available);
         setAudioCheckPerformed(true);
         
@@ -75,10 +79,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       };
       
       const handleCanPlay = () => {
+        console.log('🎵 [AUTO MODE] Audio can play');
         completeCheck(true);
       };
       
-      const handleError = () => {
+      const handleError = (e: any) => {
+        console.error('🎵 [AUTO MODE] Audio error during check:', e);
         completeCheck(false);
       };
       
@@ -86,6 +92,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       testAudio.addEventListener('error', handleError);
       
       const timeout = setTimeout(() => {
+        console.log('🎵 [AUTO MODE] Audio check timeout');
         completeCheck(false);
       }, 3000);
       
@@ -181,23 +188,38 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   }, [videoRef.current, audioRef.current, isAudioPlaying]);
 
   const playAudioSegment = (audioName: string, stepIndex: number) => {
-    if (!audioRef.current) return;
+    console.log('🎵 [AUTO MODE] Attempting to play audio:', audioName, 'step:', stepIndex);
+    if (!audioRef.current) {
+      console.log('🎵 [AUTO MODE] No audio ref available');
+      return;
+    }
+    
+    if (!audioName) {
+      console.warn('🎵 [AUTO MODE] No audioName provided');
+      return;
+    }
     
     const audioPath = `/audio/${worksheetId}/${audioName}_${stepIndex + 1}.mp3`;
+    console.log('🎵 [AUTO MODE] Audio path:', audioPath);
     
     audioRef.current.src = audioPath;
     
-    audioRef.current.onerror = () => {
+    audioRef.current.onerror = (e) => {
+      console.error('🎵 [AUTO MODE] Audio error:', e);
       setIsAudioPlaying(false);
     };
     
     audioRef.current.play().catch(err => {
+      console.error('🎵 [AUTO MODE] Audio play error:', err);
       setIsAudioPlaying(false);
     });
   };
 
   const handleGuidanceClick = (guidance: GuidanceItem) => {
+    console.log('🎯 [AUTO MODE] Guidance clicked:', guidance.title, 'audioName:', guidance.audioName);
+    
     if (!guidance.description || guidance.description.length === 0) {
+      console.warn('🎯 [AUTO MODE] No description for guidance:', guidance.title);
       return;
     }
     
@@ -209,15 +231,17 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(err => {
         if (err.name !== 'AbortError' && !err.message.includes('media was removed from the document')) {
-          // Suppress non-debug logs
+          console.error('🎥 [AUTO MODE] Video play error:', err);
         }
       });
     }
     
-    if (audioAvailable) {
+    if (audioAvailable && guidance.audioName) {
       setTimeout(() => {
         playAudioSegment(guidance.audioName, 0);
       }, 500);
+    } else if (!guidance.audioName) {
+      console.warn('🎵 [AUTO MODE] No audioName found for guidance:', guidance.title);
     }
   };
 

@@ -82,13 +82,17 @@ serve(async (req) => {
         ...pageData,
         guidance: pageData.guidance ? pageData.guidance.map(guidanceItem => ({
           ...guidanceItem,
+          title: guidanceItem.title || 'Untitled Guidance',
           description: Array.isArray(guidanceItem.description) 
             ? guidanceItem.description.map(desc => typeof desc === 'string' ? desc.trim() : '').filter(desc => desc !== '')
             : typeof guidanceItem.description === 'string' 
               ? guidanceItem.description.split('\n').map(desc => desc.trim()).filter(desc => desc !== '')
-              : []
+              : [],
+          audioName: guidanceItem.audioName || `${pageData.page_number}_${pageData.guidance.indexOf(guidanceItem) + 1}`
         })) : []
       }))
+      
+      console.log(`Successfully processed worksheet: ${worksheetId}, auto mode data:`, JSON.stringify(processedAutoModeData, null, 2))
       
       responseData = {
         meta: {

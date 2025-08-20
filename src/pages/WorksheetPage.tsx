@@ -52,6 +52,23 @@ const WorksheetPage: React.FC = () => {
   // Fetch worksheet data once at the page level
   const { data: worksheetData, isLoading, error } = useWorksheetData(id || '');
   
+  // Debug worksheet data for auto mode
+  useEffect(() => {
+    if (worksheetData?.meta?.mode === 'auto' && 'data' in worksheetData.meta) {
+      console.log('🎯 [AUTO MODE] Worksheet data loaded:', worksheetData.meta);
+      const pageIndex = parseInt(n || '1', 10);
+      const pageData = worksheetData.meta.data.find(page => page.page_number === pageIndex);
+      console.log('🎯 [AUTO MODE] Page data for page', pageIndex, ':', pageData);
+      if (pageData) {
+        console.log('🎯 [AUTO MODE] Guidance items:', pageData.guidance.map(g => ({
+          title: g.title,
+          audioName: g.audioName,
+          descriptionCount: g.description.length
+        })));
+      }
+    }
+  }, [worksheetData, n]);
+  
   // Enable zooming for worksheet page
   useEffect(() => {
     const viewportMeta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement;
