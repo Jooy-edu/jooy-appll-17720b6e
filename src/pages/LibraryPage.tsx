@@ -166,11 +166,15 @@ export const LibraryPage: React.FC = () => {
             folderId={selectedLevel.folderId}
             onActivateRequired={handleActivateRequired}
           >
-            <DocumentGrid
-              folderId={selectedLevel.folderId}
-              levelName={selectedLevel.levelName}
-              onDocumentSelect={handleDocumentSelect}
-            />
+            {({ isLocked }) => (
+              <DocumentGrid
+                folderId={selectedLevel.folderId}
+                levelName={selectedLevel.levelName}
+                onDocumentSelect={handleDocumentSelect}
+                isLocked={isLocked}
+                onActivateRequired={handleActivateRequired}
+              />
+            )}
           </LevelAccessGuard>
         )}
         

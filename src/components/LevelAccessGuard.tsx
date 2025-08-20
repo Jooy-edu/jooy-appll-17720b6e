@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface LevelAccessGuardProps {
   folderId: string;
-  children: React.ReactNode;
+  children: (props: { isLocked: boolean }) => React.ReactNode;
   onActivateRequired: () => void;
 }
 
@@ -48,28 +48,7 @@ export const LevelAccessGuard: React.FC<LevelAccessGuardProps> = ({
     );
   }
 
-  if (!levelAccess?.isActivated) {
-    return (
-      <Card className="border-warning bg-warning/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-warning">
-            <Lock className="h-5 w-5" />
-            Level Locked
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            This level requires activation to access its content. Please enter an activation code to unlock this level.
-          </p>
-          <Button onClick={onActivateRequired} className="w-full">
-            <Lock className="mr-2 h-4 w-4" />
-            Activate This Level
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Level is activated and accessible
-  return <>{children}</>;
+  // Pass locked state to children instead of blocking
+  const isLocked = !levelAccess?.isActivated;
+  return <>{children({ isLocked })}</>;
 };
