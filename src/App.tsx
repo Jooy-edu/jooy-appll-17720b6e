@@ -21,8 +21,28 @@ import { LibraryPage } from "./pages/LibraryPage";
 import FloatingButtonGroup from "./components/FloatingButtonGroup";
 import FullscreenButton from "./components/FullscreenButton";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import { useParams } from "react-router-dom";
 
 const queryClient = new QueryClient();
+
+// Wrapper components to extract params and pass to ActivationGuard
+const WorksheetPageWrapper = () => {
+  const { id } = useParams();
+  return (
+    <ActivationGuard documentId={id}>
+      <WorksheetPage />
+    </ActivationGuard>
+  );
+};
+
+const AIChatPageWrapper = () => {
+  const { worksheetId } = useParams();
+  return (
+    <ActivationGuard documentId={worksheetId}>
+      <AIChatPage />
+    </ActivationGuard>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -42,16 +62,12 @@ const App = () => (
             {/* Protected routes */}
             <Route path="/worksheet/:id/:n" element={
               <ProtectedRoute>
-                <ActivationGuard>
-                  <WorksheetPage />
-                </ActivationGuard>
+                <WorksheetPageWrapper />
               </ProtectedRoute>
             } />
             <Route path="/chat/:worksheetId/:pageNumber" element={
               <ProtectedRoute>
-                <ActivationGuard>
-                  <AIChatPage />
-                </ActivationGuard>
+                <AIChatPageWrapper />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
