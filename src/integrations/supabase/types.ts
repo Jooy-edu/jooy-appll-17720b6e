@@ -328,7 +328,6 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
-          jooy_app_activated: boolean
           onboarding_completed: boolean
           plan_id: string | null
           preferences: Json | null
@@ -341,7 +340,6 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
-          jooy_app_activated?: boolean
           onboarding_completed?: boolean
           plan_id?: string | null
           preferences?: Json | null
@@ -354,7 +352,6 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
-          jooy_app_activated?: boolean
           onboarding_completed?: boolean
           plan_id?: string | null
           preferences?: Json | null
@@ -505,40 +502,9 @@ export type Database = {
           },
         ]
       }
-      user_activations: {
-        Row: {
-          activated_at: string
-          activation_code_id: string
-          app_access_expires_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          activated_at?: string
-          activation_code_id: string
-          app_access_expires_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          activated_at?: string
-          activation_code_id?: string
-          app_access_expires_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_activations_activation_code_id_fkey"
-            columns: ["activation_code_id"]
-            isOneToOne: false
-            referencedRelation: "activation_codes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_level_activations: {
         Row: {
+          access_duration_days: number | null
           access_expires_at: string
           activated_at: string
           activation_code_id: string
@@ -548,6 +514,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_duration_days?: number | null
           access_expires_at: string
           activated_at?: string
           activation_code_id: string
@@ -557,6 +524,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_duration_days?: number | null
           access_expires_at?: string
           activated_at?: string
           activation_code_id?: string
@@ -618,6 +586,17 @@ export type Database = {
       user_has_level_access: {
         Args: { folder_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      validate_activation_code: {
+        Args: { code_input: string }
+        Returns: {
+          app_access_duration_days: number
+          code_id: string
+          error_message: string
+          expires_at: string
+          is_valid: boolean
+          max_uses: number
+        }[]
       }
     }
     Enums: {

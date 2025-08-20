@@ -50,42 +50,31 @@ export const useLevelActivation = () => {
         return { success: false, error: 'You already have access to this level' };
       }
 
-      // Check if code exists and is valid (codes are stored with dashes)
-      const { data: codeData, error: codeError } = await supabase
-        .from('activation_codes')
-        .select('id, is_active, expires_at, max_uses, app_access_duration_days')
-        .eq('code', activationCode.trim())
-        .eq('is_active', true)
-        .maybeSingle();
+      // Use secure function to validate activation code
+      const { data: validationResult, error: validationError } = await supabase
+        .rpc('validate_activation_code', {
+          code_input: activationCode.trim()
+        });
 
-      if (codeError) {
-        console.error('Code lookup error:', codeError);
+      if (validationError) {
+        console.error('Code validation error:', validationError);
         return { success: false, error: 'Failed to validate activation code' };
       }
 
-      if (!codeData) {
-        return { success: false, error: 'Invalid or expired activation code' };
+      if (!validationResult || validationResult.length === 0) {
+        return { success: false, error: 'Failed to validate activation code' };
       }
 
-      // Check if code has expired
-      if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
-        return { success: false, error: 'Activation code has expired' };
+      const codeValidation = validationResult[0];
+      
+      if (!codeValidation.is_valid) {
+        return { success: false, error: codeValidation.error_message || 'Invalid activation code' };
       }
 
-      // Check code usage limit
-      const { data: usageData, error: usageError } = await supabase
-        .from('user_level_activations')
-        .select('id')
-        .eq('activation_code_id', codeData.id);
-
-      if (usageError) {
-        console.error('Usage check error:', usageError);
-        return { success: false, error: 'Failed to check code usage' };
-      }
-
-      if (usageData && usageData.length >= codeData.max_uses) {
-        return { success: false, error: 'Activation code has reached maximum usage limit' };
-      }
+      const codeData = {
+        id: codeValidation.code_id,
+        app_access_duration_days: codeValidation.app_access_duration_days
+      };
 
       // Calculate expiration date
       const accessExpiresAt = new Date();
