@@ -26,7 +26,6 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Library</h1>
-          <p className="text-muted-foreground">Select a level to view documents</p>
         </div>
         <BookOpen className="h-8 w-8 text-primary" />
       </div>
@@ -44,14 +43,14 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <SelectTrigger className="w-full">
             <SelectValue 
               placeholder="Select a level..."
-              className="text-left"
+              className="text-center"
             >
               {selectedFolder ? selectedFolder.name : 'Select a level...'}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {folders.map((folder) => (
-              <SelectItem key={folder.id} value={folder.id}>
+              <SelectItem key={folder.id} value={folder.id} className="text-center">
                 {folder.name}
               </SelectItem>
             ))}

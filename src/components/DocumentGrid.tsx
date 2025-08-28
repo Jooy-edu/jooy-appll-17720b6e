@@ -84,7 +84,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
         onClick={() => handleButtonClick(document)}
       >
         {/* Full Cover Image */}
-        <div className={`w-full h-full ${isMobile && documents && documents.length > 6 ? 'min-h-[150px]' : 'min-h-[200px]'} bg-muted relative`}>
+        <div className={`w-full h-full ${isMobile && documents && documents.length > 6 ? 'min-h-[150px]' : 'min-h-[200px]'} bg-white relative`}>
           {isLoading ? (
             <Skeleton className="w-full h-full" />
           ) : coverUrl ? (
@@ -118,7 +118,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   };
 
   return (
-    <div className={getGridClasses()}>
+    <div className={`${getGridClasses()} direction-rtl`} style={{ direction: 'rtl' }}>
       {documents.map((document) => (
         <DocumentCard key={document.id} document={document} />
       ))}

@@ -36,7 +36,7 @@ const LevelItem: React.FC<{
     <SelectItem 
       key={folder.id} 
       value={folder.id}
-      className={isLocked ? "text-muted-foreground" : ""}
+      className={`text-center ${isLocked ? "text-muted-foreground" : ""}`}
       onSelect={() => handleClick()}
     >
       <div className="flex items-center gap-2 w-full">
@@ -68,7 +68,6 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Library</h1>
-          <p className="text-muted-foreground">Select a level to view documents</p>
         </div>
         <BookOpen className="h-8 w-8 text-primary" />
       </div>
@@ -86,7 +85,7 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
           <SelectTrigger className="w-full">
             <SelectValue 
               placeholder="Select a level..."
-              className="text-left"
+              className="text-center"
             >
               {selectedFolder ? (
                 <div className="flex items-center gap-2">
