@@ -7,6 +7,9 @@ interface UseCoverImageResult {
   error: string | null;
 }
 
+// In-memory cache for cover URLs
+const coverCache = new Map<string, string>();
+
 export const useCoverImage = (documentId: string, metadata?: any): UseCoverImageResult => {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -14,6 +17,13 @@ export const useCoverImage = (documentId: string, metadata?: any): UseCoverImage
 
   useEffect(() => {
     if (!documentId) return;
+
+    // Check cache first
+    const cachedUrl = coverCache.get(documentId);
+    if (cachedUrl) {
+      setCoverUrl(cachedUrl);
+      return;
+    }
 
     const loadCoverImage = async () => {
       setIsLoading(true);
@@ -34,6 +44,8 @@ export const useCoverImage = (documentId: string, metadata?: any): UseCoverImage
         }
 
         if (result.url) {
+          // Cache the URL
+          coverCache.set(documentId, result.url);
           setCoverUrl(result.url);
         } else {
           setCoverUrl(null);
