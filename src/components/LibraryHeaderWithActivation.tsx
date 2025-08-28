@@ -47,7 +47,7 @@ const LevelItem: React.FC<{
         ) : (
           <Unlock className="h-4 w-4 text-green-600" />
         )}
-        <span>Level {folder.name}</span>
+        <span>{folder.name}</span>
         {isLocked && <span className="text-xs text-muted-foreground ml-auto">Locked</span>}
       </div>
     </SelectItem>
@@ -95,7 +95,7 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
                   ) : (
                     <Lock className="h-4 w-4 text-muted-foreground" />
                   )}
-                  Level {selectedFolder.name}
+                  {selectedFolder.name}
                 </div>
               ) : (
                 'Select a level...'

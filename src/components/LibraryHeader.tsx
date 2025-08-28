@@ -46,13 +46,13 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               placeholder="Select a level..."
               className="text-left"
             >
-              {selectedFolder ? `Level ${selectedFolder.name}` : 'Select a level...'}
+              {selectedFolder ? selectedFolder.name : 'Select a level...'}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {folders.map((folder) => (
               <SelectItem key={folder.id} value={folder.id}>
-                Level {folder.name}
+                {folder.name}
               </SelectItem>
             ))}
           </SelectContent>
