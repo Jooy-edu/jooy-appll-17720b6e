@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, FileText, Lock } from 'lucide-react';
 import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
 import { useCoverImage } from '@/hooks/useCoverImage';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DocumentGridProps {
   folderId: string;
@@ -22,6 +23,18 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   onActivateRequired
 }) => {
   const { data: documents, isLoading, error } = useRealtimeDocuments(folderId);
+  const isMobile = useIsMobile();
+
+  const getGridClasses = () => {
+    const documentCount = documents?.length || 0;
+    
+    if (isMobile) {
+      return documentCount <= 6 
+        ? "grid gap-4 grid-cols-2" 
+        : "grid gap-4 grid-cols-3";
+    }
+    return "grid gap-4 md:grid-cols-2 lg:grid-cols-3";
+  };
 
   if (isLoading) {
     return (
@@ -105,7 +118,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className={getGridClasses()}>
       {documents.map((document) => (
         <DocumentCard key={document.id} document={document} />
       ))}
