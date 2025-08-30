@@ -1,4 +1,6 @@
-import React from 'react';
+import { useOfflineCoverImage, preloadCovers } from '@/hooks/useOfflineCoverImage';
+import { useOfflineDocuments } from '@/hooks/useOfflineFirst';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

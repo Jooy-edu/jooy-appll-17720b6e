@@ -1,17 +1,30 @@
-// Dynamic cache versioning using build timestamp
+// Enhanced PWA Service Worker with Offline-First Architecture
 const BUILD_TIMESTAMP = Date.now();
 const CACHE_NAME = `pdf-navigator-v${BUILD_TIMESTAMP}`;
 const STATIC_CACHE_NAME = `pdf-navigator-static-v${BUILD_TIMESTAMP}`;
+const COVERS_CACHE_NAME = `covers-v${BUILD_TIMESTAMP}`;
+const METADATA_CACHE_NAME = `metadata-v${BUILD_TIMESTAMP}`;
 
-// Only preload essential files (removed default.mp4 as it no longer exists)
+// Cache configurations
+const CACHE_CONFIG = {
+  STATIC_MAX_AGE: 24 * 60 * 60 * 1000, // 24 hours
+  COVERS_MAX_AGE: 24 * 60 * 60 * 1000, // 24 hours
+  METADATA_MAX_AGE: 5 * 60 * 1000, // 5 minutes
+  MAX_COVERS_SIZE: 50 * 1024 * 1024, // 50MB
+  MAX_METADATA_SIZE: 10 * 1024 * 1024 // 10MB
+};
+
+// Essential files for offline functionality
 const STATIC_ASSETS = [
   '/',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192x192.png',
+  '/icon-512x512.png'
 ];
 
-// Install event - cache only essential assets
+// Install event - cache essential assets and set up storage
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing with version', BUILD_TIMESTAMP);
+  console.log('Service Worker: Installing enhanced offline version', BUILD_TIMESTAMP);
   
   event.waitUntil(
     Promise.all([
@@ -20,16 +33,18 @@ self.addEventListener('install', (event) => {
         console.log('Service Worker: Caching static assets');
         return cache.addAll(STATIC_ASSETS);
       }),
-      // Cache the app shell (HTML, CSS, JS)
+      // Cache the app shell
       caches.open(CACHE_NAME).then((cache) => {
         console.log('Service Worker: Caching app shell');
         return fetch('/').then((response) => {
           return cache.put('/', response);
         });
-      })
+      }),
+      // Initialize specialized caches
+      caches.open(COVERS_CACHE_NAME),
+      caches.open(METADATA_CACHE_NAME)
     ]).then(() => {
-      console.log('Service Worker: Installation complete');
-      // Force the waiting service worker to become the active service worker
+      console.log('Service Worker: Enhanced installation complete');
       return self.skipWaiting();
     })
   );
@@ -67,7 +82,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache when possible
+// Enhanced fetch handler with intelligent caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -77,99 +92,281 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip cross-origin requests
-  if (url.origin !== location.origin) {
+  // Skip cross-origin requests except Supabase
+  if (url.origin !== location.origin && !url.hostname.includes('supabase.co')) {
     return;
   }
 
-  // Handle different types of requests
+  // Handle Supabase storage requests (covers)
+  if (url.hostname.includes('supabase.co') && url.pathname.includes('/storage/')) {
+    event.respondWith(handleStorageRequest(request));
+    return;
+  }
+
+  // Handle different types of requests based on path
   if (url.pathname === '/') {
-    // For the root path, always try network first, fallback to cache
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Clone the response before caching
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // If network fails, serve from cache
-          return caches.match(request);
-        })
-    );
+    // App shell - Cache first with network update
+    event.respondWith(handleAppShell(request));
   } else if (url.pathname.startsWith('/assets/')) {
-    // For built assets (CSS, JS), cache first strategy
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        return fetch(request).then((response) => {
-          // Cache the asset for future use
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        });
-      })
-    );
-  } else if (url.pathname.startsWith('/audio/') || url.pathname.startsWith('/pdfs/') || url.pathname.startsWith('/data/')) {
-    // For audio, PDFs, and data files - network first, no preloading
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Optionally cache these files after they're requested
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(request);
-        })
-    );
+    // Static assets - Cache first
+    event.respondWith(handleStaticAssets(request));
+  } else if (url.pathname.startsWith('/audio/') || url.pathname.startsWith('/pdfs/') || url.pathname.startsWith('/video/')) {
+    // Large files - Network only (no offline support)
+    event.respondWith(handleLargeFiles(request));
+  } else if (url.pathname.startsWith('/data/')) {
+    // Metadata files - Stale while revalidate
+    event.respondWith(handleMetadata(request));
   } else {
-    // For all other requests, network first with cache fallback
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache successful responses
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache
-          return caches.match(request);
-        })
+    // All other requests - Network first with fallback
+    event.respondWith(handleGenericRequest(request));
+  }
+});
+
+// App shell handler - Cache first with background update
+async function handleAppShell(request) {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      // Return cached immediately, update in background
+      fetchAndCache(request, CACHE_NAME);
+      return cached;
+    }
+    
+    // No cache, fetch from network
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    // Try to serve cached version as last resort
+    const cache = await caches.open(CACHE_NAME);
+    return cache.match(request) || new Response('App unavailable offline', { status: 503 });
+  }
+}
+
+// Static assets handler - Cache first
+async function handleStaticAssets(request) {
+  try {
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      return cached;
+    }
+    
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    return cache.match(request) || new Response('Asset not available', { status: 404 });
+  }
+}
+
+// Storage handler for cover images - Stale while revalidate
+async function handleStorageRequest(request) {
+  try {
+    const cache = await caches.open(COVERS_CACHE_NAME);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      // Check if cached response is stale
+      const cacheTime = cached.headers.get('sw-cache-time');
+      const isStale = !cacheTime || (Date.now() - parseInt(cacheTime)) > CACHE_CONFIG.COVERS_MAX_AGE;
+      
+      if (!isStale) {
+        return cached;
+      }
+      
+      // Return stale content immediately, update in background
+      fetchAndCacheStorage(request);
+      return cached;
+    }
+    
+    // No cache, fetch from network
+    return await fetchAndCacheStorage(request);
+  } catch (error) {
+    const cache = await caches.open(COVERS_CACHE_NAME);
+    return cache.match(request) || new Response('Image not available offline', { status: 404 });
+  }
+}
+
+// Metadata handler - Stale while revalidate
+async function handleMetadata(request) {
+  try {
+    const cache = await caches.open(METADATA_CACHE_NAME);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      const cacheTime = cached.headers.get('sw-cache-time');
+      const isStale = !cacheTime || (Date.now() - parseInt(cacheTime)) > CACHE_CONFIG.METADATA_MAX_AGE;
+      
+      if (!isStale) {
+        return cached;
+      }
+      
+      // Return stale, update in background
+      fetchAndCacheMetadata(request);
+      return cached;
+    }
+    
+    return await fetchAndCacheMetadata(request);
+  } catch (error) {
+    const cache = await caches.open(METADATA_CACHE_NAME);
+    return cache.match(request) || new Response('Metadata not available offline', { status: 404 });
+  }
+}
+
+// Large files handler - Network only
+async function handleLargeFiles(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    return new Response('Content requires network connection', { status: 503 });
+  }
+}
+
+// Generic handler - Network first with cache fallback
+async function handleGenericRequest(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cache = await caches.open(CACHE_NAME);
+    return cache.match(request) || new Response('Content not available offline', { status: 503 });
+  }
+}
+
+// Helper functions for background caching
+async function fetchAndCache(request, cacheName) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+  } catch (error) {
+    console.log('Background fetch failed:', error);
+  }
+}
+
+async function fetchAndCacheStorage(request) {
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(COVERS_CACHE_NAME);
+    const responseWithTime = new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: {
+        ...response.headers,
+        'sw-cache-time': Date.now().toString()
+      }
+    });
+    cache.put(request, responseWithTime.clone());
+    return responseWithTime;
+  }
+  return response;
+}
+
+async function fetchAndCacheMetadata(request) {
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(METADATA_CACHE_NAME);
+    const responseWithTime = new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: {
+        ...response.headers,
+        'sw-cache-time': Date.now().toString()
+      }
+    });
+    cache.put(request, responseWithTime.clone());
+    return responseWithTime;
+  }
+  return response;
+}
+
+// Enhanced background sync with cache management
+self.addEventListener('sync', (event) => {
+  console.log('Service Worker: Background sync triggered for tag:', event.tag);
+  
+  if (event.tag === 'background-sync') {
+    event.waitUntil(
+      Promise.all([
+        performBackgroundSync(),
+        cleanupCaches(),
+        preloadCriticalContent()
+      ])
     );
   }
 });
 
-// Handle background sync for offline actions
-self.addEventListener('sync', (event) => {
-  console.log('Service Worker: Background sync triggered');
-  
-  if (event.tag === 'background-sync') {
-    event.waitUntil(
-      // Handle any background sync tasks here
-      console.log('Service Worker: Performing background sync')
-    );
+// Background sync implementation
+async function performBackgroundSync() {
+  try {
+    // Notify main thread to process sync queue
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({ type: 'BACKGROUND_SYNC' });
+    });
+    
+    console.log('Service Worker: Background sync notification sent');
+  } catch (error) {
+    console.error('Service Worker: Background sync failed:', error);
   }
-});
+}
+
+// Cache cleanup to manage storage usage
+async function cleanupCaches() {
+  try {
+    const coversCacheName = COVERS_CACHE_NAME;
+    const coversCache = await caches.open(coversCacheName);
+    
+    // Get all cached responses and sort by access time
+    const requests = await coversCache.keys();
+    const cacheEntries = await Promise.all(
+      requests.map(async (request) => {
+        const response = await coversCache.match(request);
+        const cacheTime = response?.headers.get('sw-cache-time') || '0';
+        return { request, cacheTime: parseInt(cacheTime) };
+      })
+    );
+    
+    // Sort by cache time (oldest first)
+    cacheEntries.sort((a, b) => a.cacheTime - b.cacheTime);
+    
+    // Remove oldest entries if we have too many
+    const maxEntries = 100; // Limit number of cached covers
+    if (cacheEntries.length > maxEntries) {
+      const toRemove = cacheEntries.slice(0, cacheEntries.length - maxEntries);
+      await Promise.all(
+        toRemove.map(entry => coversCache.delete(entry.request))
+      );
+      console.log(`Service Worker: Cleaned up ${toRemove.length} old cover cache entries`);
+    }
+  } catch (error) {
+    console.error('Service Worker: Cache cleanup failed:', error);
+  }
+}
+
+// Preload critical content when online
+async function preloadCriticalContent() {
+  try {
+    // This could be enhanced to preload frequently accessed covers
+    console.log('Service Worker: Preloading critical content');
+  } catch (error) {
+    console.error('Service Worker: Preload failed:', error);
+  }
+}
 
 // Handle push notifications (if needed in the future)
 self.addEventListener('push', (event) => {
