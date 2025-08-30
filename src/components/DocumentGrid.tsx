@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, FileText, Lock } from 'lucide-react';
 import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
-import { useCoverImage } from '@/hooks/useCoverImage';
+
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DocumentGridProps {
@@ -26,6 +26,14 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
 }) => {
   const { data: documents, isLoading, error } = useRealtimeDocuments(folderId);
   const isMobile = useIsMobile();
+
+  // Preload covers when documents are loaded
+  useEffect(() => {
+    if (documents?.length) {
+      const documentIds = documents.map(doc => doc.id);
+      preloadCovers(documentIds);
+    }
+  }, [documents]);
 
   const getGridClasses = () => {
     const documentCount = documents?.length || 0;
@@ -78,7 +86,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   };
 
   const DocumentCard = ({ document }: { document: any }) => {
-    const { coverUrl, isLoading } = useCoverImage(document.id, document.metadata);
+    const { coverUrl, isLoading } = useOfflineCoverImage(document.id, document.metadata);
 
     return (
       <Card 

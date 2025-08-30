@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLevelAccess } from '@/hooks/useLevelAccess';
+import { useOptimizedLevelAccess } from '@/hooks/useOptimizedLevelAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, AlertCircle } from 'lucide-react';
@@ -16,7 +16,7 @@ export const LevelAccessGuard: React.FC<LevelAccessGuardProps> = ({
   children,
   onActivateRequired
 }) => {
-  const { data: levelAccess, isLoading, error } = useLevelAccess(folderId);
+  const { data: levelAccess, isLoading, error } = useOptimizedLevelAccess(folderId);
 
   if (isLoading) {
     return (

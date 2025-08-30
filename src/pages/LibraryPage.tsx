@@ -9,6 +9,8 @@ import { useLevelAccess } from '@/hooks/useLevelAccess';
 import { Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { preloadCovers } from '@/hooks/useOfflineCoverImage';
+import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
 
 interface SelectedLevel {
   folderId: string;
@@ -28,6 +30,9 @@ export const LibraryPage: React.FC = () => {
   const [pageSelectorState, setPageSelectorState] = useState<PageSelectorState | null>(null);
   const [activationModalOpen, setActivationModalOpen] = useState(false);
   const [preselectedFolderId, setPreselectedFolderId] = useState<string | null>(null);
+  
+  // Get documents for the selected level to preload covers
+  const { data: documents } = useRealtimeDocuments(selectedLevel?.folderId);
 
   // Load saved level from localStorage on mount
   useEffect(() => {
@@ -79,6 +84,14 @@ export const LibraryPage: React.FC = () => {
     // Close page selector if open
     setPageSelectorState(null);
   };
+
+  // Preload covers when documents change for current level
+  useEffect(() => {
+    if (documents?.length) {
+      const documentIds = documents.map(doc => doc.id);
+      preloadCovers(documentIds);
+    }
+  }, [documents]);
 
   const handleLockedLevelSelect = (folderId: string, folderName: string) => {
     setPreselectedFolderId(folderId);
