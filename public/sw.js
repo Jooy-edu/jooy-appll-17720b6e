@@ -22,17 +22,59 @@ const STATIC_ASSETS = [
   '/icon-512x512.png'
 ];
 
+// Function to discover and cache all assets from the main HTML
+async function discoverAndCacheAssets() {
+  try {
+    const response = await fetch('/');
+    const html = await response.text();
+    
+    // Extract all CSS and JS assets from HTML
+    const cssMatches = html.match(/<link[^>]+href="([^"]+\.css[^"]*)"[^>]*>/g) || [];
+    const jsMatches = html.match(/<script[^>]+src="([^"]+\.js[^"]*)"[^>]*>/g) || [];
+    
+    const cssAssets = cssMatches.map(match => {
+      const href = match.match(/href="([^"]+)"/)?.[1];
+      return href?.startsWith('/') ? href : `/${href}`;
+    }).filter(Boolean);
+    
+    const jsAssets = jsMatches.map(match => {
+      const src = match.match(/src="([^"]+)"/)?.[1];
+      return src?.startsWith('/') ? src : `/${src}`;
+    }).filter(Boolean);
+    
+    const allAssets = [...STATIC_ASSETS, ...cssAssets, ...jsAssets];
+    console.log('Service Worker: Discovered assets:', allAssets);
+    
+    // Cache all discovered assets
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    const cachePromises = allAssets.map(async (asset) => {
+      try {
+        await cache.add(asset);
+        console.log('Service Worker: Cached asset:', asset);
+      } catch (error) {
+        console.warn('Service Worker: Failed to cache asset:', asset, error);
+      }
+    });
+    
+    await Promise.allSettled(cachePromises);
+    return allAssets;
+  } catch (error) {
+    console.error('Service Worker: Asset discovery failed:', error);
+    // Fallback to basic assets
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    await cache.addAll(STATIC_ASSETS);
+    return STATIC_ASSETS;
+  }
+}
+
 // Install event - cache essential assets and set up storage
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing enhanced offline version', BUILD_TIMESTAMP);
   
   event.waitUntil(
     Promise.all([
-      // Cache static assets
-      caches.open(STATIC_CACHE_NAME).then((cache) => {
-        console.log('Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      }),
+      // Discover and cache all assets (including Vite-generated JS/CSS)
+      discoverAndCacheAssets(),
       // Cache the app shell
       caches.open(CACHE_NAME).then((cache) => {
         console.log('Service Worker: Caching app shell');
@@ -58,7 +100,11 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
+          // Keep current version caches
+          if (cacheName !== CACHE_NAME && 
+              cacheName !== STATIC_CACHE_NAME &&
+              cacheName !== COVERS_CACHE_NAME &&
+              cacheName !== METADATA_CACHE_NAME) {
             console.log('Service Worker: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -104,8 +150,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Handle different types of requests based on path
-  if (url.pathname === '/') {
-    // App shell - Cache first with network update
+  if (url.pathname === '/' || isSPARoute(url.pathname)) {
+    // App shell and SPA routes - Cache first with network update
     event.respondWith(handleAppShell(request));
   } else if (url.pathname.startsWith('/assets/')) {
     // Static assets - Cache first
@@ -122,28 +168,66 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+// Helper function to identify SPA routes
+function isSPARoute(pathname) {
+  // Common SPA routes that should serve the main HTML
+  const spaRoutes = [
+    '/auth/',
+    '/worksheet/',
+    '/library',
+    '/qr-scanner',
+    '/ai-chat',
+    '/profile'
+  ];
+  
+  return spaRoutes.some(route => pathname.startsWith(route)) || 
+         // Also catch any route that doesn't have a file extension
+         (!pathname.includes('.') && pathname !== '/');
+}
+
 // App shell handler - Cache first with background update
 async function handleAppShell(request) {
   try {
     const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
+    
+    // For SPA routes, always serve the root document
+    const url = new URL(request.url);
+    const isRoot = url.pathname === '/';
+    const cacheKey = isRoot ? request : '/';
+    
+    const cached = await cache.match(cacheKey);
     
     if (cached) {
-      // Return cached immediately, update in background
-      fetchAndCache(request, CACHE_NAME);
+      // Return cached immediately, update root in background if needed
+      if (isRoot) {
+        fetchAndCache(request, CACHE_NAME);
+      }
       return cached;
     }
     
     // No cache, fetch from network
-    const response = await fetch(request);
+    const fetchRequest = isRoot ? request : new Request('/', {
+      method: 'GET',
+      headers: request.headers
+    });
+    
+    const response = await fetch(fetchRequest);
     if (response.ok) {
-      cache.put(request, response.clone());
+      cache.put('/', response.clone());
     }
     return response;
   } catch (error) {
-    // Try to serve cached version as last resort
+    // Try to serve cached root document as last resort
     const cache = await caches.open(CACHE_NAME);
-    return cache.match(request) || new Response('App unavailable offline', { status: 503 });
+    const fallback = await cache.match('/');
+    if (fallback) {
+      return fallback;
+    }
+    
+    // If no cached root, try static cache
+    const staticCache = await caches.open(STATIC_CACHE_NAME);
+    const staticFallback = await staticCache.match('/');
+    return staticFallback || new Response('App unavailable offline', { status: 503 });
   }
 }
 
