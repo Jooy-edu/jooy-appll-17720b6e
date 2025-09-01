@@ -8,12 +8,43 @@ interface WorksheetDataResponse {
   pdfUrl: string;
 }
 
-export const useWorksheetData = (worksheetId: string) => {
+interface WorksheetDataResult {
+  data: WorksheetDataResponse | null;
+  isLoading: boolean;
+  error: Error | null;
+  isError: boolean;
+  refetch: () => void;
+}
+
+interface RegionData {
+  id: string;
+  document_id: string;
+  page: number;
+  created_at: string;
+  description: string;
+  height: number;
+  name: string;
+  type: string;
+  user_id: string;
+  width: number;
+  x: number;
+  y: number;
+}
+
+interface RegionsDataResult {
+  data: RegionData[];
+  isLoading: boolean;
+  error: Error | null;
+  isError: boolean;
+  refetch: () => void;
+}
+
+export const useWorksheetData = (worksheetId: string): WorksheetDataResult => {
   // Use enhanced offline data for worksheet fetching
-  return useEnhancedOfflineData({
+  const result = useEnhancedOfflineData<WorksheetDataResponse>({
     queryKey: ['enhanced-worksheet', worksheetId],
     category: 'worksheets',
-    queryFn: async () => {
+    queryFn: async (): Promise<WorksheetDataResponse> => {
       if (!worksheetId) throw new Error('Worksheet ID is required');
 
       const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
@@ -36,12 +67,20 @@ export const useWorksheetData = (worksheetId: string) => {
     realtimeTable: 'documents',
     dependencies: [`document_${worksheetId}`],
   });
+
+  return {
+    data: result.data,
+    isLoading: result.isLoading,
+    error: result.error,
+    isError: !!result.error,
+    refetch: result.refetch
+  };
 }
 
-export const useRegionsByPage = (worksheetId: string, pageNumber: number) => {
+export const useRegionsByPage = (worksheetId: string, pageNumber: number): RegionsDataResult => {
   // Use enhanced offline data for regions fetching
-  return useEnhancedOfflineData({
-    queryKey: ['enhanced-regions', worksheetId, pageNumber],
+  const result = useEnhancedOfflineData({
+    queryKey: ['enhanced-regions', worksheetId, pageNumber.toString()],
     category: 'regions',
     queryFn: async () => {
       if (!worksheetId || pageNumber === undefined) {
@@ -52,7 +91,7 @@ export const useRegionsByPage = (worksheetId: string, pageNumber: number) => {
         .from('document_regions')
         .select('*')
         .eq('document_id', worksheetId)
-        .eq('page_number', pageNumber)
+        .eq('page', pageNumber)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -65,4 +104,12 @@ export const useRegionsByPage = (worksheetId: string, pageNumber: number) => {
     realtimeFilter: `document_id=eq.${worksheetId}`,
     dependencies: [`worksheet_${worksheetId}`],
   });
+
+  return {
+    data: result.data || [],
+    isLoading: result.isLoading,
+    error: result.error,
+    isError: !!result.error,
+    refetch: result.refetch
+  };
 }
