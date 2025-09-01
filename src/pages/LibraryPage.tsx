@@ -5,7 +5,7 @@ import { PageSelector } from '@/components/PageSelector';
 import { LevelAccessGuard } from '@/components/LevelAccessGuard';
 import { LevelActivationModal } from '@/components/LevelActivationModal';
 import { useIntelligentFolders, useIntelligentDocuments } from '@/hooks/useIntelligentData';
-import { Loader2, BookOpen } from 'lucide-react';
+import { Loader, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { preloadCovers } from '@/hooks/useOfflineCoverImage';
@@ -135,7 +135,7 @@ export const LibraryPage: React.FC = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-muted-foreground">Loading library...</p>
             </div>
           </div>
