@@ -24,7 +24,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   isLocked = false,
   onActivateRequired
 }) => {
-  const { data: documents, isLoading, error } = useRealtimeDocuments(folderId);
+  const { data: documents, isLoading, error, refetch } = useRealtimeDocuments(folderId);
   const isMobile = useIsMobile();
 
   // Preload covers when documents are loaded
@@ -61,7 +61,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
     return (
       <div className="text-center py-8">
         <p className="text-destructive mb-4">Failed to load documents</p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
+        <Button variant="outline" onClick={() => refetch()}>
           Try Again
         </Button>
       </div>

@@ -16,7 +16,7 @@ export const LevelAccessGuard: React.FC<LevelAccessGuardProps> = ({
   children,
   onActivateRequired
 }) => {
-  const { data: levelAccess, isLoading, error } = useOptimizedLevelAccess(folderId);
+  const { data: levelAccess, isLoading, error, refetch } = useOptimizedLevelAccess(folderId);
 
   if (isLoading) {
     return (
@@ -40,7 +40,7 @@ export const LevelAccessGuard: React.FC<LevelAccessGuardProps> = ({
           <p className="text-muted-foreground mb-4">
             Unable to check your access to this level. Please try again.
           </p>
-          <Button onClick={() => window.location.reload()} variant="outline">
+          <Button onClick={() => refetch()} variant="outline">
             Retry
           </Button>
         </CardContent>

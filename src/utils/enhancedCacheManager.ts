@@ -1,6 +1,6 @@
 import { cacheManager, metadataCache } from './cacheManager';
 
-// Enhanced cache entry with intelligent metadata
+// Enhanced cache entry with intelligent metadata stored as value
 interface EnhancedCacheEntry<T> {
   data: T;
   timestamp: number;

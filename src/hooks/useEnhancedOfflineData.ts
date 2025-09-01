@@ -94,19 +94,22 @@ export const useEnhancedOfflineData = <T>(options: EnhancedOfflineDataOptions<T>
         onNetworkUpdate?.(data);
         return data;
       } catch (error) {
-        // On network error, try to serve stale cache
-        if (!isOnline) {
-          const staleData = await enhancedCache.getEnhanced<T>(category, cacheKey);
-          if (staleData) {
-            setCacheStatus('offline');
-            setIsStale(true);
-            return staleData;
-          }
+        console.error('Network fetch failed:', error);
+        
+        // On network error, always try to serve stale cache
+        const staleData = await enhancedCache.getEnhanced<T>(category, cacheKey);
+        if (staleData) {
+          console.log('Serving stale cache data due to network failure');
+          setCacheStatus(isOnline ? 'stale' : 'offline');
+          setIsStale(true);
+          return staleData;
         }
+        
+        // If no cache available, throw the error
         throw error;
       }
     },
-    enabled: enabled && isOnline,
+    enabled: enabled,  // Always enable, let the queryFn handle offline/online logic
     staleTime: enhancedCache.getNetworkSpeed() === 'fast' ? staleTime * 0.5 : staleTime,
     retry: (failureCount) => {
       // More aggressive retry when online, based on network speed
@@ -211,12 +214,12 @@ export const useEnhancedOfflineData = <T>(options: EnhancedOfflineDataOptions<T>
   }, [isOnline, query, category, cacheKey]);
 
   return {
-    data: query.data || cachedData,
+    data: cachedData || query.data,  // Always prioritize cached data for immediate response
     isLoading: !cachedData && query.isLoading,
-    isError: query.isError && !cachedData,
-    error: query.error,
-    isFromCache: isFromCache && !query.data,
-    isStale: isStale && !query.data,
+    isError: query.isError && !cachedData,  // Only show error if no cached data available
+    error: cachedData ? undefined : query.error,  // Don't show error if we have cached data
+    isFromCache: isFromCache || (!query.data && !!cachedData),
+    isStale: isStale || (!!cachedData && !query.data && query.isStale),
     cacheStatus,
     isOnline,
     networkSpeed: enhancedCache.getNetworkSpeed(),

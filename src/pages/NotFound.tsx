@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 
@@ -14,13 +14,13 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center" dir={t('common.language') === 'العربية' ? 'rtl' : 'ltr'}>
-        <h1 className="text-4xl font-bold mb-4">{t('notFound.title')}</h1>
-        <p className="text-xl text-gray-600 mb-4">{t('notFound.message')}</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
+        <h1 className="text-4xl font-bold mb-4 text-foreground">{t('notFound.title')}</h1>
+        <p className="text-xl text-muted-foreground mb-4">{t('notFound.message')}</p>
+        <Link to="/" className="text-primary hover:text-primary/80 underline">
           {t('notFound.returnHome')}
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -28,7 +28,8 @@ export const LibraryPage: React.FC = () => {
     isLoading, 
     isError: error,
     cacheStatus: foldersCacheStatus,
-    isFromCache: foldersFromCache
+    isFromCache: foldersFromCache,
+    refetch
   } = useEnhancedFolders();
   const [selectedLevel, setSelectedLevel] = useState<SelectedLevel | null>(null);
   const [pageSelectorState, setPageSelectorState] = useState<PageSelectorState | null>(null);
@@ -150,7 +151,7 @@ export const LibraryPage: React.FC = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
             <p className="text-destructive mb-4">Failed to load library</p>
-            <Button variant="outline" onClick={() => window.location.reload()}>
+            <Button variant="outline" onClick={() => refetch()}>
               Try Again
             </Button>
           </div>

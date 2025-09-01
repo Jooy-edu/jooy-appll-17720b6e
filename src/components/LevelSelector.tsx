@@ -9,7 +9,7 @@ interface LevelSelectorProps {
 }
 
 export const LevelSelector: React.FC<LevelSelectorProps> = ({ onLevelSelect }) => {
-  const { data: folders, isLoading, error } = useRealtimeFolders();
+  const { data: folders, isLoading, error, refetch } = useRealtimeFolders();
 
   if (isLoading) {
     return (
@@ -26,7 +26,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({ onLevelSelect }) =
     return (
       <div className="text-center py-8">
         <p className="text-destructive mb-4">Failed to load levels</p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
+        <Button variant="outline" onClick={() => refetch()}>
           Try Again
         </Button>
       </div>
