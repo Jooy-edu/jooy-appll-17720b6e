@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOptimizedLevelAccess } from '@/hooks/useOptimizedLevelAccess';
+import { useLevelAccess } from '@/hooks/useLevelAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, AlertCircle } from 'lucide-react';
@@ -16,7 +16,7 @@ export const LevelAccessGuard: React.FC<LevelAccessGuardProps> = ({
   children,
   onActivateRequired
 }) => {
-  const { data: levelAccess, isLoading, error, refetch } = useOptimizedLevelAccess(folderId);
+  const { data: levelAccess, isLoading, error } = useLevelAccess(folderId);
 
   if (isLoading) {
     return (
@@ -40,7 +40,7 @@ export const LevelAccessGuard: React.FC<LevelAccessGuardProps> = ({
           <p className="text-muted-foreground mb-4">
             Unable to check your access to this level. Please try again.
           </p>
-          <Button onClick={() => refetch()} variant="outline">
+          <Button onClick={() => window.location.reload()} variant="outline">
             Retry
           </Button>
         </CardContent>

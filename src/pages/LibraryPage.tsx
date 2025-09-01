@@ -4,15 +4,11 @@ import { DocumentGrid } from '@/components/DocumentGrid';
 import { PageSelector } from '@/components/PageSelector';
 import { LevelAccessGuard } from '@/components/LevelAccessGuard';
 import { LevelActivationModal } from '@/components/LevelActivationModal';
-import { PreloadingProgress } from '@/components/PreloadingProgress';
-import { useEnhancedFolders, useEnhancedDocuments } from '@/hooks/useEnhancedOfflineData';
-import { useLevelPreloader } from '@/hooks/useLevelPreloader';
-import { useBehaviorTracking } from '@/hooks/useBehaviorTracking';
-import { useStorageRealtimeSync } from '@/hooks/useStorageRealtimeSync';
-import { Loader, BookOpen } from 'lucide-react';
+import { useRealtimeFolders } from '@/hooks/useRealtimeFolders';
+import { useLevelAccess } from '@/hooks/useLevelAccess';
+import { Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { preloadCovers } from '@/hooks/useOfflineCoverImage';
 
 interface SelectedLevel {
   folderId: string;
@@ -27,32 +23,11 @@ interface PageSelectorState {
 const SELECTED_LEVEL_KEY = 'selectedLibraryLevel';
 
 export const LibraryPage: React.FC = () => {
-  // Initialize global storage realtime sync for cover updates
-  useStorageRealtimeSync();
-  
-  const { 
-    data: folders, 
-    isLoading, 
-    isError: error,
-    cacheStatus: foldersCacheStatus,
-    isFromCache: foldersFromCache,
-    refetch
-  } = useEnhancedFolders();
+  const { data: folders, isLoading, error } = useRealtimeFolders();
   const [selectedLevel, setSelectedLevel] = useState<SelectedLevel | null>(null);
   const [pageSelectorState, setPageSelectorState] = useState<PageSelectorState | null>(null);
   const [activationModalOpen, setActivationModalOpen] = useState(false);
   const [preselectedFolderId, setPreselectedFolderId] = useState<string | null>(null);
-  
-  // Enhanced preloading and behavior tracking
-  const levelPreloader = useLevelPreloader();
-  const behaviorTracking = useBehaviorTracking();
-  
-  // Get documents for the selected level and preload covers  
-  const { 
-    data: documents,
-    cacheStatus: documentsCacheStatus,
-    isFromCache: documentsFromCache
-  } = useEnhancedDocuments(selectedLevel?.folderId);
 
   // Load saved level from localStorage on mount
   useEffect(() => {
@@ -97,33 +72,13 @@ export const LibraryPage: React.FC = () => {
     }
   }, [folders, selectedLevel]);
 
-  const handleLevelSelect = async (folderId: string, levelName: string) => {
-    const sessionStartTime = Date.now();
-    const newSelectedLevel = { folderId, levelName };
-    setSelectedLevel(newSelectedLevel);
-    localStorage.setItem(SELECTED_LEVEL_KEY, JSON.stringify(newSelectedLevel));
-    
-    try {
-      // Track level access for behavior analytics
-      await behaviorTracking?.trackLevelAccess?.(folderId, levelName, sessionStartTime);
-      
-      // Start bulk preloading for the selected level
-      await levelPreloader?.startPreloading?.(folderId, levelName);
-    } catch (error) {
-      console.error('Error during level selection:', error);
-    }
-    
+  const handleLevelSelect = (folderId: string, levelName: string) => {
+    const newLevel = { folderId, levelName };
+    setSelectedLevel(newLevel);
+    localStorage.setItem(SELECTED_LEVEL_KEY, JSON.stringify(newLevel));
     // Close page selector if open
     setPageSelectorState(null);
   };
-
-  // Preload covers when documents change for current level
-  useEffect(() => {
-    if (documents?.length) {
-      const documentIds = documents.map(doc => doc.id);
-      preloadCovers(documentIds);
-    }
-  }, [documents]);
 
   const handleLockedLevelSelect = (folderId: string, folderName: string) => {
     setPreselectedFolderId(folderId);
@@ -145,21 +100,8 @@ export const LibraryPage: React.FC = () => {
     }
   };
 
-  const handleDocumentSelect = async (documentId: string, documentName: string) => {
-    const viewStartTime = Date.now();
+  const handleDocumentSelect = (documentId: string, documentName: string) => {
     setPageSelectorState({ documentId, documentName });
-    
-    try {
-      // Track document access for behavior analytics
-      await behaviorTracking?.trackDocumentAccess?.(
-        documentId, 
-        documentName, 
-        selectedLevel?.folderId, 
-        viewStartTime
-      );
-    } catch (error) {
-      console.error('Error tracking document access:', error);
-    }
   };
 
   const handlePageSelectorClose = () => {
@@ -172,7 +114,7 @@ export const LibraryPage: React.FC = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-muted-foreground">Loading library...</p>
             </div>
           </div>
@@ -187,7 +129,7 @@ export const LibraryPage: React.FC = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
             <p className="text-destructive mb-4">Failed to load library</p>
-            <Button variant="outline" onClick={() => refetch()}>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               Try Again
             </Button>
           </div>
@@ -218,18 +160,6 @@ export const LibraryPage: React.FC = () => {
           onFolderSelect={handleLevelSelect}
           onLockedLevelSelect={handleLockedLevelSelect}
         />
-
-        {/* Preloading Progress Indicator */}
-        {levelPreloader && (levelPreloader.isPreloading || levelPreloader.progress.phase === 'completed') && (
-          <div className="mt-6">
-            <PreloadingProgress
-              isPreloading={levelPreloader.isPreloading}
-              progress={levelPreloader.progress}
-              onCancel={levelPreloader.cancelPreloading}
-              error={levelPreloader.error}
-            />
-          </div>
-        )}
         
         {selectedLevel && (
           <LevelAccessGuard

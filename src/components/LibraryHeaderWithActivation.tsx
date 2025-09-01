@@ -65,11 +65,14 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
 
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-center mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Library</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Library</h1>
+        </div>
+        <BookOpen className="h-8 w-8 text-primary" />
       </div>
       
-      <div className="w-full max-w-sm mx-auto">
+      <div className="w-full max-w-sm">
         <Select 
           value={selectedFolderId || ''} 
           onValueChange={(folderId) => {

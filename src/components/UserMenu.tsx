@@ -97,6 +97,12 @@ const UserMenu: React.FC = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/" className="cursor-pointer">
+            <BookOpen className="mr-2 h-4 w-4" />
+            <span>Library</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
             <span>Profile Settings</span>

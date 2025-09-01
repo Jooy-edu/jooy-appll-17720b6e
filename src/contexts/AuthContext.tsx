@@ -49,8 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user profile
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-      console.log('🔍 [PROFILE] Attempting to fetch profile for user:', userId);
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -58,24 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
       
       if (error) {
-        console.error('🔍 [PROFILE] Supabase error:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Profile fetch error:', error);
         return null;
       }
       
-      console.log('🔍 [PROFILE] Profile fetch successful:', !!data);
       return data;
     } catch (error: any) {
-      console.error('🔍 [PROFILE] Profile fetch failed:', {
-        message: error?.message,
-        details: error?.details || error?.toString(),
-        hint: error?.hint,
-        code: error?.code
-      });
+      console.error('Profile fetch failed:', error);
       return null;
     }
   };

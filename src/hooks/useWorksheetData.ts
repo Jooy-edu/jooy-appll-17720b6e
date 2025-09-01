@@ -1,115 +1,76 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import type { WorksheetMetadata, RegionsModeMetadata } from '@/types/worksheet'
-import { useEnhancedOfflineData } from './useEnhancedOfflineData'
 
 interface WorksheetDataResponse {
   meta: WorksheetMetadata;
   pdfUrl: string;
 }
 
-interface WorksheetDataResult {
-  data: WorksheetDataResponse | null;
-  isLoading: boolean;
-  error: Error | null;
-  isError: boolean;
-  refetch: () => void;
-}
-
-interface RegionData {
-  id: string;
-  document_id: string;
-  page: number;
-  created_at: string;
-  description: string;
-  height: number;
-  name: string;
-  type: string;
-  user_id: string;
-  width: number;
-  x: number;
-  y: number;
-}
-
-interface RegionsDataResult {
-  data: RegionData[];
-  isLoading: boolean;
-  error: Error | null;
-  isError: boolean;
-  refetch: () => void;
-}
-
-export const useWorksheetData = (worksheetId: string): WorksheetDataResult => {
-  // Use enhanced offline data for worksheet fetching
-  const result = useEnhancedOfflineData<WorksheetDataResponse>({
-    queryKey: ['enhanced-worksheet', worksheetId],
-    category: 'worksheets',
+export const useWorksheetData = (worksheetId: string) => {
+  return useQuery({
+    queryKey: ['worksheet', worksheetId],
     queryFn: async (): Promise<WorksheetDataResponse> => {
-      if (!worksheetId) throw new Error('Worksheet ID is required');
+      // Try to get worksheet data from Supabase first
+      try {
+        const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
+          body: { worksheetId },
+        });
 
-      const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
-        body: { worksheetId },
-      });
+        if (error) {
+          throw new Error(`Failed to fetch worksheet: ${error.message}`)
+        }
 
-      if (error) {
-        throw new Error(`Failed to fetch worksheet: ${error.message}`)
+        if (!data?.meta || !data?.pdfUrl) {
+          throw new Error('Invalid response from worksheet data function')
+        }
+
+        return {
+          meta: data.meta,
+          pdfUrl: data.pdfUrl
+        }
+      } catch (supabaseError) {
+        // No more local fallback - all data must come from Supabase
+        throw new Error(`Document "${worksheetId}" not found. Please check if the QR code is valid or the document exists in the database.`)
       }
-
-      if (!data?.meta || !data?.pdfUrl) {
-        throw new Error('Invalid response from worksheet data function')
-      }
-
-      return {
-        meta: data.meta,
-        pdfUrl: data.pdfUrl,
-      };
     },
-    realtimeTable: 'documents',
-    dependencies: [`document_${worksheetId}`],
-  });
-
-  return {
-    data: result.data,
-    isLoading: result.isLoading,
-    error: result.error,
-    isError: !!result.error,
-    refetch: result.refetch
-  };
+    enabled: !!worksheetId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry if it's a 404
+      if (error.message.includes('404')) {
+        return false
+      }
+      return failureCount < 3
+    }
+  })
 }
 
-export const useRegionsByPage = (worksheetId: string, pageNumber: number): RegionsDataResult => {
-  // Use enhanced offline data for regions fetching
-  const result = useEnhancedOfflineData({
-    queryKey: ['enhanced-regions', worksheetId, pageNumber.toString()],
-    category: 'regions',
+export const useRegionsByPage = (worksheetId: string, pageNumber: number) => {
+  return useQuery({
+    queryKey: ['regions', worksheetId, pageNumber],
     queryFn: async () => {
-      if (!worksheetId || pageNumber === undefined) {
-        throw new Error('Worksheet ID and page number are required');
+      try {
+        // Try to get regions from document_regions table
+        const { data, error } = await supabase
+          .from('document_regions')
+          .select('*')
+          .eq('document_id', worksheetId)
+          .eq('page', pageNumber)
+          .order('created_at', { ascending: true })
+
+        if (error) {
+          throw new Error(`Failed to fetch regions: ${error.message}`)
+        }
+
+        return data || []
+      } catch (supabaseError) {
+        // No more local fallback - all data must come from Supabase
+        console.log('Failed to fetch regions from Supabase:', supabaseError)
+        return []
       }
-
-      const { data, error } = await supabase
-        .from('document_regions')
-        .select('*')
-        .eq('document_id', worksheetId)
-        .eq('page', pageNumber)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        throw new Error(`Failed to fetch regions: ${error.message}`);
-      }
-
-      return data || [];
     },
-    realtimeTable: 'document_regions',
-    realtimeFilter: `document_id=eq.${worksheetId}`,
-    dependencies: [`worksheet_${worksheetId}`],
-  });
-
-  return {
-    data: result.data || [],
-    isLoading: result.isLoading,
-    error: result.error,
-    isError: !!result.error,
-    refetch: result.refetch
-  };
+    enabled: !!worksheetId && !!pageNumber,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
 }

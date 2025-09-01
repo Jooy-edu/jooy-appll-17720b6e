@@ -1,181 +1,230 @@
-// Simple PWA Service Worker - Focused on app shell caching only
-const CACHE_NAME = 'worksheet-app-v3';
-const STATIC_CACHE_NAME = 'worksheet-static-v3';
+// Dynamic cache versioning using build timestamp
+const BUILD_TIMESTAMP = Date.now();
+const CACHE_NAME = `pdf-navigator-v${BUILD_TIMESTAMP}`;
+const STATIC_CACHE_NAME = `pdf-navigator-static-v${BUILD_TIMESTAMP}`;
 
-// Essential files for offline app shell
+// Only preload essential files (removed default.mp4 as it no longer exists)
 const STATIC_ASSETS = [
   '/',
-  '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
+  '/manifest.json'
 ];
 
-// Patterns for API requests that should NEVER be cached
-const API_PATTERNS = [
-  /^https:\/\/.*\.supabase\.co/,
-  /\/rest\/v1\//,
-  /\/auth\/v1\//,
-  /\/functions\/v1\//,
-  /\/storage\/v1\//
-];
-
-// Discover and cache essential assets
-async function cacheEssentialAssets() {
-  try {
-    const response = await fetch('/');
-    if (!response.ok) return;
-    
-    const html = await response.text();
-    
-    // Extract CSS and JS assets
-    const cssMatches = html.match(/<link[^>]+href="([^"]+\.css[^"]*)"[^>]*>/g) || [];
-    const jsMatches = html.match(/<script[^>]+src="([^"]+\.js[^"]*)"[^>]*>/g) || [];
-    
-    const assets = [...STATIC_ASSETS];
-    
-    cssMatches.forEach(match => {
-      const href = match.match(/href="([^"]+)"/)?.[1];
-      if (href && href.startsWith('/')) assets.push(href);
-    });
-    
-    jsMatches.forEach(match => {
-      const src = match.match(/src="([^"]+)"/)?.[1];
-      if (src && src.startsWith('/')) assets.push(src);
-    });
-    
-    const cache = await caches.open(STATIC_CACHE_NAME);
-    for (const asset of assets) {
-      try {
-        await cache.add(asset);
-        console.log('SW: Cached', asset);
-      } catch (err) {
-        console.warn('SW: Failed to cache', asset);
-      }
-    }
-  } catch (error) {
-    console.error('SW: Asset caching failed:', error);
-  }
-}
-
-// Install event
+// Install event - cache only essential assets
 self.addEventListener('install', (event) => {
-  console.log('SW: Installing');
+  console.log('Service Worker: Installing with version', BUILD_TIMESTAMP);
+  
   event.waitUntil(
-    cacheEssentialAssets().then(() => {
-      console.log('SW: Installation complete');
+    Promise.all([
+      // Cache static assets
+      caches.open(STATIC_CACHE_NAME).then((cache) => {
+        console.log('Service Worker: Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      }),
+      // Cache the app shell (HTML, CSS, JS)
+      caches.open(CACHE_NAME).then((cache) => {
+        console.log('Service Worker: Caching app shell');
+        return fetch('/').then((response) => {
+          return cache.put('/', response);
+        });
+      })
+    ]).then(() => {
+      console.log('Service Worker: Installation complete');
+      // Force the waiting service worker to become the active service worker
       return self.skipWaiting();
     })
   );
 });
 
-// Activate event
+// Activate event - clean up old caches and notify clients of update
 self.addEventListener('activate', (event) => {
-  console.log('SW: Activating');
+  console.log('Service Worker: Activating with version', BUILD_TIMESTAMP);
+  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
-            console.log('SW: Deleting old cache:', cacheName);
+            console.log('Service Worker: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      console.log('SW: Activation complete');
+      console.log('Service Worker: Activation complete');
+      // Ensure the service worker takes control of all pages immediately
       return self.clients.claim();
+    }).then(() => {
+      // Notify all clients that a new version is available
+      return self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'SW_UPDATE_AVAILABLE',
+            version: BUILD_TIMESTAMP
+          });
+        });
+      });
     })
   );
 });
 
-// Fetch event - VERY selective caching
+// Fetch event - serve from cache when possible
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  
-  // NEVER cache API requests - let them go directly to network
-  if (API_PATTERNS.some(pattern => pattern.test(request.url))) {
-    console.log('SW: API request - bypassing cache:', request.url);
-    return; // Let the browser handle it normally
-  }
-  
-  // Only handle GET requests from same origin
-  if (request.method !== 'GET' || url.origin !== location.origin) {
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
     return;
   }
-  
-  // Handle app shell (navigation requests)
-  if (request.mode === 'navigate' || url.pathname === '/') {
-    event.respondWith(handleAppShell(request));
+
+  // Skip cross-origin requests
+  if (url.origin !== location.origin) {
     return;
   }
-  
-  // Handle static assets
-  if (url.pathname.startsWith('/assets/') || 
-      url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$/)) {
-    event.respondWith(handleStaticAsset(request));
-    return;
-  }
-  
-  // Everything else - just fetch from network
-});
 
-// Handle app shell - network first with cache fallback
-async function handleAppShell(request) {
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put('/', response.clone());
-    }
-    return response;
-  } catch (error) {
-    console.log('SW: Network failed for app shell, trying cache');
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match('/');
-    if (cached) {
-      return cached;
-    }
-    
-    // Try static cache as backup
-    const staticCache = await caches.open(STATIC_CACHE_NAME);
-    const staticCached = await staticCache.match('/');
-    return staticCached || new Response('App unavailable offline', { status: 503 });
-  }
-}
-
-// Handle static assets - cache first
-async function handleStaticAsset(request) {
-  try {
-    const cache = await caches.open(STATIC_CACHE_NAME);
-    const cached = await cache.match(request);
-    
-    if (cached) {
-      return cached;
-    }
-    
-    const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (error) {
-    const cache = await caches.open(STATIC_CACHE_NAME);
-    return cache.match(request) || new Response('Asset unavailable', { status: 404 });
-  }
-}
-
-// Background sync
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(
-      self.clients.matchAll().then((clients) => {
-        clients.forEach((client) => {
-          client.postMessage({ type: 'BACKGROUND_SYNC' });
+  // Handle different types of requests
+  if (url.pathname === '/') {
+    // For the root path, always try network first, fallback to cache
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Clone the response before caching
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          // If network fails, serve from cache
+          return caches.match(request);
+        })
+    );
+  } else if (url.pathname.startsWith('/assets/')) {
+    // For built assets (CSS, JS), cache first strategy
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        return fetch(request).then((response) => {
+          // Cache the asset for future use
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
         });
       })
+    );
+  } else if (url.pathname.startsWith('/audio/') || url.pathname.startsWith('/pdfs/') || url.pathname.startsWith('/data/')) {
+    // For audio, PDFs, and data files - network first, no preloading
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Optionally cache these files after they're requested
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request);
+        })
+    );
+  } else {
+    // For all other requests, network first with cache fallback
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache successful responses
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache
+          return caches.match(request);
+        })
     );
   }
 });
 
-console.log('SW: Service Worker loaded');
+// Handle background sync for offline actions
+self.addEventListener('sync', (event) => {
+  console.log('Service Worker: Background sync triggered');
+  
+  if (event.tag === 'background-sync') {
+    event.waitUntil(
+      // Handle any background sync tasks here
+      console.log('Service Worker: Performing background sync')
+    );
+  }
+});
+
+// Handle push notifications (if needed in the future)
+self.addEventListener('push', (event) => {
+  console.log('Service Worker: Push notification received');
+  
+  const options = {
+    body: event.data ? event.data.text() : 'New content available',
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'Open App',
+        icon: '/icon-192x192.png'
+      },
+      {
+        action: 'close',
+        title: 'Close',
+        icon: '/icon-192x192.png'
+      }
+    ]
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification('PDF Navigator', options)
+  );
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  console.log('Service Worker: Notification clicked');
+  
+  event.notification.close();
+  
+  if (event.action === 'explore') {
+    event.waitUntil(
+      clients.openWindow('/')
+    );
+  }
+});
+
+// Handle messages from the main thread
+self.addEventListener('message', (event) => {
+  console.log('Service Worker: Message received:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: BUILD_TIMESTAMP });
+  }
+});

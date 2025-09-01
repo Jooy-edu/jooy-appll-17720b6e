@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOptimizedLevelAccess } from './useOptimizedLevelAccess';
+import { useLevelAccess } from './useLevelAccess';
 
 interface DocumentFolderAccess {
   requiresLevelAccess: boolean;
@@ -34,7 +34,7 @@ export const useDocumentFolderAccess = (documentId?: string): DocumentFolderAcce
   });
 
   // Then check level access if document has a folder
-  const { data: levelAccess, isLoading: levelLoading, error: levelError } = useOptimizedLevelAccess(
+  const { data: levelAccess, isLoading: levelLoading, error: levelError } = useLevelAccess(
     documentData?.folder_id || null
   );
 

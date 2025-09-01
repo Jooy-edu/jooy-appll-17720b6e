@@ -1,12 +1,10 @@
-import { useOfflineCoverImage, preloadCovers } from '@/hooks/useOfflineCoverImage';
-import { useOfflineDocuments } from '@/hooks/useOfflineFirst';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, FileText, Lock } from 'lucide-react';
 import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
-
+import { useCoverImage } from '@/hooks/useCoverImage';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DocumentGridProps {
@@ -24,16 +22,8 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   isLocked = false,
   onActivateRequired
 }) => {
-  const { data: documents, isLoading, error, refetch } = useRealtimeDocuments(folderId);
+  const { data: documents, isLoading, error } = useRealtimeDocuments(folderId);
   const isMobile = useIsMobile();
-
-  // Preload covers when documents are loaded
-  useEffect(() => {
-    if (documents?.length) {
-      const documentIds = documents.map(doc => doc.id);
-      preloadCovers(documentIds);
-    }
-  }, [documents]);
 
   const getGridClasses = () => {
     const documentCount = documents?.length || 0;
@@ -61,7 +51,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
     return (
       <div className="text-center py-8">
         <p className="text-destructive mb-4">Failed to load documents</p>
-        <Button variant="outline" onClick={() => refetch()}>
+        <Button variant="outline" onClick={() => window.location.reload()}>
           Try Again
         </Button>
       </div>
@@ -86,7 +76,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   };
 
   const DocumentCard = ({ document }: { document: any }) => {
-    const { coverUrl, isLoading } = useOfflineCoverImage(document.id, document.metadata);
+    const { coverUrl, isLoading } = useCoverImage(document.id, document.metadata);
 
     return (
       <Card 
