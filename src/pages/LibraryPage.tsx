@@ -4,7 +4,10 @@ import { DocumentGrid } from '@/components/DocumentGrid';
 import { PageSelector } from '@/components/PageSelector';
 import { LevelAccessGuard } from '@/components/LevelAccessGuard';
 import { LevelActivationModal } from '@/components/LevelActivationModal';
+import { PreloadingProgress } from '@/components/PreloadingProgress';
 import { useEnhancedFolders, useEnhancedDocuments } from '@/hooks/useEnhancedOfflineData';
+import { useLevelPreloader } from '@/hooks/useLevelPreloader';
+import { useBehaviorTracking } from '@/hooks/useBehaviorTracking';
 import { Loader, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -35,6 +38,10 @@ export const LibraryPage: React.FC = () => {
   const [pageSelectorState, setPageSelectorState] = useState<PageSelectorState | null>(null);
   const [activationModalOpen, setActivationModalOpen] = useState(false);
   const [preselectedFolderId, setPreselectedFolderId] = useState<string | null>(null);
+  
+  // Enhanced preloading and behavior tracking
+  const levelPreloader = useLevelPreloader();
+  const behaviorTracking = useBehaviorTracking();
   
   // Get documents for the selected level and preload covers  
   const { 
@@ -86,10 +93,18 @@ export const LibraryPage: React.FC = () => {
     }
   }, [folders, selectedLevel]);
 
-  const handleLevelSelect = (folderId: string, levelName: string) => {
-    const newLevel = { folderId, levelName };
-    setSelectedLevel(newLevel);
-    localStorage.setItem(SELECTED_LEVEL_KEY, JSON.stringify(newLevel));
+  const handleLevelSelect = async (folderId: string, levelName: string) => {
+    const sessionStartTime = Date.now();
+    const newSelectedLevel = { folderId, levelName };
+    setSelectedLevel(newSelectedLevel);
+    localStorage.setItem(SELECTED_LEVEL_KEY, JSON.stringify(newSelectedLevel));
+    
+    // Track level access for behavior analytics
+    await behaviorTracking.trackLevelAccess(folderId, levelName, sessionStartTime);
+    
+    // Start bulk preloading for the selected level
+    await levelPreloader.startPreloading(folderId, levelName);
+    
     // Close page selector if open
     setPageSelectorState(null);
   };
@@ -122,8 +137,17 @@ export const LibraryPage: React.FC = () => {
     }
   };
 
-  const handleDocumentSelect = (documentId: string, documentName: string) => {
+  const handleDocumentSelect = async (documentId: string, documentName: string) => {
+    const viewStartTime = Date.now();
     setPageSelectorState({ documentId, documentName });
+    
+    // Track document access for behavior analytics
+    await behaviorTracking.trackDocumentAccess(
+      documentId, 
+      documentName, 
+      selectedLevel?.folderId, 
+      viewStartTime
+    );
   };
 
   const handlePageSelectorClose = () => {
@@ -182,6 +206,18 @@ export const LibraryPage: React.FC = () => {
           onFolderSelect={handleLevelSelect}
           onLockedLevelSelect={handleLockedLevelSelect}
         />
+
+        {/* Preloading Progress Indicator */}
+        {(levelPreloader.isPreloading || levelPreloader.progress.phase === 'completed') && (
+          <div className="mt-6">
+            <PreloadingProgress
+              isPreloading={levelPreloader.isPreloading}
+              progress={levelPreloader.progress}
+              onCancel={levelPreloader.cancelPreloading}
+              error={levelPreloader.error}
+            />
+          </div>
+        )}
         
         {selectedLevel && (
           <LevelAccessGuard
