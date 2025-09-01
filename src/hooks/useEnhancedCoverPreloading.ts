@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { coverCache } from '@/utils/cacheManager';
+import { enhancedCache } from '@/utils/enhancedCacheManager';
 import { useEnhancedOfflineCache } from './useEnhancedOfflineCache';
+import { useNetworkAwareLoading } from './useNetworkAwareLoading';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CoverPreloadingStatus {
@@ -17,6 +19,11 @@ const PRELOAD_QUEUE_SIZE = 50;
 
 export const useEnhancedCoverPreloading = () => {
   const { user } = useAuth();
+  const { isSlowNetwork, loadingStrategy, batchLoad } = useNetworkAwareLoading();
+  
+  // Adjust concurrent preloads based on network speed
+  const maxConcurrent = isSlowNetwork ? 1 : MAX_CONCURRENT_PRELOADS;
+  const queueSize = isSlowNetwork ? 20 : PRELOAD_QUEUE_SIZE;
   const [status, setStatus] = useState<CoverPreloadingStatus>({
     isPreloading: false,
     totalToPreload: 0,
@@ -56,14 +63,21 @@ export const useEnhancedCoverPreloading = () => {
     realtimeTable: 'documents',
   });
 
-  // Preload cover for a single document
+  // Preload cover for a single document with enhanced caching
   const preloadCover = async (documentId: string): Promise<boolean> => {
     if (preloadedIds.current.has(documentId)) {
       return true;
     }
 
     try {
-      // Check if already cached and fresh
+      // Check enhanced cache first
+      const enhancedCached = await enhancedCache.getEnhanced<{ url: string }>('covers', documentId);
+      if (enhancedCached?.url) {
+        preloadedIds.current.add(documentId);
+        return true;
+      }
+
+      // Check basic cache
       const cached = await coverCache.get(documentId);
       if (cached && !await coverCache.isStale(documentId)) {
         preloadedIds.current.add(documentId);
@@ -100,7 +114,19 @@ export const useEnhancedCoverPreloading = () => {
         const response = await fetch(coverUrl);
         if (response.ok) {
           const blob = await response.blob();
+          
+          // Store in both caches
           await coverCache.set(documentId, coverUrl, blob);
+          await enhancedCache.setEnhanced(
+            'covers',
+            documentId,
+            { url: coverUrl, timestamp: Date.now(), size: blob.size },
+            {
+              priority: 'low',
+              dependencies: [`documents_${documentId}`]
+            }
+          );
+          
           preloadedIds.current.add(documentId);
           return true;
         }
@@ -113,9 +139,9 @@ export const useEnhancedCoverPreloading = () => {
     }
   };
 
-  // Process preload queue with concurrency control
+  // Process preload queue with network-aware concurrency control
   const processPreloadQueue = async () => {
-    while (preloadQueue.current.length > 0 && activePreloads.current.size < MAX_CONCURRENT_PRELOADS) {
+    while (preloadQueue.current.length > 0 && activePreloads.current.size < maxConcurrent) {
       const documentId = preloadQueue.current.shift();
       if (!documentId || activePreloads.current.has(documentId)) continue;
       
@@ -151,7 +177,7 @@ export const useEnhancedCoverPreloading = () => {
     const documentsToPreload = allDocuments
       .map((doc: any) => doc.id)
       .filter(id => !preloadedIds.current.has(id))
-      .slice(0, PRELOAD_QUEUE_SIZE); // Limit queue size
+      .slice(0, queueSize); // Use network-aware queue size
     
     if (documentsToPreload.length === 0) return;
     

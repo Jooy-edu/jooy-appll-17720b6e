@@ -4,8 +4,7 @@ import { DocumentGrid } from '@/components/DocumentGrid';
 import { PageSelector } from '@/components/PageSelector';
 import { LevelAccessGuard } from '@/components/LevelAccessGuard';
 import { LevelActivationModal } from '@/components/LevelActivationModal';
-import { useRealtimeFolders } from '@/hooks/useRealtimeFolders';
-import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
+import { useEnhancedFolders, useEnhancedDocuments } from '@/hooks/useEnhancedOfflineData';
 import { Loader, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -27,8 +26,10 @@ export const LibraryPage: React.FC = () => {
   const { 
     data: folders, 
     isLoading, 
-    isError: error
-  } = useRealtimeFolders();
+    isError: error,
+    cacheStatus: foldersCacheStatus,
+    isFromCache: foldersFromCache
+  } = useEnhancedFolders();
   const [selectedLevel, setSelectedLevel] = useState<SelectedLevel | null>(null);
   const [pageSelectorState, setPageSelectorState] = useState<PageSelectorState | null>(null);
   const [activationModalOpen, setActivationModalOpen] = useState(false);
@@ -36,8 +37,10 @@ export const LibraryPage: React.FC = () => {
   
   // Get documents for the selected level and preload covers  
   const { 
-    data: documents
-  } = useRealtimeDocuments(selectedLevel?.folderId);
+    data: documents,
+    cacheStatus: documentsCacheStatus,
+    isFromCache: documentsFromCache
+  } = useEnhancedDocuments(selectedLevel?.folderId);
 
   // Load saved level from localStorage on mount
   useEffect(() => {
