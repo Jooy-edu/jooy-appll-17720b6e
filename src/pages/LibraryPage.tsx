@@ -4,13 +4,12 @@ import { DocumentGrid } from '@/components/DocumentGrid';
 import { PageSelector } from '@/components/PageSelector';
 import { LevelAccessGuard } from '@/components/LevelAccessGuard';
 import { LevelActivationModal } from '@/components/LevelActivationModal';
-import { useRealtimeFolders } from '@/hooks/useRealtimeFolders';
+import { useOptimizedOfflineFolders, useOptimizedOfflineDocuments } from '@/hooks/useOptimizedOfflineData';
 import { useLevelAccess } from '@/hooks/useLevelAccess';
 import { Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { preloadCovers } from '@/hooks/useOfflineCoverImage';
-import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
+import { useEnhancedCoverPreloading } from '@/hooks/useEnhancedCoverPreloading';
 
 interface SelectedLevel {
   folderId: string;
@@ -25,14 +24,15 @@ interface PageSelectorState {
 const SELECTED_LEVEL_KEY = 'selectedLibraryLevel';
 
 export const LibraryPage: React.FC = () => {
-  const { data: folders, isLoading, error } = useRealtimeFolders();
+  const { data: folders, isLoading, error } = useOptimizedOfflineFolders();
   const [selectedLevel, setSelectedLevel] = useState<SelectedLevel | null>(null);
   const [pageSelectorState, setPageSelectorState] = useState<PageSelectorState | null>(null);
   const [activationModalOpen, setActivationModalOpen] = useState(false);
   const [preselectedFolderId, setPreselectedFolderId] = useState<string | null>(null);
   
-  // Get documents for the selected level to preload covers
-  const { data: documents } = useRealtimeDocuments(selectedLevel?.folderId);
+  // Get documents for the selected level and enhanced preloading
+  const { data: documents } = useOptimizedOfflineDocuments(selectedLevel?.folderId);
+  const { preloadSpecificCovers } = useEnhancedCoverPreloading();
 
   // Load saved level from localStorage on mount
   useEffect(() => {
@@ -85,13 +85,13 @@ export const LibraryPage: React.FC = () => {
     setPageSelectorState(null);
   };
 
-  // Preload covers when documents change for current level
+  // Enhanced cover preloading when documents change for current level
   useEffect(() => {
     if (documents?.length) {
       const documentIds = documents.map(doc => doc.id);
-      preloadCovers(documentIds);
+      preloadSpecificCovers(documentIds);
     }
-  }, [documents]);
+  }, [documents, preloadSpecificCovers]);
 
   const handleLockedLevelSelect = (folderId: string, folderName: string) => {
     setPreselectedFolderId(folderId);
