@@ -1,5 +1,6 @@
 import { cacheManager } from './cacheManager';
 import { supabase } from '@/integrations/supabase/client';
+import { cacheCoordinator } from './cacheCoordinator';
 
 interface SyncQueueItem {
   id: string;
@@ -28,6 +29,8 @@ export class BackgroundSync {
     window.addEventListener('online', () => {
       this.isOnline = true;
       this.processSyncQueue();
+      // Validate cached items against server when network returns
+      this.validateCacheOnNetworkReturn();
     });
     
     window.addEventListener('offline', () => {
@@ -221,6 +224,32 @@ export class BackgroundSync {
       table: 'text_assignments',
       data: { match: { id } }
     });
+  }
+
+  /**
+   * Validate cached items against server when network returns
+   */
+  private async validateCacheOnNetworkReturn() {
+    if (!this.isOnline) return;
+    
+    try {
+      console.log('Network returned - validating cached items against server...');
+      await cacheCoordinator.validateAllCachedItems();
+      console.log('Cache validation completed');
+    } catch (error) {
+      console.error('Error validating cache on network return:', error);
+    }
+  }
+
+  /**
+   * Force cache validation (can be called manually)
+   */
+  async validateCache(): Promise<void> {
+    if (!this.isOnline) {
+      throw new Error('Cannot validate cache while offline');
+    }
+    
+    await cacheCoordinator.validateAllCachedItems();
   }
 
   // Get sync queue status

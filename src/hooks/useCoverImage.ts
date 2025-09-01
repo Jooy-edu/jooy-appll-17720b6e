@@ -7,8 +7,10 @@ interface UseCoverImageResult {
   error: string | null;
 }
 
-// In-memory cache for cover URLs
-const coverCache = new Map<string, string>();
+// Expose the enhanced cover cache globally for coordination
+if (typeof window !== 'undefined') {
+  (window as any).coverCache = new Map();
+}
 
 export const useCoverImage = (documentId: string, metadata?: any): UseCoverImageResult => {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export const useCoverImage = (documentId: string, metadata?: any): UseCoverImage
     if (!documentId) return;
 
     // Check cache first
-    const cachedUrl = coverCache.get(documentId);
+    const cachedUrl = (window as any).coverCache?.get(documentId);
     if (cachedUrl) {
       setCoverUrl(cachedUrl);
       return;
@@ -45,7 +47,9 @@ export const useCoverImage = (documentId: string, metadata?: any): UseCoverImage
 
         if (result.url) {
           // Cache the URL
-          coverCache.set(documentId, result.url);
+          if (typeof window !== 'undefined' && (window as any).coverCache) {
+            (window as any).coverCache.set(documentId, result.url);
+          }
           setCoverUrl(result.url);
         } else {
           setCoverUrl(null);

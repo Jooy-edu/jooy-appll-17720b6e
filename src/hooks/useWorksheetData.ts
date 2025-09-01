@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import type { WorksheetMetadata, RegionsModeMetadata } from '@/types/worksheet'
-import { useEnhancedWorksheetData, useEnhancedRegionsByPage } from './useEnhancedWorksheetData'
+import { useEnhancedOfflineData } from './useEnhancedOfflineData'
 
 interface WorksheetDataResponse {
   meta: WorksheetMetadata;
@@ -9,13 +9,13 @@ interface WorksheetDataResponse {
 }
 
 export const useWorksheetData = (worksheetId: string) => {
-  // Use enhanced worksheet data with offline-first caching
-  const enhancedResult = useEnhancedWorksheetData(worksheetId);
-  
-  // Fallback to traditional query if enhanced version fails
-  const fallbackResult = useQuery({
-    queryKey: ['worksheet-fallback', worksheetId],
-    queryFn: async (): Promise<WorksheetDataResponse> => {
+  // Use enhanced offline data for worksheet fetching
+  return useEnhancedOfflineData({
+    queryKey: ['enhanced-worksheet', worksheetId],
+    category: 'worksheets',
+    queryFn: async () => {
+      if (!worksheetId) throw new Error('Worksheet ID is required');
+
       const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
         body: { worksheetId },
       });
@@ -30,46 +30,29 @@ export const useWorksheetData = (worksheetId: string) => {
 
       return {
         meta: data.meta,
-        pdfUrl: data.pdfUrl
+        pdfUrl: data.pdfUrl,
       };
     },
-    enabled: !!worksheetId && enhancedResult.isError && !enhancedResult.data,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: (failureCount, error) => {
-      if (error.message.includes('404')) {
-        return false
-      }
-      return failureCount < 3
-    }
+    realtimeTable: 'documents',
+    dependencies: [`document_${worksheetId}`],
   });
-
-  // Return enhanced result if available, otherwise fallback
-  if (enhancedResult.data || enhancedResult.isLoading || !enhancedResult.isError) {
-    return {
-      ...enhancedResult,
-      data: enhancedResult.data,
-      isLoading: enhancedResult.isLoading,
-      error: enhancedResult.error,
-      isError: enhancedResult.isError
-    };
-  }
-
-  return fallbackResult;
 }
 
 export const useRegionsByPage = (worksheetId: string, pageNumber: number) => {
-  // Use enhanced regions data with offline-first caching
-  const enhancedResult = useEnhancedRegionsByPage(worksheetId, pageNumber);
-  
-  // Fallback to traditional query if enhanced version fails
-  const fallbackResult = useQuery({
-    queryKey: ['regions-fallback', worksheetId, pageNumber],
+  // Use enhanced offline data for regions fetching
+  return useEnhancedOfflineData({
+    queryKey: ['enhanced-regions', worksheetId, pageNumber],
+    category: 'regions',
     queryFn: async () => {
+      if (!worksheetId || pageNumber === undefined) {
+        throw new Error('Worksheet ID and page number are required');
+      }
+
       const { data, error } = await supabase
         .from('document_regions')
         .select('*')
         .eq('document_id', worksheetId)
-        .eq('page', pageNumber)
+        .eq('page_number', pageNumber)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -78,20 +61,8 @@ export const useRegionsByPage = (worksheetId: string, pageNumber: number) => {
 
       return data || [];
     },
-    enabled: !!worksheetId && !!pageNumber && enhancedResult.isError && !enhancedResult.data,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    realtimeTable: 'document_regions',
+    realtimeFilter: `document_id=eq.${worksheetId}`,
+    dependencies: [`worksheet_${worksheetId}`],
   });
-
-  // Return enhanced result if available, otherwise fallback
-  if (enhancedResult.data || enhancedResult.isLoading || !enhancedResult.isError) {
-    return {
-      ...enhancedResult,
-      data: enhancedResult.data || [],
-      isLoading: enhancedResult.isLoading,
-      error: enhancedResult.error,
-      isError: enhancedResult.isError
-    };
-  }
-
-  return fallbackResult;
 }
