@@ -1,4 +1,4 @@
-import { OfflineStatus } from '@/components/OfflineStatus';
+import { IntelligentOfflineStatus } from '@/components/IntelligentOfflineStatus';
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -51,7 +51,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <OfflineStatus />
+        <IntelligentOfflineStatus />
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
