@@ -128,6 +128,34 @@ export const useEnhancedCoverImage = (documentId: string, metadata?: any): Cover
 
     loadCoverImage();
 
+    // Subscribe to storage realtime changes for this specific cover
+    const channel = supabase
+      .channel(`cover-changes-${documentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'storage',
+          table: 'objects',
+          filter: `bucket_id=eq.covers AND name=like.${documentId}%`
+        },
+        async (payload) => {
+          console.log('Storage change detected for cover:', payload);
+          
+          // Invalidate cache and reload
+          await cacheCoordinator.invalidateCache({
+            type: 'cover',
+            id: documentId,
+            action: payload.eventType === 'DELETE' ? 'delete' : 'update',
+            cascadeKeys: [`document_${documentId}`]
+          });
+          
+          // Reload cover image
+          loadCoverImage();
+        }
+      )
+      .subscribe();
+
     // Subscribe to cache invalidation events
     const handleCacheInvalidation = (event: CustomEvent) => {
       const { type, id } = event.detail;
@@ -140,6 +168,7 @@ export const useEnhancedCoverImage = (documentId: string, metadata?: any): Cover
     window.addEventListener('cache-invalidated', handleCacheInvalidation as EventListener);
 
     return () => {
+      supabase.removeChannel(channel);
       window.removeEventListener('cache-invalidated', handleCacheInvalidation as EventListener);
     };
 

@@ -2,6 +2,13 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { enhancedCache } from '@/utils/enhancedCacheManager';
+import { cacheCoordinator } from '@/utils/cacheCoordinator';
+
+interface CoverImageMetadata {
+  url: string;
+  timestamp: number;
+  version?: string;
+}
 
 interface PreloadProgress {
   phase: 'initializing' | 'documents' | 'worksheets' | 'covers' | 'completed' | 'failed';
@@ -109,17 +116,28 @@ export const useLevelPreloader = (): LevelPreloadResult => {
           try {
             updateProgress('worksheets', i + batch.indexOf(doc) + 1, documents.length, doc.name);
             
-            // Fetch and cache worksheet data
+            // Fetch and cache worksheet data with proper cache key coordination
             const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
               body: { worksheetId: doc.id },
             });
 
             if (!error && data) {
+              // Cache with keys that match useWorksheetData hook
               await enhancedCache.setEnhanced('worksheets', doc.id, data, {
                 priority: 'medium',
-                dependencies: [`documents_${doc.id}`],
+                dependencies: [`document_${doc.id}`],
                 version: '1.0'
               });
+              
+              // Also cache with enhanced-worksheet key for useWorksheetData compatibility
+              await enhancedCache.setEnhanced('enhanced-worksheet', doc.id, data, {
+                priority: 'medium',
+                dependencies: [`document_${doc.id}`],
+                version: '1.0'
+              });
+              
+              // Store worksheet version for cache coordinator
+              await cacheCoordinator.storeVersion('worksheet', doc.id, '1.0');
             }
           } catch (error) {
             console.warn(`Failed to preload worksheet data for ${doc.id}:`, error);
@@ -149,24 +167,41 @@ export const useLevelPreloader = (): LevelPreloadResult => {
           try {
             updateProgress('covers', i + batch.indexOf(doc) + 1, documents.length, doc.name);
             
-            // Try to determine cover URL from metadata or common patterns
+            // Use proper covers bucket and generate signed URLs
             let coverUrl = '';
-            if (doc.metadata?.cover) {
-              coverUrl = `https://bohxienpthilrfwktokd.supabase.co/storage/v1/object/public/pdfs/${doc.metadata.cover}`;
-            } else {
-              // Try common cover file extensions
-              const extensions = ['jpg', 'jpeg', 'png', 'webp'];
-              for (const ext of extensions) {
-                try {
-                  const testUrl = `https://bohxienpthilrfwktokd.supabase.co/storage/v1/object/public/pdfs/${doc.id}.${ext}`;
-                  const response = await fetch(testUrl, { method: 'HEAD' });
+            let coverVersion = '';
+            
+            const extensions = ['jpg', 'jpeg', 'png', 'webp'];
+            for (const ext of extensions) {
+              try {
+                const filePath = `${doc.id}.${ext}`;
+                
+                // Get signed URL from covers bucket
+                const { data: urlData, error: urlError } = await supabase.storage
+                  .from('covers')
+                  .createSignedUrl(filePath, 60 * 60); // 1 hour expiry
+
+                if (!urlError && urlData?.signedUrl) {
+                  // Verify the file exists
+                  const response = await fetch(urlData.signedUrl, { method: 'HEAD' });
                   if (response.ok) {
-                    coverUrl = testUrl;
+                    coverUrl = urlData.signedUrl;
+                    
+                    // Get file metadata for version tracking
+                    const { data: fileList } = await supabase.storage
+                      .from('covers')
+                      .list('', { search: filePath, limit: 1 });
+                    
+                    if (fileList && fileList.length > 0) {
+                      const file = fileList[0];
+                      coverVersion = `${file.updated_at}_${file.metadata?.size || 0}`;
+                    }
+                    
                     break;
                   }
-                } catch {
-                  // Continue to next extension
                 }
+              } catch (fetchError) {
+                console.warn(`Failed to check cover ${doc.id}.${ext}:`, fetchError);
               }
             }
 
@@ -181,12 +216,23 @@ export const useLevelPreloader = (): LevelPreloadResult => {
                 img.src = coverUrl;
               });
 
-              // Cache the cover URL
-              await enhancedCache.setEnhanced('covers', doc.id, coverUrl, {
+              // Cache the cover with proper metadata structure matching useEnhancedCoverImage
+              const coverMetadata: CoverImageMetadata = {
+                url: coverUrl,
+                timestamp: Date.now(),
+                version: coverVersion
+              };
+
+              await enhancedCache.setEnhanced('covers', doc.id, coverMetadata, {
                 priority: 'low',
                 dependencies: [`documents_${doc.id}`],
-                version: '1.0'
+                version: coverVersion || '1.0'
               });
+              
+              // Store version for cache coordinator
+              if (coverVersion) {
+                await cacheCoordinator.storeVersion('cover', doc.id, coverVersion);
+              }
             }
           } catch (error) {
             console.warn(`Failed to preload cover for ${doc.id}:`, error);

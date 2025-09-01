@@ -8,6 +8,7 @@ import { PreloadingProgress } from '@/components/PreloadingProgress';
 import { useEnhancedFolders, useEnhancedDocuments } from '@/hooks/useEnhancedOfflineData';
 import { useLevelPreloader } from '@/hooks/useLevelPreloader';
 import { useBehaviorTracking } from '@/hooks/useBehaviorTracking';
+import { useStorageRealtimeSync } from '@/hooks/useStorageRealtimeSync';
 import { Loader, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -26,6 +27,9 @@ interface PageSelectorState {
 const SELECTED_LEVEL_KEY = 'selectedLibraryLevel';
 
 export const LibraryPage: React.FC = () => {
+  // Initialize global storage realtime sync for cover updates
+  useStorageRealtimeSync();
+  
   const { 
     data: folders, 
     isLoading, 

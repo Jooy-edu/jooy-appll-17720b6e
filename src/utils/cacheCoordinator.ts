@@ -112,7 +112,7 @@ export class CacheCoordinator {
   }
 
   /**
-   * Get cover version from server (using HEAD request to check existence)
+   * Get cover version from server (enhanced with better metadata detection)
    */
   private async getCoverVersion(documentId: string): Promise<string | null> {
     try {
@@ -120,19 +120,43 @@ export class CacheCoordinator {
       
       for (const ext of extensions) {
         const filePath = `${documentId}.${ext}`;
-        const { data, error } = await supabase.storage
+        
+        // First try to list the file to get metadata
+        const { data: fileList, error: listError } = await supabase.storage
           .from('covers')
-          .createSignedUrl(filePath, 60); // Short-lived URL for validation
+          .list('', { search: filePath, limit: 1 });
 
-        if (!error && data?.signedUrl) {
-          // Try to get file metadata
-          const { data: fileList } = await supabase.storage
-            .from('covers')
-            .list('', { search: filePath, limit: 1 });
+        if (!listError && fileList && fileList.length > 0) {
+          const file = fileList[0];
+          
+          // Create a comprehensive version identifier
+          const versionComponents = [
+            file.updated_at || file.created_at,
+            file.metadata?.size || 0,
+            file.metadata?.httpStatusCode || 'unknown',
+            file.id || filePath
+          ];
+          
+          return versionComponents.join('_');
+        }
+        
+        // Fallback: try HEAD request to signed URL
+        const { data: urlData, error: urlError } = await supabase.storage
+          .from('covers')
+          .createSignedUrl(filePath, 60);
 
-          if (fileList && fileList.length > 0) {
-            const file = fileList[0];
-            return `${file.updated_at}_${file.metadata?.size || 0}`;
+        if (!urlError && urlData?.signedUrl) {
+          try {
+            const response = await fetch(urlData.signedUrl, { method: 'HEAD' });
+            if (response.ok) {
+              const lastModified = response.headers.get('last-modified');
+              const contentLength = response.headers.get('content-length');
+              const etag = response.headers.get('etag');
+              
+              return `${lastModified || Date.now()}_${contentLength || 0}_${etag?.replace(/"/g, '') || 'no-etag'}`;
+            }
+          } catch (headError) {
+            console.warn('HEAD request failed for cover:', filePath, headError);
           }
         }
       }
@@ -196,8 +220,9 @@ export class CacheCoordinator {
     try {
       // Invalidate in all cache layers
       await Promise.all([
-        // Enhanced cache
+        // Enhanced cache - try multiple key patterns
         enhancedCache.delete(type, id),
+        enhancedCache.delete(`enhanced-${type}`, id), // For compatibility with preloader
         
         // Intelligent cache  
         intelligentCache.invalidateWithDependencies(type, id),
@@ -205,8 +230,9 @@ export class CacheCoordinator {
         // Basic cache manager
         cacheManager.delete(type, id),
         
-        // React Query cache
+        // React Query cache with multiple patterns
         getQueryClient().invalidateQueries({ queryKey: [type, id] }),
+        getQueryClient().invalidateQueries({ queryKey: [`enhanced-${type}`, id] }),
         
         // Clear version tracking
         cacheManager.delete('cache_meta', `${type}_${id}_version`)
@@ -220,6 +246,13 @@ export class CacheCoordinator {
       // Special handling for cover images (clear in-memory cache too)
       if (type === 'cover') {
         this.clearInMemoryCoverCache(id);
+      }
+
+      // Emit cache invalidation event for components
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('cache-invalidated', {
+          detail: { type, id, action }
+        }));
       }
 
       console.log(`Cache invalidated for ${type}:${id} with action ${action}`);
