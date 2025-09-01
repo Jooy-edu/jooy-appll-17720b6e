@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { enhancedCache } from '@/utils/enhancedCacheManager';
-import { useEnhancedOfflineData } from './useEnhancedOfflineData';
 
 interface PreloadProgress {
   phase: 'initializing' | 'documents' | 'worksheets' | 'covers' | 'completed' | 'failed';
@@ -260,12 +259,12 @@ export const useLevelPreloader = (): LevelPreloadResult => {
       });
 
     } catch (error: any) {
-      if (error.message === 'Preloading cancelled') {
+      if (error?.message === 'Preloading cancelled') {
         updateProgress('initializing', 0, 0, 'Cancelled');
       } else {
         console.error('Preloading failed:', error);
-        setError(error.message || 'Preloading failed');
-        updateProgress('failed', 0, 0, error.message);
+        setError(error?.message || 'Preloading failed');
+        updateProgress('failed', 0, 0, error?.message || 'Unknown error');
       }
     } finally {
       setIsPreloading(false);

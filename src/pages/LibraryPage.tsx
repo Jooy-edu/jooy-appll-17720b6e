@@ -99,11 +99,15 @@ export const LibraryPage: React.FC = () => {
     setSelectedLevel(newSelectedLevel);
     localStorage.setItem(SELECTED_LEVEL_KEY, JSON.stringify(newSelectedLevel));
     
-    // Track level access for behavior analytics
-    await behaviorTracking.trackLevelAccess(folderId, levelName, sessionStartTime);
-    
-    // Start bulk preloading for the selected level
-    await levelPreloader.startPreloading(folderId, levelName);
+    try {
+      // Track level access for behavior analytics
+      await behaviorTracking?.trackLevelAccess?.(folderId, levelName, sessionStartTime);
+      
+      // Start bulk preloading for the selected level
+      await levelPreloader?.startPreloading?.(folderId, levelName);
+    } catch (error) {
+      console.error('Error during level selection:', error);
+    }
     
     // Close page selector if open
     setPageSelectorState(null);
@@ -141,13 +145,17 @@ export const LibraryPage: React.FC = () => {
     const viewStartTime = Date.now();
     setPageSelectorState({ documentId, documentName });
     
-    // Track document access for behavior analytics
-    await behaviorTracking.trackDocumentAccess(
-      documentId, 
-      documentName, 
-      selectedLevel?.folderId, 
-      viewStartTime
-    );
+    try {
+      // Track document access for behavior analytics
+      await behaviorTracking?.trackDocumentAccess?.(
+        documentId, 
+        documentName, 
+        selectedLevel?.folderId, 
+        viewStartTime
+      );
+    } catch (error) {
+      console.error('Error tracking document access:', error);
+    }
   };
 
   const handlePageSelectorClose = () => {
@@ -208,7 +216,7 @@ export const LibraryPage: React.FC = () => {
         />
 
         {/* Preloading Progress Indicator */}
-        {(levelPreloader.isPreloading || levelPreloader.progress.phase === 'completed') && (
+        {levelPreloader && (levelPreloader.isPreloading || levelPreloader.progress.phase === 'completed') && (
           <div className="mt-6">
             <PreloadingProgress
               isPreloading={levelPreloader.isPreloading}
