@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, FileText, Lock } from 'lucide-react';
-import { useRealtimeDocuments } from '@/hooks/useRealtimeDocuments';
+import { useDocuments } from '@/hooks/useDocuments';
 import { useCoverImage } from '@/hooks/useCoverImage';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -22,7 +22,7 @@ export const DocumentGrid: React.FC<DocumentGridProps> = ({
   isLocked = false,
   onActivateRequired
 }) => {
-  const { data: documents, isLoading, error } = useRealtimeDocuments(folderId);
+  const { data: documents, isLoading, error } = useDocuments(folderId);
   const isMobile = useIsMobile();
 
   const getGridClasses = () => {
