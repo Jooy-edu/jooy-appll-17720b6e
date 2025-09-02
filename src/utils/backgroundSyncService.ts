@@ -1,0 +1,154 @@
+import { QueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { documentStore } from './documentStore';
+
+// Import QueryClient from a separate module to avoid circular imports
+let queryClient: QueryClient;
+
+// Function to set the query client reference
+export const setQueryClient = (client: QueryClient) => {
+  queryClient = client;
+};
+
+interface SyncResponse {
+  documents: any[];
+  covers: any[];
+  lastUpdated: number;
+  tombstones?: string[];
+}
+
+class BackgroundSyncService {
+  private isOnline = navigator.onLine;
+  private syncInProgress = false;
+  private lastSyncAttempt = 0;
+  private minSyncInterval = 30000; // 30 seconds minimum between syncs
+
+  constructor() {
+    this.setupEventListeners();
+    this.initializeStore();
+  }
+
+  private async initializeStore() {
+    try {
+      await documentStore.initialize();
+    } catch (error) {
+      console.error('Failed to initialize document store:', error);
+    }
+  }
+
+  private setupEventListeners() {
+    // Online/offline status
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      this.syncDocuments();
+    });
+
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+    });
+
+    // Page visibility
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && this.isOnline) {
+        this.syncDocuments();
+      }
+    });
+
+    // App focus
+    window.addEventListener('focus', () => {
+      if (this.isOnline) {
+        this.syncDocuments();
+      }
+    });
+  }
+
+  async syncDocuments(force = false): Promise<boolean> {
+    if (!this.isOnline && !force) return false;
+    if (this.syncInProgress) return false;
+    
+    const now = Date.now();
+    if (!force && now - this.lastSyncAttempt < this.minSyncInterval) {
+      return false;
+    }
+
+    this.syncInProgress = true;
+    this.lastSyncAttempt = now;
+
+    try {
+      const lastSync = await documentStore.getLastSyncTimestamp();
+      
+      // Call our sync endpoint
+      const { data, error } = await supabase.functions.invoke('sync-documents', {
+        body: { since: lastSync },
+      });
+
+      if (error) throw error;
+
+      const syncData: SyncResponse = data;
+      
+      if (syncData.documents?.length > 0) {
+        // Save new/updated documents
+        await documentStore.saveDocuments(syncData.documents, syncData.lastUpdated);
+        
+        // Invalidate React Query cache to trigger re-renders
+        queryClient?.invalidateQueries({ queryKey: ['documents'] });
+      }
+
+      if (syncData.covers?.length > 0) {
+        // Update cover cache
+        for (const cover of syncData.covers) {
+          await documentStore.saveCover(cover.documentId, cover.url);
+        }
+        
+        // Invalidate cover-related queries
+        queryClient?.invalidateQueries({ queryKey: ['covers'] });
+      }
+
+      // Handle deletions
+      if (syncData.tombstones?.length > 0) {
+        // TODO: Implement document deletion from cache
+        queryClient?.invalidateQueries({ queryKey: ['documents'] });
+      }
+
+      // Clean up old data (older than 30 days)
+      const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+      await documentStore.clearOldData(thirtyDaysAgo);
+
+      return true;
+    } catch (error) {
+      console.error('Document sync failed:', error);
+      return false;
+    } finally {
+      this.syncInProgress = false;
+    }
+  }
+
+  async manualSync(): Promise<{ success: boolean; message: string }> {
+    if (!this.isOnline) {
+      return { success: false, message: 'No internet connection' };
+    }
+
+    try {
+      const success = await this.syncDocuments(true);
+      return {
+        success,
+        message: success ? 'Documents synced successfully' : 'No new updates available'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Sync failed: ' + (error as Error).message
+      };
+    }
+  }
+
+  isOffline(): boolean {
+    return !this.isOnline;
+  }
+
+  isSyncing(): boolean {
+    return this.syncInProgress;
+  }
+}
+
+export const backgroundSyncService = new BackgroundSyncService();

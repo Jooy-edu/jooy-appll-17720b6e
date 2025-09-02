@@ -11,11 +11,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, LogOut, BookOpen } from 'lucide-react';
+import { User, Settings, LogOut, BookOpen, RefreshCw } from 'lucide-react';
+import { useManualUpdateCheck } from '@/components/AppUpdatePrompt';
 
 const UserMenu: React.FC = () => {
   const { user, profile, signOut, loading } = useAuth();
   const [isInitialRender, setIsInitialRender] = useState(true);
+  const { checkForUpdates, checking } = useManualUpdateCheck();
 
   // Prevent flash by ensuring we don't show login buttons on initial render
   useEffect(() => {
@@ -107,6 +109,14 @@ const UserMenu: React.FC = () => {
             <Settings className="mr-2 h-4 w-4" />
             <span>Profile Settings</span>
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={checkForUpdates} 
+          disabled={checking}
+          className="cursor-pointer"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+          <span>{checking ? 'Checking...' : 'Check for Updates'}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">

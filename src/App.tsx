@@ -12,7 +12,6 @@ import RegisterForm from "@/components/auth/RegisterForm";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import ProfilePage from "@/components/auth/ProfilePage";
-
 import NotFound from "./pages/NotFound";
 import QrScannerPage from "./pages/QrScannerPage";
 import WorksheetPage from "./pages/WorksheetPage";
@@ -21,9 +20,21 @@ import { LibraryPage } from "./pages/LibraryPage";
 import FloatingButtonGroup from "./components/FloatingButtonGroup";
 import FullscreenButton from "./components/FullscreenButton";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import { AppUpdatePrompt } from "./components/AppUpdatePrompt";
+import { setQueryClient } from "./utils/backgroundSyncService";
 import { useParams } from "react-router-dom";
 
-const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Set the query client reference for background sync
+setQueryClient(queryClient);
 
 // Wrapper components to extract params and pass to ActivationGuard
 const WorksheetPageWrapper = () => {
@@ -93,6 +104,7 @@ const App = () => (
             <Route path="*" element={<FloatingButtonGroup />} />
           </Routes>
           <PWAInstallPrompt />
+          <AppUpdatePrompt />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
