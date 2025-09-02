@@ -103,15 +103,22 @@ class BackgroundSyncService {
       }
 
       if (syncData.covers?.length > 0) {
-        // Update cover cache
+        // Enhanced cover sync with change detection
+        const { downloadAndCacheCover, updateCoverIfChanged } = await import('@/utils/coverBlobCache');
+        
         for (const cover of syncData.covers) {
-          if (typeof cover === 'object' && cover.documentId) {
-            // New format with metadata
-            const { downloadAndCacheCover } = await import('@/utils/coverBlobCache');
-            await downloadAndCacheCover(cover.documentId);
-          } else if (typeof cover === 'object' && cover.url) {
-            // Legacy format
-            await documentStore.saveCover(cover.documentId, cover.url);
+          try {
+            if (typeof cover === 'object' && cover.documentId) {
+              // Check if cover needs updating based on timestamp
+              if (cover.updatedAt) {
+                await updateCoverIfChanged(cover.documentId, cover.updatedAt);
+              } else {
+                // Fallback to regular download if no timestamp
+                await downloadAndCacheCover(cover.documentId, cover.extension || 'jpg');
+              }
+            }
+          } catch (error) {
+            console.warn(`Failed to sync cover for ${cover.documentId}:`, error);
           }
         }
         

@@ -74,6 +74,11 @@ export const useLevelPreloader = () => {
       // Preload covers for all documents in this level using blob caching
       for (const doc of documents) {
         try {
+          updateProgress(folderId, { 
+            completed, 
+            currentItem: `Cover for ${doc.name || doc.id}` 
+          });
+          
           const { findAndCacheCover } = await import('@/utils/coverBlobCache');
           const coverResult = await findAndCacheCover(doc.id);
           
@@ -130,15 +135,14 @@ export const useLevelPreloader = () => {
     }
   }, [updateProgress, queryClient]);
 
-  // Enhanced preload all with background sync integration
+  // Enhanced preload all with intelligent verification
   const preloadAllActivatedLevels = useCallback(async () => {
     if (isPreloading || !activatedLevels.length) return;
 
     setIsPreloading(true);
     
     try {
-      // First sync documents to get latest changes
-      console.log('Starting background sync before preloading...');
+      console.log('Starting smart preload verification...');
       
       const { data: folders } = await supabase
         .from('folders')
@@ -146,8 +150,32 @@ export const useLevelPreloader = () => {
         .in('id', activatedLevels);
 
       if (folders?.length) {
+        // Smart verification - only preload what's actually needed
+        const foldersToPreload = [];
+        
+        for (const folder of folders) {
+          // Check if level already has cached content
+          const cachedDocs = await documentStore.getDocuments(folder.id);
+          const currentProgress = preloadProgress[folder.id];
+          
+          // Skip if already complete and has cached data
+          if (currentProgress?.status === 'complete' && cachedDocs.length > 0) {
+            console.log(`Skipping ${folder.name} - already preloaded`);
+            continue;
+          }
+          
+          foldersToPreload.push(folder);
+        }
+        
+        if (foldersToPreload.length === 0) {
+          console.log('All levels already preloaded, no action needed');
+          return;
+        }
+        
+        console.log(`Preloading ${foldersToPreload.length} levels:`, foldersToPreload.map(f => f.name));
+        
         const results = await Promise.allSettled(
-          folders.map(folder => preloadLevel(folder.id, folder.name))
+          foldersToPreload.map(folder => preloadLevel(folder.id, folder.name))
         );
 
         const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
@@ -160,7 +188,7 @@ export const useLevelPreloader = () => {
     } finally {
       setIsPreloading(false);
     }
-  }, [activatedLevels, isPreloading, preloadLevel]);
+  }, [activatedLevels, isPreloading, preloadLevel, preloadProgress]);
 
   // Smart repreload when content changes
   const repreloadChangedLevels = useCallback(async (changedDocumentIds: string[]) => {

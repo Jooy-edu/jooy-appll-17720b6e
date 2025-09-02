@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLevelPreloader } from '@/hooks/useLevelPreloader';
 import { useUserActivatedLevels } from '@/hooks/useUserActivatedLevels';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useStartupPreloadCheck } from '@/hooks/useStartupPreloadCheck';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Download, CheckCircle, AlertCircle } from 'lucide-react';
@@ -19,6 +21,7 @@ interface PreloadStatus {
 export const PreloadManager: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: activatedLevels = [], isLoading: levelsLoading } = useUserActivatedLevels();
+  const { startupCheckComplete, levelsNeedingPreload, allContentCached } = useStartupPreloadCheck();
   const { 
     preloadAllActivatedLevels, 
     preloadProgress, 
@@ -33,32 +36,47 @@ export const PreloadManager: React.FC = () => {
   });
   const [hasTriggeredInitialPreload, setHasTriggeredInitialPreload] = useState(false);
   const [showPreloadUI, setShowPreloadUI] = useState(false);
+  
+  // Debounced preload function to prevent rapid successive calls
+  const [debouncedPreload] = useDebounce(preloadAllActivatedLevels, 1000);
 
-  // Monitor for new level activations and trigger preloading
+  // Single consolidated effect for managing preloading
   useEffect(() => {
-    if (authLoading || levelsLoading || !user) return;
+    if (authLoading || levelsLoading || !user || isPreloading || !startupCheckComplete) return;
     
-    // If we have activated levels and haven't triggered initial preload
-    if (activatedLevels.length > 0 && !hasTriggeredInitialPreload) {
-      console.log('Triggering initial preload for', activatedLevels.length, 'activated levels');
+    // If startup check shows all content is cached, no need to preload
+    if (allContentCached && activatedLevels.length > 0) {
+      console.log('All content already cached - no preloading needed');
+      setHasTriggeredInitialPreload(true);
+      return;
+    }
+    
+    // Initial preload trigger - only if there's content needing preload
+    if (levelsNeedingPreload.length > 0 && !hasTriggeredInitialPreload) {
+      console.log(`Triggering smart preload for ${levelsNeedingPreload.length}/${activatedLevels.length} levels`);
       setShowPreloadUI(true);
       setHasTriggeredInitialPreload(true);
-      
-      // Trigger comprehensive preloading
-      preloadAllActivatedLevels();
+      debouncedPreload();
+      return;
     }
-  }, [user, authLoading, levelsLoading, activatedLevels, hasTriggeredInitialPreload, preloadAllActivatedLevels]);
 
-  // Monitor level activation changes to trigger additional preloading
-  useEffect(() => {
-    if (!user || authLoading || levelsLoading || !hasTriggeredInitialPreload) return;
-    
-    // Trigger preloading when new levels are activated
-    if (activatedLevels.length > 0) {
-      console.log('Detected level changes, triggering preload refresh');
-      preloadAllActivatedLevels();
+    // Smart change detection - only preload if levels actually changed
+    if (hasTriggeredInitialPreload && activatedLevels.length > 0) {
+      const currentLevelIds = new Set(activatedLevels);
+      const preloadedLevelIds = new Set(Object.keys(preloadProgress));
+      
+      // Check if there are new levels that haven't been preloaded
+      const newLevels = activatedLevels.filter(levelId => 
+        !preloadedLevelIds.has(levelId) || preloadProgress[levelId]?.status === 'error'
+      );
+      
+      if (newLevels.length > 0) {
+        console.log('Detected new levels to preload:', newLevels);
+        setShowPreloadUI(true);
+        debouncedPreload();
+      }
     }
-  }, [activatedLevels, preloadAllActivatedLevels, user, authLoading, levelsLoading, hasTriggeredInitialPreload]);
+  }, [user, authLoading, levelsLoading, activatedLevels, hasTriggeredInitialPreload, isPreloading, debouncedPreload, preloadProgress, startupCheckComplete, allContentCached, levelsNeedingPreload]);
 
   // Update preload status based on progress
   useEffect(() => {

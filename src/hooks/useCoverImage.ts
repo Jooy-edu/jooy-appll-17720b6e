@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { extractCoverPath, findCoverImage, getCoverImageUrl } from '@/utils/coverUtils';
+import { getCachedCover } from '@/utils/coverBlobCache';
 
 interface UseCoverImageResult {
   coverUrl: string | null;
@@ -7,7 +7,7 @@ interface UseCoverImageResult {
   error: string | null;
 }
 
-// In-memory cache for cover URLs
+// In-memory cache for cover URLs to avoid redundant blob operations
 const coverCache = new Map<string, string>();
 
 export const useCoverImage = (documentId: string, metadata?: any): UseCoverImageResult => {
@@ -18,7 +18,7 @@ export const useCoverImage = (documentId: string, metadata?: any): UseCoverImage
   useEffect(() => {
     if (!documentId) return;
 
-    // Check cache first
+    // Check in-memory cache first for immediate return
     const cachedUrl = coverCache.get(documentId);
     if (cachedUrl) {
       setCoverUrl(cachedUrl);
@@ -30,26 +30,16 @@ export const useCoverImage = (documentId: string, metadata?: any): UseCoverImage
       setError(null);
 
       try {
-        // First try to get cover path from metadata
-        const coverPath = extractCoverPath(metadata);
+        // Use blob-based caching for permanent offline access
+        const blobUrl = await getCachedCover(documentId);
         
-        let result;
-        if (coverPath) {
-          // Extract extension from path and get signed URL
-          const extension = coverPath.split('.').pop() || 'jpg';
-          result = await getCoverImageUrl(documentId, extension);
-        } else {
-          // Try to find cover with common extensions
-          result = await findCoverImage(documentId);
-        }
-
-        if (result.url) {
-          // Cache the URL
-          coverCache.set(documentId, result.url);
-          setCoverUrl(result.url);
+        if (blobUrl) {
+          // Cache in memory for quick subsequent access
+          coverCache.set(documentId, blobUrl);
+          setCoverUrl(blobUrl);
         } else {
           setCoverUrl(null);
-          setError(result.error || 'No cover image found');
+          setError('No cover image found');
         }
       } catch (err) {
         console.error('Error loading cover image:', err);

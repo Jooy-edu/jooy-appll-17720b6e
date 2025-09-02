@@ -79,7 +79,9 @@ serve(async (req) => {
                 documentId: doc.id,
                 url: signedUrlData.signedUrl,
                 updatedAt: new Date(coverFile.updated_at || coverFile.created_at || Date.now()).getTime(),
-                extension: coverFile.name.split('.').pop() || 'jpg'
+                extension: coverFile.name.split('.').pop() || 'jpg',
+                size: coverFile.metadata?.size || 0,
+                lastModified: new Date(coverFile.updated_at || coverFile.created_at || Date.now()).getTime()
               })
             }
           }
