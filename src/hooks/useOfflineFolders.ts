@@ -63,7 +63,7 @@ export const useOfflineFolders = () => {
       // Offline with no cached data
       return [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - reduce unnecessary refetches
+    staleTime: 2 * 60 * 1000, // 2 minutes - standardized cache duration
     refetchOnMount: false, // Rely on cache first
     refetchOnWindowFocus: false, // Background service handles this
     refetchInterval: false, // Disable automatic refetching

@@ -59,7 +59,7 @@ export const useOfflineDocuments = (folderId?: string) => {
       return [];
     },
     enabled: !!folderId,
-    staleTime: 1000, // Always consider stale to allow background updates
+    staleTime: 2 * 60 * 1000, // 2 minutes - standardized cache duration
     refetchOnMount: false, // Don't refetch on mount - rely on cache
     refetchOnWindowFocus: false, // Background service handles this
   });

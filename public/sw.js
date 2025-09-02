@@ -3,11 +3,16 @@ const BUILD_TIMESTAMP = Date.now();
 const CACHE_NAME = `pdf-navigator-v${BUILD_TIMESTAMP}`;
 const STATIC_CACHE_NAME = `pdf-navigator-static-v${BUILD_TIMESTAMP}`;
 
-// Only preload essential files (removed default.mp4 as it no longer exists)
+// Critical assets for offline-first experience
 const STATIC_ASSETS = [
   '/',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192x192.png',
+  '/icon-512x512.png'
 ];
+
+// Cache size limits (in MB)
+const CACHE_SIZE_LIMIT = 50; // 50MB total cache limit
 
 // Install event - cache only essential assets
 self.addEventListener('install', (event) => {
@@ -101,7 +106,7 @@ self.addEventListener('fetch', (event) => {
         })
     );
   } else if (url.pathname.startsWith('/assets/')) {
-    // For built assets (CSS, JS), cache first strategy
+    // For built assets (CSS, JS), cache first strategy with size management
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
@@ -109,9 +114,10 @@ self.addEventListener('fetch', (event) => {
         }
         
         return fetch(request).then((response) => {
-          // Cache the asset for future use
+          // Cache the asset for future use with size check
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
+          caches.open(CACHE_NAME).then(async (cache) => {
+            await manageCacheSize(cache);
             cache.put(request, responseClone);
           });
           return response;
@@ -215,6 +221,32 @@ self.addEventListener('notificationclick', (event) => {
     );
   }
 });
+
+// Cache management helper
+async function manageCacheSize(cache) {
+  try {
+    const keys = await cache.keys();
+    let totalSize = 0;
+    
+    for (const key of keys) {
+      const response = await cache.match(key);
+      if (response) {
+        const arrayBuffer = await response.clone().arrayBuffer();
+        totalSize += arrayBuffer.byteLength;
+      }
+    }
+    
+    // If cache exceeds limit, remove oldest items (basic LRU)
+    if (totalSize > CACHE_SIZE_LIMIT * 1024 * 1024) {
+      const itemsToDelete = Math.ceil(keys.length * 0.2); // Remove 20% of items
+      for (let i = 0; i < itemsToDelete; i++) {
+        await cache.delete(keys[i]);
+      }
+    }
+  } catch (error) {
+    console.error('Cache management error:', error);
+  }
+}
 
 // Handle messages from the main thread
 self.addEventListener('message', (event) => {

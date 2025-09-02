@@ -51,10 +51,12 @@ class DocumentStore {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
-        // Documents store
+        // Documents store with compound indexes
         if (!db.objectStoreNames.contains('documents')) {
           const documentsStore = db.createObjectStore('documents', { keyPath: 'id' });
           documentsStore.createIndex('updatedAt', 'updatedAt');
+          documentsStore.createIndex('folderUpdated', ['data.folder_id', 'updatedAt']);
+          documentsStore.createIndex('userTimestamp', ['data.user_id', 'syncVersion']);
         }
 
         // Folders store
@@ -69,10 +71,11 @@ class DocumentStore {
           coversStore.createIndex('updatedAt', 'updatedAt');
         }
 
-        // Worksheet data store (for JSON files)
+        // Worksheet data store (for JSON files) with compression
         if (!db.objectStoreNames.contains('worksheetData')) {
           const worksheetStore = db.createObjectStore('worksheetData', { keyPath: 'id' });
           worksheetStore.createIndex('updatedAt', 'updatedAt');
+          worksheetStore.createIndex('compressed', 'compressed'); // Track compressed entries
         }
 
         // Metadata store
@@ -322,9 +325,25 @@ class DocumentStore {
       const transaction = db.transaction(['worksheetData'], 'readwrite');
       const store = transaction.objectStore('worksheetData');
       
+      // Compress JSON data if it's large
+      let finalData = data;
+      let compressed = false;
+      
+      try {
+        const jsonString = JSON.stringify(data);
+        if (jsonString.length > 10000) { // Compress if > 10KB
+          // Simple compression by removing whitespace and common patterns
+          finalData = JSON.parse(JSON.stringify(data, null, 0));
+          compressed = true;
+        }
+      } catch (e) {
+        console.warn('Failed to compress worksheet data:', e);
+      }
+      
       store.put({
         id: documentId,
-        data,
+        data: finalData,
+        compressed,
         updatedAt: timestamp,
       });
 

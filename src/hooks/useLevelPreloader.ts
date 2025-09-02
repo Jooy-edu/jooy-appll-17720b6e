@@ -222,7 +222,7 @@ export const useLevelPreloader = () => {
       return needsPreload;
     },
     enabled: activatedLevels.length > 0,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes - standardized cache duration
   });
 
   return {
