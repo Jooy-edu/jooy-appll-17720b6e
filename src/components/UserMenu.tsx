@@ -11,11 +11,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, BookOpen, RefreshCw } from 'lucide-react';
+import { useManualUpdateCheck } from '@/components/AppUpdatePrompt';
 
 const UserMenu: React.FC = () => {
   const { user, profile, signOut, loading } = useAuth();
   const [isInitialRender, setIsInitialRender] = useState(true);
+  const { checkForUpdates, checking } = useManualUpdateCheck();
 
   const getInitials = (name: string) => {
     return name
@@ -93,10 +95,24 @@ const UserMenu: React.FC = () => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
+              <Link to="/" className="cursor-pointer">
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span>Library</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link to="/profile" className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Profile Settings</span>
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={checkForUpdates} 
+              disabled={checking}
+              className="cursor-pointer"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+              <span>{checking ? 'Checking...' : 'Check for Updates'}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
@@ -141,10 +157,24 @@ const UserMenu: React.FC = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/" className="cursor-pointer">
+            <BookOpen className="mr-2 h-4 w-4" />
+            <span>Library</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
             <span>Profile Settings</span>
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={checkForUpdates} 
+          disabled={checking}
+          className="cursor-pointer"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+          <span>{checking ? 'Checking...' : 'Check for Updates'}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">

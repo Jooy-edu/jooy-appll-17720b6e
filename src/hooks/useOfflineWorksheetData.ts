@@ -12,67 +12,58 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
   return useQuery({
     queryKey: ['worksheet', worksheetId],
     queryFn: async (): Promise<WorksheetDataResponse> => {
-      console.log(`[useOfflineWorksheetData] Fetching worksheet data for: ${worksheetId}`);
-      
+      // Try cache first (offline-first approach)
       try {
-        // Try to fetch from server first (online-first approach)
-        console.log(`[useOfflineWorksheetData] Attempting to fetch from server...`);
+        const cachedData = await documentStore.getWorksheetData(worksheetId);
+        if (cachedData) {
+          // Generate PDF URL for cached data
+          const pdfUrl = `/pdfs/${worksheetId}.pdf`;
+          return {
+            meta: cachedData,
+            pdfUrl
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to get cached worksheet data:', error);
+      }
+
+      // Fallback to Supabase function when online or cache miss
+      try {
         const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
           body: { worksheetId },
         });
 
         if (error) {
-          console.error(`[useOfflineWorksheetData] Server error:`, error);
-          throw new Error(error.message);
+          throw new Error(`Failed to fetch worksheet: ${error.message}`);
         }
 
-        if (data?.meta && data?.pdfUrl) {
-          console.log(`[useOfflineWorksheetData] Server data received, caching for offline use`);
-          // Cache the data for offline use when successfully fetched online
-          try {
-            await documentStore.saveWorksheetData(worksheetId, data.meta, Date.now());
-          } catch (cacheError) {
-            console.warn('Failed to cache worksheet data:', cacheError);
-          }
-          
-          return {
-            meta: data.meta,
-            pdfUrl: data.pdfUrl
-          };
+        if (!data?.meta || !data?.pdfUrl) {
+          throw new Error('Invalid response from worksheet data function');
         }
-        
-        throw new Error('Invalid response from server');
-      } catch (error) {
-        console.warn(`[useOfflineWorksheetData] Server fetch failed, trying offline cache...`, error);
-        
-        // Try to get cached data only if server fetch failed
+
+        // Cache the fetched data for future offline use
         try {
-          const cachedData = await documentStore.getWorksheetData(worksheetId);
-          if (cachedData) {
-            console.log(`[useOfflineWorksheetData] Using cached data for offline access`);
-            const pdfUrl = `/pdfs/${worksheetId}.pdf`;
-            return {
-              meta: cachedData,
-              pdfUrl
-            };
-          }
+          await documentStore.saveWorksheetData(worksheetId, data.meta, Date.now());
         } catch (cacheError) {
-          console.warn('Failed to get cached worksheet data:', cacheError);
+          console.warn('Failed to cache worksheet data:', cacheError);
         }
-        
-        // No cached data available
-        console.error(`[useOfflineWorksheetData] No cached data available for worksheet: ${worksheetId}`);
-        throw new Error('ورقة عمل غير موجودة - يجب الاتصال بالإنترنت لتحميل المحتوى أولاً');
+
+        return {
+          meta: data.meta,
+          pdfUrl: data.pdfUrl
+        };
+      } catch (supabaseError) {
+        throw new Error(`Document "${worksheetId}" not found. Please check if the QR code is valid or the document exists in the database.`);
       }
     },
     enabled: !!worksheetId,
-    staleTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 30 * 60 * 1000, // 30 minutes - worksheets change less frequently
     retry: (failureCount, error) => {
-      // Don't retry if it's a "not found" error
-      if (error.message.includes('ورقة عمل غير موجودة') || error.message.includes('404')) {
+      // Don't retry if it's a 404
+      if (error.message.includes('404')) {
         return false;
       }
-      return failureCount < 2;
+      return failureCount < 3;
     }
   });
 };
