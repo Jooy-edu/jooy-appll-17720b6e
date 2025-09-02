@@ -71,22 +71,17 @@ export const useLevelPreloader = () => {
       completed += documents.length;
       updateProgress(folderId, { completed });
 
-      // Preload covers
+      // Preload covers for all documents in this level using blob caching
       for (const doc of documents) {
         try {
-          const existingCover = await documentStore.getCover(doc.id);
-          if (!existingCover) {
-            // Try to fetch cover from storage
-            const { data: coverUrl } = await supabase.storage
-              .from('covers')
-              .createSignedUrl(`${doc.id}.jpg`, 86400); // 24 hours
-
-            if (coverUrl?.signedUrl) {
-              await documentStore.saveCover(doc.id, coverUrl.signedUrl);
-            }
+          const { findAndCacheCover } = await import('@/utils/coverBlobCache');
+          const coverResult = await findAndCacheCover(doc.id);
+          
+          if (coverResult.success) {
+            console.log(`Cached cover blob for document ${doc.id}`);
           }
         } catch (error) {
-          console.warn(`Failed to preload cover for ${doc.id}:`, error);
+          console.error(`Failed to cache cover for document ${doc.id}:`, error);
           skipped++;
         }
         

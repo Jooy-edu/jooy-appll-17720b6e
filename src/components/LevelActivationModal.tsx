@@ -38,7 +38,7 @@ export const LevelActivationModal: React.FC<LevelActivationModalProps> = ({
   
   const { activateLevel, isActivating, validateCodeFormat, formatCode } = useLevelActivation();
   const { data: activatedLevelIds = [], isLoading: loadingActivatedLevels } = useUserActivatedLevels();
-  const { preloadLevel } = useLevelPreloader();
+  const { preloadAllActivatedLevels } = useLevelPreloader();
 
   // Filter out already activated levels
   const availableFolders = folders.filter(folder => !activatedLevelIds.includes(folder.id));
@@ -70,14 +70,18 @@ export const LevelActivationModal: React.FC<LevelActivationModalProps> = ({
       return;
     }
 
+    // Fix duplicate result.success handling
     try {
       const result = await activateLevel(activationCode, selectedFolderId);
       
       if (result.success) {
         const selectedFolder = folders.find(f => f.id === selectedFolderId);
         if (selectedFolder) {
-          // Trigger preloading after successful activation
-          preloadLevel(selectedFolderId, selectedFolder.name);
+          // Trigger comprehensive preloading for all activated levels
+          setTimeout(() => {
+            preloadAllActivatedLevels();
+          }, 100); // Small delay to ensure activation is processed
+          
           onSuccess(selectedFolderId, selectedFolder.name);
         }
         onClose();
