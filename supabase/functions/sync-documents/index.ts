@@ -37,13 +37,13 @@ serve(async (req) => {
       throw new Error('Authentication failed')
     }
 
-    // Fetch documents created since the given timestamp
+    // Fetch documents updated since the given timestamp
     const { data: documents, error: docsError } = await supabaseClient
       .from('documents')
       .select('*')
-      .gte('created_at', sinceDate)
+      .or(`updated_at.gte.${sinceDate},created_at.gte.${sinceDate}`)
       .or(`user_id.eq.${user.id},is_private.eq.false`)
-      .order('created_at', { ascending: true })
+      .order('updated_at', { ascending: true })
 
     if (docsError) {
       throw new Error(`Failed to fetch documents: ${docsError.message}`)
@@ -78,8 +78,7 @@ serve(async (req) => {
               covers.push({
                 documentId: doc.id,
                 url: signedUrlData.signedUrl,
-                updatedAt: new Date(coverFile.updated_at || coverFile.created_at || Date.now()).getTime(),
-                extension: coverFile.name.split('.').pop() || 'jpg'
+                updatedAt: new Date(coverFile.updated_at || coverFile.created_at).getTime()
               })
             }
           }
@@ -87,8 +86,14 @@ serve(async (req) => {
       }
     }
 
-    // Since there's no soft delete tracking, tombstones will be empty for now
-    const tombstones: string[] = []
+    // Get tombstones for deleted documents and covers
+    const { data: deletedDocs } = await supabaseClient
+      .from('documents')
+      .select('id')
+      .eq('is_deleted', true)
+      .gte('updated_at', sinceDate)
+
+    const tombstones: string[] = deletedDocs?.map(doc => doc.id) || []
     
     // Check for deleted covers by comparing storage with database
     const deletedCovers: string[] = []
