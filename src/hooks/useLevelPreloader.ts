@@ -103,8 +103,10 @@ export const useLevelPreloader = () => {
             const response = await fetch(jsonPath);
             if (response.ok) {
               const jsonData = await response.json();
-              // Cache JSON data in documentStore
-              await documentStore.saveWorksheetData(folderId, jsonData, Date.now());
+              // Cache JSON data for each document in this folder (not the folder itself)
+              for (const doc of documents) {
+                await documentStore.saveWorksheetData(doc.id, jsonData, Date.now());
+              }
               break; // Found the JSON file, no need to try others
             }
           } catch (error) {

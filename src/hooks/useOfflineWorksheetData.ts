@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { documentStore } from '@/utils/documentStore';
 import type { WorksheetMetadata } from '@/types/worksheet';
 
 interface WorksheetDataResponse {
@@ -11,6 +12,22 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
   return useQuery({
     queryKey: ['worksheet', worksheetId],
     queryFn: async (): Promise<WorksheetDataResponse> => {
+      // Try cache first (offline-first approach)
+      try {
+        const cachedData = await documentStore.getWorksheetData(worksheetId);
+        if (cachedData) {
+          // Generate PDF URL for cached data
+          const pdfUrl = `/pdfs/${worksheetId}.pdf`;
+          return {
+            meta: cachedData,
+            pdfUrl
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to get cached worksheet data:', error);
+      }
+
+      // Fallback to Supabase function when online or cache miss
       try {
         const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
           body: { worksheetId },
@@ -22,6 +39,13 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
 
         if (!data?.meta || !data?.pdfUrl) {
           throw new Error('Invalid response from worksheet data function');
+        }
+
+        // Cache the fetched data for future offline use
+        try {
+          await documentStore.saveWorksheetData(worksheetId, data.meta, Date.now());
+        } catch (cacheError) {
+          console.warn('Failed to cache worksheet data:', cacheError);
         }
 
         return {
