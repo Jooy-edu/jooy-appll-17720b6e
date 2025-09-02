@@ -2,6 +2,8 @@ import { QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { documentStore } from './documentStore';
 import { getOfflineUser } from './offlineAuth';
+import { networkService } from './networkService';
+import { offlineActionQueue } from './offlineActionQueue';
 
 // Import QueryClient from a separate module to avoid circular imports
 let queryClient: QueryClient;
@@ -24,6 +26,9 @@ class BackgroundSyncService {
   private syncInProgress = false;
   private lastSyncAttempt = 0;
   private minSyncInterval = 30000; // 30 seconds minimum between syncs
+  private batchQueue: Array<{ type: string; id: string; priority: 'high' | 'medium' | 'low' }> = [];
+  private batchProcessingTimer: NodeJS.Timeout | null = null;
+  private readonly batchDelay = 2000; // 2 seconds batch delay
 
   constructor() {
     this.setupEventListeners();
@@ -71,7 +76,16 @@ class BackgroundSyncService {
   }
 
   async syncDocuments(force = false): Promise<boolean> {
-    if (!this.isOnline && !force) return false;
+    if (!this.isOnline && !force) {
+      // Queue for later when online
+      offlineActionQueue.enqueue({
+        type: 'sync',
+        payload: { syncType: 'documents' },
+        priority: 'medium',
+      });
+      return false;
+    }
+    
     if (this.syncInProgress) return false;
     
     const now = Date.now();
@@ -84,15 +98,23 @@ class BackgroundSyncService {
 
     try {
       const lastSync = await documentStore.getLastSyncTimestamp();
+      const settings = networkService.getOptimalSettings();
       
-      // Call our sync endpoint
-      const { data, error } = await supabase.functions.invoke('sync-documents', {
-        body: { since: lastSync },
-      });
+      // Use enhanced network service for delta sync
+      const response = await networkService.supabaseWithRetry('sync-documents', 
+        { since: lastSync },
+        {
+          timeout: settings.timeout,
+          retryConfig: settings.retryConfig,
+          conditionalRequest: true,
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Sync failed: ${response.status} ${response.statusText}`);
+      }
 
-      const syncData: SyncResponse = data;
+      const syncData: SyncResponse = await response.json();
       
       if (syncData.documents?.length > 0) {
         // Save new/updated documents
@@ -103,24 +125,8 @@ class BackgroundSyncService {
       }
 
       if (syncData.covers?.length > 0) {
-        // Enhanced cover sync with change detection
-        const { downloadAndCacheCover, updateCoverIfChanged } = await import('@/utils/coverBlobCache');
-        
-        for (const cover of syncData.covers) {
-          try {
-            if (typeof cover === 'object' && cover.documentId) {
-              // Check if cover needs updating based on timestamp
-              if (cover.updatedAt) {
-                await updateCoverIfChanged(cover.documentId, cover.updatedAt);
-              } else {
-                // Fallback to regular download if no timestamp
-                await downloadAndCacheCover(cover.documentId, cover.extension || 'jpg');
-              }
-            }
-          } catch (error) {
-            console.warn(`Failed to sync cover for ${cover.documentId}:`, error);
-          }
-        }
+        // Batch process covers for efficiency
+        await this.batchProcessCovers(syncData.covers);
         
         // Invalidate cover-related queries
         queryClient?.invalidateQueries({ queryKey: ['covers'] });
@@ -238,17 +244,82 @@ class BackgroundSyncService {
     }
   }
 
+
+  // Batch processing for covers to reduce network overhead
+  private async batchProcessCovers(covers: any[]): Promise<void> {
+    const settings = networkService.getOptimalSettings();
+    const batchSize = settings.batchSize;
+    
+    for (let i = 0; i < covers.length; i += batchSize) {
+      const batch = covers.slice(i, i + batchSize);
+      
+      await Promise.allSettled(
+        batch.map(async (cover) => {
+          try {
+            if (typeof cover === 'object' && cover.documentId) {
+              // Check if cover needs updating based on timestamp
+              if (cover.updatedAt) {
+                const { updateCoverIfChanged } = await import('@/utils/coverBlobCache');
+                await updateCoverIfChanged(cover.documentId, cover.updatedAt);
+              } else {
+                // Queue for background download
+                offlineActionQueue.enqueue({
+                  type: 'download',
+                  payload: {
+                    type: 'cover',
+                    documentId: cover.documentId,
+                    url: `/api/covers/${cover.documentId}`,
+                  },
+                  priority: 'low',
+                });
+              }
+            }
+          } catch (error) {
+            console.warn(`Failed to sync cover for ${cover.documentId}:`, error);
+          }
+        })
+      );
+      
+      // Small delay between batches to prevent overwhelming the network
+      if (i + batchSize < covers.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+  }
+
+  // Enhanced manual sync with better error handling
   async manualSync(): Promise<{ success: boolean; message: string }> {
     if (!this.isOnline) {
-      return { success: false, message: 'No internet connection' };
+      const queueStatus = offlineActionQueue.getQueueStatus();
+      return { 
+        success: false, 
+        message: `No internet connection. ${queueStatus.pending} actions queued for when online.` 
+      };
     }
 
     try {
-      const success = await this.syncDocuments(true);
-      return {
-        success,
-        message: success ? 'Documents synced successfully' : 'No new updates available'
-      };
+      const [docsSuccess, foldersSuccess, levelsSuccess] = await Promise.allSettled([
+        this.syncDocuments(true),
+        this.syncFolders(true),
+        this.syncLevelActivations(true),
+      ]);
+
+      const results = [
+        { name: 'Documents', success: docsSuccess.status === 'fulfilled' && docsSuccess.value },
+        { name: 'Folders', success: foldersSuccess.status === 'fulfilled' && foldersSuccess.value },
+        { name: 'Levels', success: levelsSuccess.status === 'fulfilled' && levelsSuccess.value },
+      ];
+
+      const successful = results.filter(r => r.success).length;
+      const total = results.length;
+
+      if (successful === total) {
+        return { success: true, message: 'All data synced successfully' };
+      } else if (successful > 0) {
+        return { success: true, message: `Partial sync: ${successful}/${total} completed` };
+      } else {
+        return { success: false, message: 'Sync failed for all data types' };
+      }
     } catch (error) {
       return {
         success: false,
@@ -263,6 +334,14 @@ class BackgroundSyncService {
 
   isSyncing(): boolean {
     return this.syncInProgress;
+  }
+
+  getNetworkQuality() {
+    return networkService.getConnectionQuality();
+  }
+
+  getQueuedActionsCount(): number {
+    return offlineActionQueue.getQueueStatus().pending;
   }
 }
 

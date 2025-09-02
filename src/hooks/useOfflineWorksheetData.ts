@@ -29,13 +29,23 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
 
       // Fallback to Supabase function when online or cache miss
       try {
-        const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
-          body: { worksheetId },
-        });
+        const { networkService } = await import('@/utils/networkService');
+        const settings = networkService.getOptimalSettings();
+        
+        const response = await networkService.supabaseWithRetry('get-worksheet-data', 
+          { worksheetId },
+          {
+            timeout: settings.timeout,
+            retryConfig: settings.retryConfig,
+            conditionalRequest: true,
+          }
+        );
 
-        if (error) {
-          throw new Error(`Failed to fetch worksheet: ${error.message}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch worksheet: ${response.status} ${response.statusText}`);
         }
+
+        const data = await response.json();
 
         if (!data?.meta || !data?.pdfUrl) {
           throw new Error('Invalid response from worksheet data function');
@@ -61,14 +71,16 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
       }
     },
     enabled: !!worksheetId,
-    staleTime: 30 * 60 * 1000, // 30 minutes - worksheets change less frequently
+    staleTime: 2 * 60 * 1000, // 2 minutes - standardized cache duration
     retry: (failureCount, error) => {
-      // Don't retry if it's a 404
-      if (error.message.includes('404')) {
+      // Don't retry if it's a 404 or network is offline
+      if (error.message.includes('404') || error.message.includes('Network unavailable')) {
         return false;
       }
-      return failureCount < 3;
-    }
+      // Use exponential backoff for retries
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 10000)
   });
 };
 
@@ -95,6 +107,15 @@ export const useOfflineRegionsByPage = (worksheetId: string, pageNumber: number)
       }
     },
     enabled: !!worksheetId && !!pageNumber,
-    staleTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes - standardized cache duration
+    retry: (failureCount, error) => {
+      // Don't retry if it's a 404 or network is offline
+      if (error.message.includes('404') || error.message.includes('Network unavailable')) {
+        return false;
+      }
+      // Use exponential backoff for retries
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 10000)
   });
 };
