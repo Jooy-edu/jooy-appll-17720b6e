@@ -5,6 +5,13 @@ interface CachedDocument {
   syncVersion: number;
 }
 
+interface CachedFolder {
+  id: string;
+  data: any;
+  updatedAt: number;
+  syncVersion: number;
+}
+
 interface DocumentStoreState {
   documents: Record<string, CachedDocument>;
   covers: Record<string, { url: string; updatedAt: number }>;
@@ -36,10 +43,22 @@ class DocumentStore {
           documentsStore.createIndex('updatedAt', 'updatedAt');
         }
 
+        // Folders store
+        if (!db.objectStoreNames.contains('folders')) {
+          const foldersStore = db.createObjectStore('folders', { keyPath: 'id' });
+          foldersStore.createIndex('updatedAt', 'updatedAt');
+        }
+
         // Covers store
         if (!db.objectStoreNames.contains('covers')) {
           const coversStore = db.createObjectStore('covers', { keyPath: 'id' });
           coversStore.createIndex('updatedAt', 'updatedAt');
+        }
+
+        // Worksheet data store (for JSON files)
+        if (!db.objectStoreNames.contains('worksheetData')) {
+          const worksheetStore = db.createObjectStore('worksheetData', { keyPath: 'id' });
+          worksheetStore.createIndex('updatedAt', 'updatedAt');
         }
 
         // Metadata store
@@ -160,11 +179,88 @@ class DocumentStore {
     });
   }
 
+  async getFolders(): Promise<CachedFolder[]> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['folders'], 'readonly');
+      const store = transaction.objectStore('folders');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        resolve(request.result || []);
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveFolders(folders: any[], timestamp: number): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['folders', 'metadata'], 'readwrite');
+      
+      // Save folders
+      const foldersStore = transaction.objectStore('folders');
+      folders.forEach(folder => {
+        const cachedFolder: CachedFolder = {
+          id: folder.id,
+          data: folder,
+          updatedAt: new Date(folder.updated_at || folder.created_at).getTime(),
+          syncVersion: timestamp,
+        };
+        foldersStore.put(cachedFolder);
+      });
+
+      // Update last folder sync timestamp
+      const metadataStore = transaction.objectStore('metadata');
+      metadataStore.put({ key: 'lastFolderSyncTimestamp', value: timestamp });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async saveWorksheetData(folderId: string, data: any, timestamp: number): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['worksheetData'], 'readwrite');
+      const store = transaction.objectStore('worksheetData');
+      
+      store.put({
+        id: folderId,
+        data,
+        updatedAt: timestamp,
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async getWorksheetData(folderId: string): Promise<any | null> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['worksheetData'], 'readonly');
+      const store = transaction.objectStore('worksheetData');
+      const request = store.get(folderId);
+
+      request.onsuccess = () => {
+        resolve(request.result?.data || null);
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   async clearOldData(olderThan: number): Promise<void> {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['documents', 'covers'], 'readwrite');
+      const transaction = db.transaction(['documents', 'folders', 'covers', 'worksheetData'], 'readwrite');
       
       // Clear old documents
       const documentsStore = transaction.objectStore('documents');
@@ -178,11 +274,35 @@ class DocumentStore {
         }
       };
 
+      // Clear old folders
+      const foldersStore = transaction.objectStore('folders');
+      const foldersIndex = foldersStore.index('updatedAt');
+      const foldersRange = IDBKeyRange.upperBound(olderThan);
+      foldersIndex.openCursor(foldersRange).onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
       // Clear old covers
       const coversStore = transaction.objectStore('covers');
       const coversIndex = coversStore.index('updatedAt');
       const coversRange = IDBKeyRange.upperBound(olderThan);
       coversIndex.openCursor(coversRange).onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
+      // Clear old worksheet data
+      const worksheetStore = transaction.objectStore('worksheetData');
+      const worksheetIndex = worksheetStore.index('updatedAt');
+      const worksheetRange = IDBKeyRange.upperBound(olderThan);
+      worksheetIndex.openCursor(worksheetRange).onsuccess = (event) => {
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {
           cursor.delete();

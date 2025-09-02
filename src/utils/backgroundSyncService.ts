@@ -41,6 +41,7 @@ class BackgroundSyncService {
     window.addEventListener('online', () => {
       this.isOnline = true;
       this.syncDocuments();
+      this.syncFolders();
     });
 
     window.addEventListener('offline', () => {
@@ -51,6 +52,7 @@ class BackgroundSyncService {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && this.isOnline) {
         this.syncDocuments();
+        this.syncFolders();
       }
     });
 
@@ -58,6 +60,7 @@ class BackgroundSyncService {
     window.addEventListener('focus', () => {
       if (this.isOnline) {
         this.syncDocuments();
+        this.syncFolders();
       }
     });
   }
@@ -120,6 +123,48 @@ class BackgroundSyncService {
       return false;
     } finally {
       this.syncInProgress = false;
+    }
+  }
+
+  async syncFolders(force = false): Promise<boolean> {
+    if (!this.isOnline && !force) return false;
+    if (this.syncInProgress) return false;
+
+    try {
+      // Get current user first
+      const { data: user } = await supabase.auth.getUser();
+      
+      // Fetch all folders with their documents
+      const { data, error } = await supabase
+        .from('folders')
+        .select(`
+          *,
+          documents(id, is_private, user_id)
+        `)
+        .order('name');
+      
+      if (error) throw error;
+      
+      // Filter folders: user's own folders OR folders with public documents
+      const filteredData = data?.filter(folder => 
+        folder.user_id === user.user?.id ||
+        folder.documents?.some((doc: any) => !doc.is_private)
+      ) || [];
+      
+      // Save folders to cache
+      if (filteredData.length > 0) {
+        await documentStore.saveFolders(filteredData, Date.now());
+      }
+
+      // Invalidate folder queries
+      queryClient?.invalidateQueries({ queryKey: ['folders'] });
+
+      console.log(`Folder sync completed: ${filteredData.length} folders`);
+      return true;
+
+    } catch (error) {
+      console.error('Folder sync failed:', error);
+      return false;
     }
   }
 

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Lock } from 'lucide-react';
 import { useLevelActivation } from '@/hooks/useLevelActivation';
 import { useUserActivatedLevels } from '@/hooks/useUserActivatedLevels';
+import { useLevelPreloader } from '@/hooks/useLevelPreloader';
 import { useTranslation } from 'react-i18next';
 
 interface Folder {
@@ -37,6 +38,7 @@ export const LevelActivationModal: React.FC<LevelActivationModalProps> = ({
   
   const { activateLevel, isActivating, validateCodeFormat, formatCode } = useLevelActivation();
   const { data: activatedLevelIds = [], isLoading: loadingActivatedLevels } = useUserActivatedLevels();
+  const { preloadLevel } = useLevelPreloader();
 
   // Filter out already activated levels
   const availableFolders = folders.filter(folder => !activatedLevelIds.includes(folder.id));
@@ -74,6 +76,8 @@ export const LevelActivationModal: React.FC<LevelActivationModalProps> = ({
       if (result.success) {
         const selectedFolder = folders.find(f => f.id === selectedFolderId);
         if (selectedFolder) {
+          // Trigger preloading after successful activation
+          preloadLevel(selectedFolderId, selectedFolder.name);
           onSuccess(selectedFolderId, selectedFolder.name);
         }
         onClose();
