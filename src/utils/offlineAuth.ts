@@ -5,6 +5,7 @@ export interface OfflineUser {
   id: string;
   email: string | null;
   user_metadata?: any;
+  profile?: any;
 }
 
 /**
@@ -36,7 +37,8 @@ export const getOfflineUser = async (): Promise<{ user: OfflineUser | null; erro
         user: {
           id: cachedUser.id,
           email: cachedUser.email,
-          user_metadata: cachedUser.user_metadata
+          user_metadata: cachedUser.user_metadata,
+          profile: cachedUser.profile
         }, 
         error: null 
       };
@@ -54,7 +56,8 @@ export const getOfflineUser = async (): Promise<{ user: OfflineUser | null; erro
           user: {
             id: cachedUser.id,
             email: cachedUser.email,
-            user_metadata: cachedUser.user_metadata
+            user_metadata: cachedUser.user_metadata,
+            profile: cachedUser.profile
           }, 
           error: null 
         };

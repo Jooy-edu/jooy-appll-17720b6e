@@ -59,12 +59,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Profile fetch error:', error);
+        
+        // Try to get cached profile when online fetch fails
+        const cachedUser = await documentStore.getCachedUser();
+        if (cachedUser?.profile) {
+          console.log('🔍 [AUTH] Using cached profile data due to fetch error');
+          return cachedUser.profile;
+        }
+        
         return null;
       }
       
       return data;
     } catch (error: any) {
       console.error('Profile fetch failed:', error);
+      
+      // Fallback to cached profile when offline
+      try {
+        const cachedUser = await documentStore.getCachedUser();
+        if (cachedUser?.profile) {
+          console.log('🔍 [AUTH] Using cached profile data (offline fallback)');
+          return cachedUser.profile;
+        }
+      } catch (cacheError) {
+        console.error('Failed to get cached profile:', cacheError);
+      }
+      
       return null;
     }
   };
@@ -107,10 +127,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         console.log('🔍 [AUTH] User found, fetching profile');
         try {
-          // Cache user session for offline use
-          await documentStore.saveUserSession(session.user);
-          
           const profileData = await fetchProfile(session.user.id);
+          
+          // Cache user session with profile for offline use
+          await documentStore.saveUserSession(session.user, profileData);
           if (mounted) {
             setProfile(profileData);
             console.log('🔍 [AUTH] Profile set:', !!profileData);
@@ -169,9 +189,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           console.log('🔍 [AUTH] User authenticated, fetching profile');
           
-          // Cache user session for offline use
-          documentStore.saveUserSession(session.user).catch(console.error);
-          
           // Don't block the auth state change on profile fetching
           Promise.all([
             fetchProfile(session.user.id),
@@ -181,6 +198,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (mounted) {
                 setProfile(profileData);
                 console.log('🔍 [AUTH] Profile updated:', !!profileData);
+                
+                // Cache user session with profile for offline use
+                documentStore.saveUserSession(session.user, profileData).catch(console.error);
               }
             })
             .catch((error) => {

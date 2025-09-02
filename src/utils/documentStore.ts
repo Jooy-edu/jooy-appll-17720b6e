@@ -16,6 +16,13 @@ interface CachedUser {
   id: string;
   email: string | null;
   user_metadata: any;
+  profile?: any;
+  updatedAt: number;
+}
+
+interface CachedLevelActivation {
+  id: string;
+  data: any;
   updatedAt: number;
 }
 
@@ -28,7 +35,7 @@ interface DocumentStoreState {
 
 class DocumentStore {
   private dbName = 'JooyOfflineStore';
-  private version = 2; // Increment version for new userSession store
+  private version = 3; // Increment version for new levelActivations store
   private db: IDBDatabase | null = null;
 
   async initialize(): Promise<void> {
@@ -76,6 +83,12 @@ class DocumentStore {
         // User session store
         if (!db.objectStoreNames.contains('userSession')) {
           db.createObjectStore('userSession', { keyPath: 'key' });
+        }
+
+        // Level activations store
+        if (!db.objectStoreNames.contains('levelActivations')) {
+          const activationsStore = db.createObjectStore('levelActivations', { keyPath: 'id' });
+          activationsStore.createIndex('updatedAt', 'updatedAt');
         }
       };
     });
@@ -272,7 +285,7 @@ class DocumentStore {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['documents', 'folders', 'covers', 'worksheetData'], 'readwrite');
+      const transaction = db.transaction(['documents', 'folders', 'covers', 'worksheetData', 'levelActivations'], 'readwrite');
       
       // Clear old documents
       const documentsStore = transaction.objectStore('documents');
@@ -322,12 +335,24 @@ class DocumentStore {
         }
       };
 
+      // Clear old level activations
+      const activationsStore = transaction.objectStore('levelActivations');
+      const activationsIndex = activationsStore.index('updatedAt');
+      const activationsRange = IDBKeyRange.upperBound(olderThan);
+      activationsIndex.openCursor(activationsRange).onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
     });
   }
 
-  async saveUserSession(user: any): Promise<void> {
+  async saveUserSession(user: any, profile?: any): Promise<void> {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
@@ -338,6 +363,7 @@ class DocumentStore {
         id: user.id,
         email: user.email,
         user_metadata: user.user_metadata,
+        profile: profile,
         updatedAt: Date.now(),
       };
 
@@ -371,13 +397,68 @@ class DocumentStore {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['userSession'], 'readwrite');
-      const store = transaction.objectStore('userSession');
+      const transaction = db.transaction(['userSession', 'levelActivations'], 'readwrite');
+      const userStore = transaction.objectStore('userSession');
+      const activationsStore = transaction.objectStore('levelActivations');
       
-      store.delete('currentUser');
+      userStore.delete('currentUser');
+      activationsStore.clear(); // Clear all level activations on logout
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async saveLevelActivations(activations: any[]): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['levelActivations'], 'readwrite');
+      const store = transaction.objectStore('levelActivations');
+      
+      activations.forEach(activation => {
+        const cached: CachedLevelActivation = {
+          id: activation.folder_id,
+          data: activation,
+          updatedAt: Date.now(),
+        };
+        store.put(cached);
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async getLevelActivations(): Promise<CachedLevelActivation[]> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['levelActivations'], 'readonly');
+      const store = transaction.objectStore('levelActivations');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        resolve(request.result || []);
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getLevelActivation(folderId: string): Promise<CachedLevelActivation | null> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['levelActivations'], 'readonly');
+      const store = transaction.objectStore('levelActivations');
+      const request = store.get(folderId);
+
+      request.onsuccess = () => {
+        resolve(request.result || null);
+      };
+      
+      request.onerror = () => reject(request.error);
     });
   }
 }

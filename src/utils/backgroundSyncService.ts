@@ -43,6 +43,7 @@ class BackgroundSyncService {
       this.isOnline = true;
       this.syncDocuments();
       this.syncFolders();
+      this.syncLevelActivations();
     });
 
     window.addEventListener('offline', () => {
@@ -54,6 +55,7 @@ class BackgroundSyncService {
       if (document.visibilityState === 'visible' && this.isOnline) {
         this.syncDocuments();
         this.syncFolders();
+        this.syncLevelActivations();
       }
     });
 
@@ -62,6 +64,7 @@ class BackgroundSyncService {
       if (this.isOnline) {
         this.syncDocuments();
         this.syncFolders();
+        this.syncLevelActivations();
       }
     });
   }
@@ -165,6 +168,45 @@ class BackgroundSyncService {
 
     } catch (error) {
       console.error('Folder sync failed:', error);
+      return false;
+    }
+  }
+
+  async syncLevelActivations(force = false): Promise<boolean> {
+    if (!this.isOnline && !force) return false;
+    if (this.syncInProgress) return false;
+
+    try {
+      // Get current user first
+      const { user } = await getOfflineUser();
+      if (!user) return false;
+      
+      // Fetch user's level activations
+      const { data, error } = await supabase
+        .from('user_level_activations')
+        .select(`
+          *,
+          folders(id, name)
+        `)
+        .eq('user_id', user.id)
+        .order('activated_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Save activations to cache
+      if (data && data.length > 0) {
+        await documentStore.saveLevelActivations(data);
+      }
+
+      // Invalidate level access queries
+      queryClient?.invalidateQueries({ queryKey: ['level-access'] });
+      queryClient?.invalidateQueries({ queryKey: ['user-level-activations'] });
+
+      console.log(`Level activations sync completed: ${data?.length || 0} activations`);
+      return true;
+
+    } catch (error) {
+      console.error('Level activations sync failed:', error);
       return false;
     }
   }

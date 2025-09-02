@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { documentStore } from '@/utils/documentStore';
 
 interface LevelActivationResult {
   success: boolean;
@@ -96,6 +97,25 @@ export const useLevelActivation = () => {
       }
 
       await refreshProfile();
+
+      // Cache the new activation immediately for offline access
+      const newActivation = {
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        folder_id: folderId,
+        activation_code_id: codeData.id,
+        activated_at: new Date().toISOString(),
+        access_expires_at: accessExpiresAt.toISOString(),
+        access_duration_days: codeData.app_access_duration_days,
+      };
+
+      try {
+        await documentStore.saveLevelActivations([newActivation]);
+        console.log('✅ Cached level activation for offline access');
+      } catch (cacheError) {
+        console.warn('Failed to cache level activation:', cacheError);
+        // Don't fail the activation if caching fails
+      }
 
       // Invalidate level access cache to update UI immediately
       await queryClient.invalidateQueries({ queryKey: ['level-access'] });

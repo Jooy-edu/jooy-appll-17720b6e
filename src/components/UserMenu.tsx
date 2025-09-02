@@ -19,6 +19,19 @@ const UserMenu: React.FC = () => {
   const [isInitialRender, setIsInitialRender] = useState(true);
   const { checkForUpdates, checking } = useManualUpdateCheck();
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   // Prevent flash by ensuring we don't show login buttons on initial render
   useEffect(() => {
     setIsInitialRender(false);
@@ -53,25 +66,70 @@ const UserMenu: React.FC = () => {
 
   // Show loading state if user exists but profile is still loading
   if (user && !profile) {
+    // Try to show cached profile first before showing loading
+    const cachedDisplayName = user?.user_metadata?.full_name || user?.email?.split('@')[0];
+    
+    if (cachedDisplayName) {
+      // Show user menu with fallback data while profile loads
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-gradient-orange-magenta text-white text-xs">
+                  {getInitials(cachedDisplayName)}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">
+                  {cachedDisplayName}
+                </p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/" className="cursor-pointer">
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span>Library</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Profile Settings</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={checkForUpdates} 
+              disabled={checking}
+              className="cursor-pointer"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+              <span>{checking ? 'Checking...' : 'Check for Updates'}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Sign Out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+    
     return (
       <div className="flex items-center gap-2">
         <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
       </div>
     );
   }
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   return (
     <DropdownMenu>
