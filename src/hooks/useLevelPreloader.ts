@@ -94,27 +94,31 @@ export const useLevelPreloader = () => {
         updateProgress(folderId, { completed });
       }
 
-      // Check for JSON files to preload
-      try {
-        const jsonFiles = [`/data/${folderName}.json`, `/data/${folderId}.json`];
-        
-        for (const jsonPath of jsonFiles) {
-          try {
-            const response = await fetch(jsonPath);
-            if (response.ok) {
-              const jsonData = await response.json();
-              // Cache JSON data for each document in this folder (not the folder itself)
-              for (const doc of documents) {
-                await documentStore.saveWorksheetData(doc.id, jsonData, Date.now());
-              }
-              break; // Found the JSON file, no need to try others
-            }
-          } catch (error) {
-            console.warn(`Failed to preload JSON ${jsonPath}:`, error);
+      // Preload server JSON data for each document using get-worksheet-data
+      for (const doc of documents) {
+        try {
+          updateProgress(folderId, { 
+            completed, 
+            currentItem: `JSON data for ${doc.name || doc.id}` 
+          });
+          
+          // Use the get-worksheet-data edge function to fetch proper JSON data
+          const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
+            body: { worksheetId: doc.id },
+          });
+
+          if (!error && data?.meta) {
+            // Cache the actual server JSON data for this document
+            await documentStore.saveWorksheetData(doc.id, data.meta, Date.now());
+            console.log(`Cached server JSON data for document ${doc.id}`);
+          } else {
+            console.warn(`Failed to preload JSON for document ${doc.id}:`, error);
+            skipped++;
           }
+        } catch (error) {
+          console.warn(`Failed to preload JSON for document ${doc.id}:`, error);
+          skipped++;
         }
-      } catch (error) {
-        console.warn('Failed to preload JSON files:', error);
       }
 
       updateProgress(folderId, { status: 'complete' });

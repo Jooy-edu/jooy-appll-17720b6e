@@ -4,6 +4,7 @@ import { useLevelPreloader } from '@/hooks/useLevelPreloader';
 import { useUserActivatedLevels } from '@/hooks/useUserActivatedLevels';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useStartupPreloadCheck } from '@/hooks/useStartupPreloadCheck';
+import { usePreloadSession } from '@/hooks/usePreloadSession';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Download, CheckCircle, AlertCircle } from 'lucide-react';
@@ -22,6 +23,7 @@ export const PreloadManager: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: activatedLevels = [], isLoading: levelsLoading } = useUserActivatedLevels();
   const { startupCheckComplete, levelsNeedingPreload, allContentCached } = useStartupPreloadCheck();
+  const { isLevelCompleted, markLevelCompleted } = usePreloadSession();
   const { 
     preloadAllActivatedLevels, 
     preloadProgress, 
@@ -40,7 +42,7 @@ export const PreloadManager: React.FC = () => {
   // Debounced preload function to prevent rapid successive calls
   const [debouncedPreload] = useDebounce(preloadAllActivatedLevels, 1000);
 
-  // Single consolidated effect for managing preloading
+  // Single consolidated effect for managing preloading - FIXED: Removed unstable dependencies
   useEffect(() => {
     if (authLoading || levelsLoading || !user || isPreloading || !startupCheckComplete) return;
     
@@ -51,32 +53,18 @@ export const PreloadManager: React.FC = () => {
       return;
     }
     
+    // Check session-based completion to prevent duplicates
+    const uncompletedLevels = activatedLevels.filter(levelId => !isLevelCompleted(levelId));
+    
     // Initial preload trigger - only if there's content needing preload
-    if (levelsNeedingPreload.length > 0 && !hasTriggeredInitialPreload) {
-      console.log(`Triggering smart preload for ${levelsNeedingPreload.length}/${activatedLevels.length} levels`);
+    if (uncompletedLevels.length > 0 && !hasTriggeredInitialPreload) {
+      console.log(`Triggering smart preload for ${uncompletedLevels.length}/${activatedLevels.length} levels`);
       setShowPreloadUI(true);
       setHasTriggeredInitialPreload(true);
       debouncedPreload();
       return;
     }
-
-    // Smart change detection - only preload if levels actually changed
-    if (hasTriggeredInitialPreload && activatedLevels.length > 0) {
-      const currentLevelIds = new Set(activatedLevels);
-      const preloadedLevelIds = new Set(Object.keys(preloadProgress));
-      
-      // Check if there are new levels that haven't been preloaded
-      const newLevels = activatedLevels.filter(levelId => 
-        !preloadedLevelIds.has(levelId) || preloadProgress[levelId]?.status === 'error'
-      );
-      
-      if (newLevels.length > 0) {
-        console.log('Detected new levels to preload:', newLevels);
-        setShowPreloadUI(true);
-        debouncedPreload();
-      }
-    }
-  }, [user, authLoading, levelsLoading, activatedLevels, hasTriggeredInitialPreload, isPreloading, debouncedPreload, preloadProgress, startupCheckComplete, allContentCached, levelsNeedingPreload]);
+  }, [user, authLoading, levelsLoading, activatedLevels, hasTriggeredInitialPreload, isPreloading, debouncedPreload, startupCheckComplete, allContentCached, isLevelCompleted]);
 
   // Update preload status based on progress
   useEffect(() => {
@@ -96,8 +84,15 @@ export const PreloadManager: React.FC = () => {
       errors
     });
 
-    // Hide UI when preloading is complete
+    // Hide UI when preloading is complete and mark levels as completed
     if (!isPreloading && totalLevels > 0 && completedLevels === totalLevels) {
+      // Mark completed levels in session
+      Object.keys(preloadProgress).forEach(levelId => {
+        if (preloadProgress[levelId].status === 'complete') {
+          markLevelCompleted(levelId);
+        }
+      });
+      
       setTimeout(() => {
         setShowPreloadUI(false);
         if (errors.length === 0) {

@@ -16,6 +16,7 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
       try {
         const cachedData = await documentStore.getWorksheetData(worksheetId);
         if (cachedData) {
+          console.log(`Using cached worksheet data for ${worksheetId}`);
           // Generate PDF URL for cached data
           const pdfUrl = `/pdfs/${worksheetId}.pdf`;
           return {
@@ -27,8 +28,14 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
         console.warn('Failed to get cached worksheet data:', error);
       }
 
+      // Check if we're offline before attempting server fetch
+      if (!navigator.onLine) {
+        throw new Error('ورقة عمل غير متوفرة بدون اتصال. يرجى الاتصال بالإنترنت لتحميل المحتوى.');
+      }
+
       // Fallback to Supabase function when online or cache miss
       try {
+        console.log(`Fetching server worksheet data for ${worksheetId}`);
         const { data, error } = await supabase.functions.invoke('get-worksheet-data', {
           body: { worksheetId },
         });
@@ -44,6 +51,7 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
         // Cache the fetched data for future offline use
         try {
           await documentStore.saveWorksheetData(worksheetId, data.meta, Date.now());
+          console.log(`Cached server worksheet data for ${worksheetId}`);
         } catch (cacheError) {
           console.warn('Failed to cache worksheet data:', cacheError);
         }
@@ -53,17 +61,21 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
           pdfUrl: data.pdfUrl
         };
       } catch (supabaseError) {
-        throw new Error(`Document "${worksheetId}" not found. Please check if the QR code is valid or the document exists in the database.`);
+        // Provide better Arabic error messages for offline scenarios
+        if (supabaseError.message?.includes('fetch')) {
+          throw new Error('ورقة عمل غير متوفرة. تأكد من الاتصال بالإنترنت أو أن المحتوى محمل مسبقاً.');
+        }
+        throw new Error(`ورقة عمل غير موجودة "${worksheetId}". تحقق من صحة رمز QR أو وجود الوثيقة في قاعدة البيانات.`);
       }
     },
     enabled: !!worksheetId,
     staleTime: 30 * 60 * 1000, // 30 minutes - worksheets change less frequently
     retry: (failureCount, error) => {
-      // Don't retry if it's a 404
-      if (error.message.includes('404')) {
+      // Don't retry if it's a 404 or offline error
+      if (error.message.includes('404') || error.message.includes('ورقة عمل غير متوفرة بدون اتصال')) {
         return false;
       }
-      return failureCount < 3;
+      return failureCount < 2;
     }
   });
 };
