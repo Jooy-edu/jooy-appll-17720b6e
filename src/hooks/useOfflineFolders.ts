@@ -11,24 +11,23 @@ export const useOfflineFolders = () => {
       // Always try offline data first for immediate UI
       const cachedFolders = await documentStore.getFolders();
       
-      // If we have cached data, return it immediately and sync in background
+      // If we have cached data, return it immediately
       if (cachedFolders.length > 0) {
+        // Trigger background sync for updates
+        backgroundSyncService.syncFolders();
+        
+        // Return cached data processed for the UI
         const { user } = await getOfflineUser();
-        const processedData = cachedFolders
+        return cachedFolders
           .map(cached => cached.data)
           .filter(folder => 
             folder.user_id === user?.id || 
             folder.documents?.some((doc: any) => !doc.is_private)
           )
           .sort((a, b) => a.name.localeCompare(b.name));
-
-        // Trigger background sync for updates (don't await)
-        backgroundSyncService.syncFolders().catch(console.error);
-        
-        return processedData;
       }
 
-      // No cached data - try to fetch from server if online
+      // No cached data - try to fetch from server
       if (!backgroundSyncService.isOffline()) {
         try {
           const { user } = await getOfflineUser();
@@ -56,6 +55,7 @@ export const useOfflineFolders = () => {
           return filteredData;
         } catch (error) {
           console.error('Failed to fetch folders from server:', error);
+          // Return empty array if both cache and server fail
           return [];
         }
       }
@@ -63,9 +63,8 @@ export const useOfflineFolders = () => {
       // Offline with no cached data
       return [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - reduce unnecessary refetches
-    refetchOnMount: false, // Rely on cache first
+    staleTime: 1000, // Always consider stale to allow background updates
+    refetchOnMount: false, // Don't refetch on mount - rely on cache
     refetchOnWindowFocus: false, // Background service handles this
-    refetchInterval: false, // Disable automatic refetching
   });
 };

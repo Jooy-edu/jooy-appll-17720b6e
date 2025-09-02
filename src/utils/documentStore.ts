@@ -186,34 +186,18 @@ class DocumentStore {
     });
   }
 
-  async saveCover(documentId: string, urlOrBlob: string | Blob, metadata?: any): Promise<void> {
+  async saveCover(documentId: string, url: string): Promise<void> {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['covers'], 'readwrite');
       const store = transaction.objectStore('covers');
       
-      let coverData: any;
-      
-      if (typeof urlOrBlob === 'string') {
-        // Legacy string URL format
-        coverData = {
-          id: documentId,
-          url: urlOrBlob,
-          updatedAt: Date.now()
-        };
-      } else {
-        // New blob format
-        coverData = {
-          id: documentId,
-          blob: urlOrBlob,
-          metadata: metadata || {},
-          updatedAt: Date.now(),
-          lastModified: metadata?.lastModified || Date.now()
-        };
-      }
-      
-      store.put(coverData);
+      store.put({
+        id: documentId,
+        url,
+        updatedAt: Date.now(),
+      });
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -229,43 +213,7 @@ class DocumentStore {
       const request = store.get(documentId);
 
       request.onsuccess = () => {
-        const result = request.result;
-        if (result) {
-          if (result.blob) {
-            // Return blob URL for new blob format
-            const blobUrl = URL.createObjectURL(result.blob);
-            resolve(blobUrl);
-          } else if (result.url) {
-            // Return URL for legacy format
-            resolve(result.url);
-          } else {
-            resolve(null);
-          }
-        } else {
-          resolve(null);
-        }
-      };
-      
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getCoverMetadata(documentId: string): Promise<any | null> {
-    const db = await this.ensureDB();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['covers'], 'readonly');
-      const store = transaction.objectStore('covers');
-      const request = store.get(documentId);
-
-      request.onsuccess = () => {
-        const result = request.result;
-        resolve(result ? { 
-          updatedAt: result.updatedAt, 
-          lastModified: result.lastModified || result.updatedAt,
-          metadata: result.metadata || {},
-          hasBlob: !!result.blob
-        } : null);
+        resolve(request.result?.url || null);
       };
       
       request.onerror = () => reject(request.error);

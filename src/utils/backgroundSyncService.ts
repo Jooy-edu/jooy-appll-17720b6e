@@ -105,14 +105,7 @@ class BackgroundSyncService {
       if (syncData.covers?.length > 0) {
         // Update cover cache
         for (const cover of syncData.covers) {
-          if (typeof cover === 'object' && cover.documentId) {
-            // New format with metadata
-            const { downloadAndCacheCover } = await import('@/utils/coverBlobCache');
-            await downloadAndCacheCover(cover.documentId);
-          } else if (typeof cover === 'object' && cover.url) {
-            // Legacy format
-            await documentStore.saveCover(cover.documentId, cover.url);
-          }
+          await documentStore.saveCover(cover.documentId, cover.url);
         }
         
         // Invalidate cover-related queries
