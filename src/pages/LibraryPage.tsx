@@ -9,7 +9,6 @@ import { useLevelAccess } from '@/hooks/useLevelAccess';
 import { Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 
 interface SelectedLevel {
   folderId: string;
@@ -155,17 +154,12 @@ export const LibraryPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex-1">
-            <LibraryHeaderWithActivation
-              folders={folders}
-              selectedFolderId={selectedLevel?.folderId || null}
-              onFolderSelect={handleLevelSelect}
-              onLockedLevelSelect={handleLockedLevelSelect}
-            />
-          </div>
-          <SyncStatusIndicator />
-        </div>
+        <LibraryHeaderWithActivation
+          folders={folders}
+          selectedFolderId={selectedLevel?.folderId || null}
+          onFolderSelect={handleLevelSelect}
+          onLockedLevelSelect={handleLockedLevelSelect}
+        />
         
         {selectedLevel && (
           <LevelAccessGuard

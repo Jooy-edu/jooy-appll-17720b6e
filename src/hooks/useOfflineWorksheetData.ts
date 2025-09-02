@@ -53,6 +53,10 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
           pdfUrl: data.pdfUrl
         };
       } catch (supabaseError) {
+        // Check if user is offline
+        if (!navigator.onLine) {
+          throw new Error(`لا يمكن تحميل المستند "${worksheetId}" في وضع عدم الاتصال. يرجى الاتصال بالإنترنت أولاً لتحميل المحتوى.`);
+        }
         throw new Error(`Document "${worksheetId}" not found. Please check if the QR code is valid or the document exists in the database.`);
       }
     },

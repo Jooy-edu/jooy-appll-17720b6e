@@ -36,10 +36,10 @@ const LevelItem: React.FC<{
     <SelectItem 
       key={folder.id} 
       value={folder.id}
-      className={`text-center ${isLocked ? "text-muted-foreground" : ""}`}
+      className={`${isLocked ? "text-muted-foreground" : ""}`}
       onSelect={() => handleClick()}
     >
-      <div className="flex items-center gap-2 w-full">
+      <div className="flex items-center justify-center gap-2 w-full">
         {isLoading ? (
           <div className="w-4 h-4 animate-pulse bg-muted rounded" />
         ) : isLocked ? (
@@ -48,7 +48,7 @@ const LevelItem: React.FC<{
           <Unlock className="h-4 w-4 text-green-600" />
         )}
         <span>{folder.name}</span>
-        {isLocked && <span className="text-xs text-muted-foreground ml-auto">Locked</span>}
+        {isLocked && <span className="text-xs text-muted-foreground ml-2">Locked</span>}
       </div>
     </SelectItem>
   );
@@ -65,30 +65,29 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
 
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-center justify-center mb-6">
+        <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground mb-2">Library</h1>
         </div>
-        <BookOpen className="h-8 w-8 text-primary" />
       </div>
       
-      <div className="w-full max-w-sm">
-        <Select 
-          value={selectedFolderId || ''} 
-          onValueChange={(folderId) => {
-            const folder = folders.find(f => f.id === folderId);
-            if (folder) {
-              onFolderSelect(folderId, folder.name);
-            }
-          }}
-        >
+      <div className="flex justify-center">
+        <div className="w-full max-w-sm">
+          <Select 
+            value={selectedFolderId || ''} 
+            onValueChange={(folderId) => {
+              const folder = folders.find(f => f.id === folderId);
+              if (folder) {
+                onFolderSelect(folderId, folder.name);
+              }
+            }}
+          >
           <SelectTrigger className="w-full">
             <SelectValue 
               placeholder="Select a level..."
-              className="text-center"
             >
               {selectedFolder ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   {selectedLevelAccess?.isActivated ? (
                     <Unlock className="h-4 w-4 text-green-600" />
                   ) : (
@@ -112,6 +111,7 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
     </div>
   );

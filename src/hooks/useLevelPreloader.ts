@@ -94,29 +94,6 @@ export const useLevelPreloader = () => {
         updateProgress(folderId, { completed });
       }
 
-      // Check for JSON files to preload
-      try {
-        const jsonFiles = [`/data/${folderName}.json`, `/data/${folderId}.json`];
-        
-        for (const jsonPath of jsonFiles) {
-          try {
-            const response = await fetch(jsonPath);
-            if (response.ok) {
-              const jsonData = await response.json();
-              // Cache JSON data for each document in this folder (not the folder itself)
-              for (const doc of documents) {
-                await documentStore.saveWorksheetData(doc.id, jsonData, Date.now());
-              }
-              break; // Found the JSON file, no need to try others
-            }
-          } catch (error) {
-            console.warn(`Failed to preload JSON ${jsonPath}:`, error);
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to preload JSON files:', error);
-      }
-
       updateProgress(folderId, { status: 'complete' });
 
       // Invalidate related queries to refresh UI
