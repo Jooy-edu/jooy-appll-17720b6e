@@ -4,44 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { documentStore } from '@/utils/documentStore';
 import { useUserActivatedLevels } from './useUserActivatedLevels';
 
-// Helper function to discover and preload available JSON files
-const preloadAvailableJsonFiles = async (documents: any[]) => {
-  // List of known JSON files in public/data/ directory
-  const knownJsonFiles = [
-    'ABCDE.json'
-    // Add more JSON filenames here as they become available
-  ];
-  
-  for (const jsonFileName of knownJsonFiles) {
-    try {
-      const response = await fetch(`/data/${jsonFileName}`);
-      if (response.ok) {
-        const jsonData = await response.json();
-        
-        // Try to match JSON to documents by document ID in the JSON
-        if (jsonData.documentId) {
-          const matchingDoc = documents.find(doc => doc.id === jsonData.documentId);
-          if (matchingDoc) {
-            console.log(`Caching JSON data from ${jsonFileName} for document ${matchingDoc.id}`);
-            await documentStore.saveWorksheetData(matchingDoc.id, jsonData, Date.now());
-            continue;
-          }
-        }
-        
-        // Fallback: cache JSON for all documents in the folder
-        // This ensures offline access even if the matching is imperfect
-        for (const doc of documents) {
-          await documentStore.saveWorksheetData(doc.id, jsonData, Date.now());
-        }
-        
-        console.log(`Cached JSON data from ${jsonFileName} for ${documents.length} documents`);
-      }
-    } catch (error) {
-      console.warn(`Failed to preload JSON ${jsonFileName}:`, error);
-    }
-  }
-};
-
 interface PreloadProgress {
   folderId: string;
   folderName: string;
@@ -132,9 +94,25 @@ export const useLevelPreloader = () => {
         updateProgress(folderId, { completed });
       }
 
-      // Discover and preload JSON files
+      // Check for JSON files to preload
       try {
-        await preloadAvailableJsonFiles(documents);
+        const jsonFiles = [`/data/${folderName}.json`, `/data/${folderId}.json`];
+        
+        for (const jsonPath of jsonFiles) {
+          try {
+            const response = await fetch(jsonPath);
+            if (response.ok) {
+              const jsonData = await response.json();
+              // Cache JSON data for each document in this folder (not the folder itself)
+              for (const doc of documents) {
+                await documentStore.saveWorksheetData(doc.id, jsonData, Date.now());
+              }
+              break; // Found the JSON file, no need to try others
+            }
+          } catch (error) {
+            console.warn(`Failed to preload JSON ${jsonPath}:`, error);
+          }
+        }
       } catch (error) {
         console.warn('Failed to preload JSON files:', error);
       }

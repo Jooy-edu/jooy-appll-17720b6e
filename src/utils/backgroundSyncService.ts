@@ -103,18 +103,44 @@ class BackgroundSyncService {
       }
 
       if (syncData.covers?.length > 0) {
-        // Enhanced cover sync with change detection
+        // Enhanced cover sync with intelligent change detection
         const { downloadAndCacheCover, updateCoverIfChanged } = await import('@/utils/coverBlobCache');
         
+        let syncedCovers = 0;
         for (const cover of syncData.covers) {
           try {
             if (typeof cover === 'object' && cover.documentId) {
-              // Check if cover needs updating based on timestamp
-              if (cover.updatedAt) {
-                await updateCoverIfChanged(cover.documentId, cover.updatedAt);
-              } else {
-                // Fallback to regular download if no timestamp
-                await downloadAndCacheCover(cover.documentId, cover.extension || 'jpg');
+              // Get current cached cover metadata for comparison
+              const cachedMetadata = await documentStore.getCoverMetadata(cover.documentId);
+              
+              // Determine if cover needs updating based on multiple factors
+              let needsUpdate = false;
+              
+              if (!cachedMetadata) {
+                // No cached cover exists
+                needsUpdate = true;
+              } else if (cover.etag && cachedMetadata.etag !== cover.etag) {
+                // ETag mismatch indicates file change
+                needsUpdate = true;
+              } else if (cover.updatedAt && cachedMetadata.lastModified < cover.updatedAt) {
+                // Server version is newer
+                needsUpdate = true;
+              } else if (cover.size && cachedMetadata.size !== cover.size) {
+                // File size mismatch
+                needsUpdate = true;
+              }
+              
+              if (needsUpdate) {
+                console.log(`Updating cover for ${cover.documentId} - reason: ${!cachedMetadata ? 'missing' : 'changed'}`);
+                const result = await updateCoverIfChanged(
+                  cover.documentId, 
+                  cover.updatedAt,
+                  cover.etag,
+                  cover.size
+                );
+                if (result) {
+                  syncedCovers++;
+                }
               }
             }
           } catch (error) {
@@ -122,8 +148,11 @@ class BackgroundSyncService {
           }
         }
         
-        // Invalidate cover-related queries
-        queryClient?.invalidateQueries({ queryKey: ['covers'] });
+        if (syncedCovers > 0) {
+          console.log(`Successfully synced ${syncedCovers} covers`);
+          // Invalidate cover-related queries
+          queryClient?.invalidateQueries({ queryKey: ['covers'] });
+        }
       }
 
       // Handle deleted covers

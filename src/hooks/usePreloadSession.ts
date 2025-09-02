@@ -1,82 +1,113 @@
 import { useState, useEffect, useCallback } from 'react';
+import { documentStore } from '@/utils/documentStore';
 
-interface SessionPreloadState {
-  completedLevels: Set<string>;
+interface PreloadSession {
   sessionId: string;
-  lastPreloadTime: number;
+  completedLevels: Set<string>;
+  lastActivity: number;
 }
 
-const SESSION_STORAGE_KEY = 'preload_session_state';
-const SESSION_DURATION = 2 * 60 * 60 * 1000; // 2 hours
-
+/**
+ * Hook to manage preload sessions and prevent duplicate downloads
+ */
 export const usePreloadSession = () => {
-  const [sessionState, setSessionState] = useState<SessionPreloadState>(() => {
-    // Initialize from sessionStorage or create new session
-    const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    if (stored) {
+  const [session, setSession] = useState<PreloadSession | null>(null);
+
+  useEffect(() => {
+    // Initialize or restore session
+    const initSession = async () => {
       try {
-        const parsed = JSON.parse(stored);
-        // Check if session is still valid (not expired)
-        if (Date.now() - parsed.lastPreloadTime < SESSION_DURATION) {
-          return {
-            ...parsed,
-            completedLevels: new Set(parsed.completedLevels || [])
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const currentTime = Date.now();
+        
+        // Check if there's a recent session (within last hour)
+        const existingSessionData = await documentStore.getMetadata('currentPreloadSession');
+        
+        if (existingSessionData && 
+            currentTime - existingSessionData.lastActivity < 60 * 60 * 1000) { // 1 hour
+          // Restore existing session
+          const completedLevels = new Set<string>(existingSessionData.completedLevels || []);
+          setSession({
+            sessionId: existingSessionData.sessionId,
+            completedLevels,
+            lastActivity: currentTime
+          });
+          console.log('Restored preload session:', existingSessionData.sessionId, 'with', completedLevels.size, 'completed levels');
+        } else {
+          // Create new session
+          const newSession = {
+            sessionId,
+            completedLevels: new Set<string>(),
+            lastActivity: currentTime
           };
+          setSession(newSession);
+          console.log('Created new preload session:', sessionId);
         }
       } catch (error) {
-        console.warn('Failed to parse session preload state:', error);
+        console.error('Failed to initialize preload session:', error);
+        // Fallback to new session
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setSession({
+          sessionId,
+          completedLevels: new Set(),
+          lastActivity: Date.now()
+        });
       }
+    };
+
+    initSession();
+  }, []);
+
+  const markLevelCompleted = useCallback(async (folderId: string) => {
+    if (!session) return;
+
+    const updatedSession = {
+      ...session,
+      completedLevels: new Set([...session.completedLevels, folderId]),
+      lastActivity: Date.now()
+    };
+
+    setSession(updatedSession);
+
+    // Persist to storage
+    try {
+      await documentStore.saveMetadata('currentPreloadSession', {
+        sessionId: updatedSession.sessionId,
+        completedLevels: Array.from(updatedSession.completedLevels),
+        lastActivity: updatedSession.lastActivity
+      });
+      console.log('Marked level as completed in session:', folderId);
+    } catch (error) {
+      console.error('Failed to persist session data:', error);
     }
-    
-    // Create new session
-    return {
-      completedLevels: new Set<string>(),
-      sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      lastPreloadTime: Date.now()
-    };
-  });
+  }, [session]);
 
-  // Persist session state to sessionStorage
-  useEffect(() => {
-    const stateToStore = {
-      ...sessionState,
-      completedLevels: Array.from(sessionState.completedLevels)
-    };
-    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(stateToStore));
-  }, [sessionState]);
+  const isLevelCompleted = useCallback((folderId: string): boolean => {
+    return session?.completedLevels.has(folderId) || false;
+  }, [session]);
 
-  const markLevelCompleted = useCallback((folderId: string) => {
-    setSessionState(prev => ({
-      ...prev,
-      completedLevels: new Set([...prev.completedLevels, folderId]),
-      lastPreloadTime: Date.now()
-    }));
-  }, []);
+  const clearSession = useCallback(async () => {
+    if (!session) return;
 
-  const isLevelCompleted = useCallback((folderId: string) => {
-    return sessionState.completedLevels.has(folderId);
-  }, [sessionState.completedLevels]);
-
-  const clearSession = useCallback(() => {
-    setSessionState({
-      completedLevels: new Set<string>(),
-      sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      lastPreloadTime: Date.now()
-    });
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
-  }, []);
-
-  const hasRecentPreloadActivity = useCallback(() => {
-    const timeSinceLastPreload = Date.now() - sessionState.lastPreloadTime;
-    return timeSinceLastPreload < SESSION_DURATION;
-  }, [sessionState.lastPreloadTime]);
+    try {
+      await documentStore.removeMetadata('currentPreloadSession');
+      setSession({
+        ...session,
+        completedLevels: new Set(),
+        lastActivity: Date.now()
+      });
+      console.log('Cleared preload session');
+    } catch (error) {
+      console.error('Failed to clear session:', error);
+    }
+  }, [session]);
 
   return {
-    markLevelCompleted,
+    sessionId: session?.sessionId || null,
     isLevelCompleted,
+    markLevelCompleted,
     clearSession,
-    hasRecentPreloadActivity,
-    completedLevelsCount: sessionState.completedLevels.size,
-    sessionId: sessionState.sessionId
+    completedCount: session?.completedLevels.size || 0,
+    isSessionReady: session !== null
   };
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLevelPreloader } from '@/hooks/useLevelPreloader';
 import { useUserActivatedLevels } from '@/hooks/useUserActivatedLevels';
@@ -28,7 +28,12 @@ export const PreloadManager: React.FC = () => {
     preloadProgress, 
     isPreloading 
   } = useLevelPreloader();
-  const { markLevelCompleted, isLevelCompleted, hasRecentPreloadActivity } = usePreloadSession();
+  const { 
+    isLevelCompleted, 
+    markLevelCompleted, 
+    isSessionReady,
+    completedCount 
+  } = usePreloadSession();
   
   const [preloadStatus, setPreloadStatus] = useState<PreloadStatus>({
     isPreloading: false,
@@ -36,58 +41,55 @@ export const PreloadManager: React.FC = () => {
     completedLevels: 0,
     errors: []
   });
-  
+  const [hasTriggeredPreload, setHasTriggeredPreload] = useState(false);
   const [showPreloadUI, setShowPreloadUI] = useState(false);
-  const hasTriggeredPreloadRef = useRef(false);
-  const lastActivatedLevelsRef = useRef<string[]>([]);
   
   // Debounced preload function to prevent rapid successive calls
-  const [debouncedPreload] = useDebounce(preloadAllActivatedLevels, 1500);
+  const [debouncedPreload] = useDebounce(preloadAllActivatedLevels, 2000);
 
-  // Smart preload management with session tracking
+  // Session-based preloading logic - prevents repetitive downloads
   useEffect(() => {
-    if (authLoading || levelsLoading || !user || isPreloading || !startupCheckComplete) return;
+    if (authLoading || levelsLoading || !user || isPreloading || 
+        !startupCheckComplete || !isSessionReady) return;
     
-    // Check if levels have actually changed (not just reference)
-    const currentLevelIds = activatedLevels.join(',');
-    const lastLevelIds = lastActivatedLevelsRef.current.join(',');
-    const levelsChanged = currentLevelIds !== lastLevelIds;
-    
-    if (levelsChanged) {
-      lastActivatedLevelsRef.current = [...activatedLevels];
-    }
-    
-    // If startup check shows all content is cached and we have session tracking, skip
-    if (allContentCached && activatedLevels.length > 0 && hasRecentPreloadActivity()) {
-      console.log('All content cached and recent session - no preloading needed');
-      hasTriggeredPreloadRef.current = true;
+    // If all content is cached and session shows completion, no preload needed
+    if (allContentCached && activatedLevels.length > 0) {
+      console.log('All content already cached - no preloading needed');
+      setHasTriggeredPreload(true);
       return;
     }
     
-    // Initial preload or new levels detected
-    const levelsNeedingDownload = levelsNeedingPreload.filter(levelId => !isLevelCompleted(levelId));
+    // Filter levels that need preloading and aren't completed in current session
+    const levelsToPreload = levelsNeedingPreload.filter(levelId => !isLevelCompleted(levelId));
     
-    if (levelsNeedingDownload.length > 0 && (!hasTriggeredPreloadRef.current || levelsChanged)) {
-      console.log(`Smart preload: ${levelsNeedingDownload.length}/${activatedLevels.length} levels need downloading`);
+    // Only trigger preloading if we haven't triggered it yet and there are levels to preload
+    if (!hasTriggeredPreload && levelsToPreload.length > 0) {
+      console.log(`Session-based preload: ${levelsToPreload.length} new levels need preloading`);
       setShowPreloadUI(true);
-      hasTriggeredPreloadRef.current = true;
+      setHasTriggeredPreload(true);
       debouncedPreload();
+      return;
     }
-  }, [
-    user, 
-    authLoading, 
-    levelsLoading, 
-    activatedLevels, 
-    isPreloading, 
-    debouncedPreload, 
-    startupCheckComplete, 
-    allContentCached, 
-    levelsNeedingPreload,
-    isLevelCompleted,
-    hasRecentPreloadActivity
-  ]);
 
-  // Update preload status and session tracking
+    // Handle new activated levels - only preload levels not completed in session
+    if (hasTriggeredPreload && activatedLevels.length > 0) {
+      const newLevelsToPreload = activatedLevels.filter(levelId => 
+        !isLevelCompleted(levelId) && 
+        (levelsNeedingPreload.includes(levelId) || 
+         (preloadProgress[levelId] && preloadProgress[levelId].status === 'error'))
+      );
+      
+      if (newLevelsToPreload.length > 0) {
+        console.log('Detected new levels needing preload (not in session):', newLevelsToPreload);
+        setShowPreloadUI(true);
+        debouncedPreload();
+      }
+    }
+  }, [user, authLoading, levelsLoading, activatedLevels, hasTriggeredPreload, isPreloading, 
+      debouncedPreload, startupCheckComplete, allContentCached, levelsNeedingPreload, 
+      isSessionReady, isLevelCompleted]);
+
+  // Update preload status and mark completed levels in session
   useEffect(() => {
     const levels = Object.values(preloadProgress);
     const totalLevels = levels.length;
@@ -97,19 +99,19 @@ export const PreloadManager: React.FC = () => {
     );
     const currentLevel = levels.find(level => level.status === 'downloading')?.folderName;
 
-    // Mark completed levels in session tracking
-    levels.forEach(level => {
-      if (level.status === 'complete' && !isLevelCompleted(level.folderId)) {
-        markLevelCompleted(level.folderId);
-      }
-    });
-
     setPreloadStatus({
       isPreloading,
       totalLevels,
       completedLevels,
       currentLevel,
       errors
+    });
+
+    // Mark completed levels in session to prevent re-downloading
+    levels.forEach(level => {
+      if (level.status === 'complete' && !isLevelCompleted(level.folderId)) {
+        markLevelCompleted(level.folderId);
+      }
     });
 
     // Hide UI when preloading is complete
@@ -124,7 +126,7 @@ export const PreloadManager: React.FC = () => {
         }
       }, 2000);
     }
-  }, [preloadProgress, isPreloading, markLevelCompleted, isLevelCompleted]);
+  }, [preloadProgress, isPreloading, isLevelCompleted, markLevelCompleted]);
 
   // Show errors if any occur
   useEffect(() => {
