@@ -250,7 +250,7 @@ class DocumentStore {
     });
   }
 
-  async getCoverMetadata(documentId: string): Promise<any> {
+  async getCoverMetadata(documentId: string): Promise<any | null> {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
@@ -264,9 +264,7 @@ class DocumentStore {
           updatedAt: result.updatedAt, 
           lastModified: result.lastModified || result.updatedAt,
           metadata: result.metadata || {},
-          hasBlob: !!result.blob,
-          size: result.metadata?.size || 0,
-          etag: result.metadata?.etag || null
+          hasBlob: !!result.blob
         } : null);
       };
       
@@ -570,49 +568,6 @@ class DocumentStore {
       request.onerror = () => reject(request.error);
     });
   }
-
-  async saveMetadata(key: string, value: any): Promise<void> {
-    const db = await this.ensureDB();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['metadata'], 'readwrite');
-      const store = transaction.objectStore('metadata');
-      
-      const request = store.put({ key, value });
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getMetadata(key: string): Promise<any> {
-    const db = await this.ensureDB();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['metadata'], 'readonly');
-      const store = transaction.objectStore('metadata');
-      const request = store.get(key);
-
-      request.onsuccess = () => {
-        resolve(request.result?.value || null);
-      };
-      
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async removeMetadata(key: string): Promise<void> {
-    const db = await this.ensureDB();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['metadata'], 'readwrite');
-      const store = transaction.objectStore('metadata');
-      
-      const request = store.delete(key);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
 }
 
 export const documentStore = new DocumentStore();
