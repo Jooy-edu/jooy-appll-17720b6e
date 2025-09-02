@@ -20,10 +20,8 @@ import { LibraryPage } from "./pages/LibraryPage";
 import FloatingButtonGroup from "./components/FloatingButtonGroup";
 import FullscreenButton from "./components/FullscreenButton";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
-import { AppUpdatePrompt } from "./components/AppUpdatePrompt";
 import { setQueryClient } from "./utils/backgroundSyncService";
 import { useParams } from "react-router-dom";
-import { PreloadManager } from "./components/PreloadManager";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -104,9 +102,7 @@ const App = () => (
             <Route path="/auth/*" element={null} />
             <Route path="*" element={<FloatingButtonGroup />} />
           </Routes>
-          <PreloadManager />
           <PWAInstallPrompt />
-          <AppUpdatePrompt />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

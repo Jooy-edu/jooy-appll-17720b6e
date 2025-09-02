@@ -36,10 +36,10 @@ const LevelItem: React.FC<{
     <SelectItem 
       key={folder.id} 
       value={folder.id}
-      className={`text-center ${isLocked ? "text-muted-foreground" : ""}`}
+      className="justify-center"
       onSelect={() => handleClick()}
     >
-      <div className="flex items-center gap-2 w-full">
+      <div className="flex items-center justify-center gap-2 w-full">
         {isLoading ? (
           <div className="w-4 h-4 animate-pulse bg-muted rounded" />
         ) : isLocked ? (
@@ -65,14 +65,13 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
 
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-center justify-center mb-6">
+        <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground mb-2">Library</h1>
         </div>
-        <BookOpen className="h-8 w-8 text-primary" />
       </div>
       
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm mx-auto">
         <Select 
           value={selectedFolderId || ''} 
           onValueChange={(folderId) => {
@@ -88,7 +87,7 @@ export const LibraryHeaderWithActivation: React.FC<LibraryHeaderWithActivationPr
               className="text-center"
             >
               {selectedFolder ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   {selectedLevelAccess?.isActivated ? (
                     <Unlock className="h-4 w-4 text-green-600" />
                   ) : (
