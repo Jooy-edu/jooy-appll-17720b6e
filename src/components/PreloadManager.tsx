@@ -22,8 +22,7 @@ export const PreloadManager: React.FC = () => {
   const { 
     preloadAllActivatedLevels, 
     preloadProgress, 
-    isPreloading, 
-    needsPreloading 
+    isPreloading 
   } = useLevelPreloader();
   
   const [preloadStatus, setPreloadStatus] = useState<PreloadStatus>({
@@ -35,33 +34,31 @@ export const PreloadManager: React.FC = () => {
   const [hasTriggeredInitialPreload, setHasTriggeredInitialPreload] = useState(false);
   const [showPreloadUI, setShowPreloadUI] = useState(false);
 
-  // Trigger automatic preloading when user is authenticated and has activated levels
+  // Monitor for new level activations and trigger preloading
   useEffect(() => {
-    if (authLoading || levelsLoading || !user || hasTriggeredInitialPreload) return;
-    if (!activatedLevels.length) return;
-
-    // Check if any levels need preloading
-    if (needsPreloading.length > 0) {
-      console.log('Triggering automatic preload for levels:', needsPreloading);
+    if (authLoading || levelsLoading || !user) return;
+    
+    // If we have activated levels and haven't triggered initial preload
+    if (activatedLevels.length > 0 && !hasTriggeredInitialPreload) {
+      console.log('Triggering initial preload for', activatedLevels.length, 'activated levels');
       setShowPreloadUI(true);
       setHasTriggeredInitialPreload(true);
       
-      // Trigger background sync first, then preload
-      backgroundSyncService.syncDocuments(true).then(() => {
-        preloadAllActivatedLevels();
-      });
-    } else {
-      setHasTriggeredInitialPreload(true);
+      // Trigger comprehensive preloading
+      preloadAllActivatedLevels();
     }
-  }, [
-    user, 
-    authLoading, 
-    levelsLoading, 
-    activatedLevels, 
-    needsPreloading, 
-    hasTriggeredInitialPreload, 
-    preloadAllActivatedLevels
-  ]);
+  }, [user, authLoading, levelsLoading, activatedLevels, hasTriggeredInitialPreload, preloadAllActivatedLevels]);
+
+  // Monitor level activation changes to trigger additional preloading
+  useEffect(() => {
+    if (!user || authLoading || levelsLoading || !hasTriggeredInitialPreload) return;
+    
+    // Trigger preloading when new levels are activated
+    if (activatedLevels.length > 0) {
+      console.log('Detected level changes, triggering preload refresh');
+      preloadAllActivatedLevels();
+    }
+  }, [activatedLevels, preloadAllActivatedLevels, user, authLoading, levelsLoading, hasTriggeredInitialPreload]);
 
   // Update preload status based on progress
   useEffect(() => {
