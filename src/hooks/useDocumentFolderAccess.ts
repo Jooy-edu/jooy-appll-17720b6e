@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLevelAccess } from './useLevelAccess';
+import { documentStore } from '@/utils/documentStore';
 
 interface DocumentFolderAccess {
   requiresLevelAccess: boolean;
@@ -14,12 +15,19 @@ interface DocumentFolderAccess {
 export const useDocumentFolderAccess = (documentId?: string): DocumentFolderAccess => {
   const { user } = useAuth();
 
-  // First, get the document's folder_id
+  // First, get the document's folder_id (offline-first)
   const { data: documentData, isLoading: documentLoading, error: documentError } = useQuery({
     queryKey: ['document-folder', documentId],
     queryFn: async () => {
       if (!documentId) return null;
       
+      // Try cache first
+      const cachedDoc = await documentStore.getDocumentById(documentId);
+      if (cachedDoc?.data) {
+        return { folder_id: cachedDoc.data.folder_id };
+      }
+      
+      // Fallback to Supabase if online and not cached
       const { data, error } = await supabase
         .from('documents')
         .select('folder_id')

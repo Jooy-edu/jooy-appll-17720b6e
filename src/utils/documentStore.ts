@@ -127,6 +127,22 @@ class DocumentStore {
     });
   }
 
+  async getDocumentById(documentId: string): Promise<CachedDocument | null> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['documents'], 'readonly');
+      const store = transaction.objectStore('documents');
+      const request = store.get(documentId);
+
+      request.onsuccess = () => {
+        resolve(request.result || null);
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   async saveDocuments(documents: any[], timestamp: number): Promise<void> {
     const db = await this.ensureDB();
     
