@@ -263,7 +263,7 @@ class DocumentStore {
     });
   }
 
-  async saveWorksheetData(folderId: string, data: any, timestamp: number): Promise<void> {
+  async saveWorksheetData(documentId: string, data: any, timestamp: number): Promise<void> {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
@@ -271,7 +271,7 @@ class DocumentStore {
       const store = transaction.objectStore('worksheetData');
       
       store.put({
-        id: folderId,
+        id: documentId,
         data,
         updatedAt: timestamp,
       });
@@ -281,13 +281,13 @@ class DocumentStore {
     });
   }
 
-  async getWorksheetData(folderId: string): Promise<any | null> {
+  async getWorksheetData(documentId: string): Promise<any | null> {
     const db = await this.ensureDB();
     
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['worksheetData'], 'readonly');
       const store = transaction.objectStore('worksheetData');
-      const request = store.get(folderId);
+      const request = store.get(documentId);
 
       request.onsuccess = () => {
         resolve(request.result?.data || null);
