@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { documentStore } from './documentStore';
+import { getOfflineUser } from './offlineAuth';
 
 // Import QueryClient from a separate module to avoid circular imports
 let queryClient: QueryClient;
@@ -132,7 +133,7 @@ class BackgroundSyncService {
 
     try {
       // Get current user first
-      const { data: user } = await supabase.auth.getUser();
+      const { user } = await getOfflineUser();
       
       // Fetch all folders with their documents
       const { data, error } = await supabase
@@ -147,7 +148,7 @@ class BackgroundSyncService {
       
       // Filter folders: user's own folders OR folders with public documents
       const filteredData = data?.filter(folder => 
-        folder.user_id === user.user?.id ||
+        folder.user_id === user?.id ||
         folder.documents?.some((doc: any) => !doc.is_private)
       ) || [];
       

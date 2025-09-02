@@ -12,6 +12,13 @@ interface CachedFolder {
   syncVersion: number;
 }
 
+interface CachedUser {
+  id: string;
+  email: string | null;
+  user_metadata: any;
+  updatedAt: number;
+}
+
 interface DocumentStoreState {
   documents: Record<string, CachedDocument>;
   covers: Record<string, { url: string; updatedAt: number }>;
@@ -21,7 +28,7 @@ interface DocumentStoreState {
 
 class DocumentStore {
   private dbName = 'JooyOfflineStore';
-  private version = 1;
+  private version = 2; // Increment version for new userSession store
   private db: IDBDatabase | null = null;
 
   async initialize(): Promise<void> {
@@ -64,6 +71,11 @@ class DocumentStore {
         // Metadata store
         if (!db.objectStoreNames.contains('metadata')) {
           db.createObjectStore('metadata', { keyPath: 'key' });
+        }
+
+        // User session store
+        if (!db.objectStoreNames.contains('userSession')) {
+          db.createObjectStore('userSession', { keyPath: 'key' });
         }
       };
     });
@@ -309,6 +321,60 @@ class DocumentStore {
           cursor.continue();
         }
       };
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async saveUserSession(user: any): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['userSession'], 'readwrite');
+      const store = transaction.objectStore('userSession');
+      
+      const cachedUser: CachedUser = {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+        updatedAt: Date.now(),
+      };
+
+      store.put({
+        key: 'currentUser',
+        value: cachedUser,
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async getCachedUser(): Promise<CachedUser | null> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['userSession'], 'readonly');
+      const store = transaction.objectStore('userSession');
+      const request = store.get('currentUser');
+
+      request.onsuccess = () => {
+        resolve(request.result?.value || null);
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async clearUserSession(): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['userSession'], 'readwrite');
+      const store = transaction.objectStore('userSession');
+      
+      store.delete('currentUser');
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);

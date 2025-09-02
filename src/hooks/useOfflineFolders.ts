@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { documentStore } from '@/utils/documentStore';
 import { backgroundSyncService } from '@/utils/backgroundSyncService';
+import { getOfflineUser } from '@/utils/offlineAuth';
 
 export const useOfflineFolders = () => {
   return useQuery({
@@ -16,11 +17,11 @@ export const useOfflineFolders = () => {
         backgroundSyncService.syncFolders();
         
         // Return cached data processed for the UI
-        const { data: user } = await supabase.auth.getUser();
+        const { user } = await getOfflineUser();
         return cachedFolders
           .map(cached => cached.data)
           .filter(folder => 
-            folder.user_id === user.user?.id || 
+            folder.user_id === user?.id || 
             folder.documents?.some((doc: any) => !doc.is_private)
           )
           .sort((a, b) => a.name.localeCompare(b.name));
@@ -29,7 +30,7 @@ export const useOfflineFolders = () => {
       // No cached data - try to fetch from server
       if (!backgroundSyncService.isOffline()) {
         try {
-          const { data: user } = await supabase.auth.getUser();
+          const { user } = await getOfflineUser();
           
           const { data, error } = await supabase
             .from('folders')
@@ -42,7 +43,7 @@ export const useOfflineFolders = () => {
           if (error) throw error;
 
           const filteredData = data?.filter(folder => 
-            folder.user_id === user.user?.id ||
+            folder.user_id === user?.id ||
             folder.documents?.some((doc: any) => !doc.is_private)
           ) || [];
 

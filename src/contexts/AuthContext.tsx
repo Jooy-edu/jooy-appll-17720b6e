@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { documentStore } from '@/utils/documentStore';
+import { clearOfflineUserSession } from '@/utils/offlineAuth';
 
 interface UserProfile {
   id: string;
@@ -105,6 +107,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         console.log('🔍 [AUTH] User found, fetching profile');
         try {
+          // Cache user session for offline use
+          await documentStore.saveUserSession(session.user);
+          
           const profileData = await fetchProfile(session.user.id);
           if (mounted) {
             setProfile(profileData);
@@ -118,6 +123,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         console.log('🔍 [AUTH] No user session found');
+        // Clear cached user session when no session
+        await clearOfflineUserSession();
       }
       
       if (mounted) {
@@ -162,6 +169,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           console.log('🔍 [AUTH] User authenticated, fetching profile');
           
+          // Cache user session for offline use
+          documentStore.saveUserSession(session.user).catch(console.error);
+          
           // Don't block the auth state change on profile fetching
           Promise.all([
             fetchProfile(session.user.id),
@@ -182,6 +192,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.log('🔍 [AUTH] User signed out, clearing profile');
           setProfile(null);
+          // Clear cached user session when signed out
+          clearOfflineUserSession().catch(console.error);
         }
         
         // Always set loading to false after auth state change
