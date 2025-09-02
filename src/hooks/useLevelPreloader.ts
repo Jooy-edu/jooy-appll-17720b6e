@@ -121,6 +121,7 @@ export const useLevelPreloader = () => {
 
       // Invalidate related queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ['documents', folderId] });
+      queryClient.invalidateQueries({ queryKey: ['covers'] });
 
       return { success: true, skipped };
 
@@ -134,12 +135,16 @@ export const useLevelPreloader = () => {
     }
   }, [updateProgress, queryClient]);
 
+  // Enhanced preload all with background sync integration
   const preloadAllActivatedLevels = useCallback(async () => {
     if (isPreloading || !activatedLevels.length) return;
 
     setIsPreloading(true);
     
     try {
+      // First sync documents to get latest changes
+      console.log('Starting background sync before preloading...');
+      
       const { data: folders } = await supabase
         .from('folders')
         .select('id, name')
@@ -150,7 +155,10 @@ export const useLevelPreloader = () => {
           folders.map(folder => preloadLevel(folder.id, folder.name))
         );
 
-        console.log('Preloading results:', results);
+        const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+        const errorCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
+
+        console.log(`Preloading complete: ${successCount} successful, ${errorCount} errors`);
       }
     } catch (error) {
       console.error('Failed to preload activated levels:', error);
@@ -158,6 +166,40 @@ export const useLevelPreloader = () => {
       setIsPreloading(false);
     }
   }, [activatedLevels, isPreloading, preloadLevel]);
+
+  // Smart repreload when content changes
+  const repreloadChangedLevels = useCallback(async (changedDocumentIds: string[]) => {
+    if (!changedDocumentIds.length) return;
+
+    try {
+      // Get folders for changed documents
+      const { data: documents } = await supabase
+        .from('documents')
+        .select('folder_id')
+        .in('id', changedDocumentIds);
+
+      if (documents?.length) {
+        const uniqueFolderIds = [...new Set(documents.map(doc => doc.folder_id))];
+        const activeFolders = uniqueFolderIds.filter(folderId => activatedLevels.includes(folderId));
+
+        if (activeFolders.length > 0) {
+          const { data: folders } = await supabase
+            .from('folders')
+            .select('id, name')
+            .in('id', activeFolders);
+
+          if (folders?.length) {
+            console.log('Repreloading changed levels:', folders.map(f => f.name));
+            await Promise.allSettled(
+              folders.map(folder => preloadLevel(folder.id, folder.name))
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to repreload changed levels:', error);
+    }
+  }, [activatedLevels, preloadLevel]);
 
   // Get preload status for a specific level
   const getLevelPreloadStatus = useCallback((folderId: string) => {
@@ -186,6 +228,7 @@ export const useLevelPreloader = () => {
   return {
     preloadLevel,
     preloadAllActivatedLevels,
+    repreloadChangedLevels,
     getLevelPreloadStatus,
     preloadProgress,
     isPreloading,

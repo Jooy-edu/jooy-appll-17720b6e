@@ -14,6 +14,7 @@ export const setQueryClient = (client: QueryClient) => {
 interface SyncResponse {
   documents: any[];
   covers: any[];
+  deletedCovers?: string[];
   lastUpdated: number;
   tombstones?: string[];
 }
@@ -111,9 +112,21 @@ class BackgroundSyncService {
         queryClient?.invalidateQueries({ queryKey: ['covers'] });
       }
 
+      // Handle deleted covers
+      if (syncData.deletedCovers?.length > 0) {
+        for (const documentId of syncData.deletedCovers) {
+          await documentStore.deleteCover(documentId);
+        }
+        queryClient?.invalidateQueries({ queryKey: ['covers'] });
+      }
+
       // Handle deletions
       if (syncData.tombstones?.length > 0) {
-        // TODO: Implement document deletion from cache
+        for (const documentId of syncData.tombstones) {
+          await documentStore.deleteDocument(documentId);
+          await documentStore.deleteCover(documentId);
+          await documentStore.deleteWorksheetData(documentId);
+        }
         queryClient?.invalidateQueries({ queryKey: ['documents'] });
       }
 

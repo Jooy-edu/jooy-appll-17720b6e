@@ -86,8 +86,39 @@ serve(async (req) => {
       }
     }
 
-    // TODO: Implement tombstones for deleted documents
-    const tombstones: string[] = []
+    // Get tombstones for deleted documents and covers
+    const { data: deletedDocs } = await supabaseClient
+      .from('documents')
+      .select('id')
+      .eq('is_deleted', true)
+      .gte('updated_at', sinceDate)
+
+    const tombstones: string[] = deletedDocs?.map(doc => doc.id) || []
+    
+    // Check for deleted covers by comparing storage with database
+    const deletedCovers: string[] = []
+    if (documentIds.length > 0) {
+      const { data: allDbDocs } = await supabaseClient
+        .from('documents')
+        .select('id')
+        .in('id', documentIds)
+      
+      const existingDocIds = new Set(allDbDocs?.map(doc => doc.id) || [])
+      
+      // Find covers that exist in storage but not in database (deleted documents)
+      const { data: allCoverFiles } = await supabaseClient.storage
+        .from('covers')
+        .list('', { limit: 1000 })
+      
+      if (allCoverFiles) {
+        for (const file of allCoverFiles) {
+          const docId = file.name.split('.')[0]
+          if (!existingDocIds.has(docId)) {
+            deletedCovers.push(docId)
+          }
+        }
+      }
+    }
 
     const currentTimestamp = Date.now()
 
@@ -95,6 +126,7 @@ serve(async (req) => {
       JSON.stringify({
         documents: documents || [],
         covers,
+        deletedCovers,
         lastUpdated: currentTimestamp,
         tombstones,
         syncedAt: new Date().toISOString()
@@ -112,6 +144,7 @@ serve(async (req) => {
         error: error.message,
         documents: [],
         covers: [],
+        deletedCovers: [],
         lastUpdated: Date.now(),
         tombstones: []
       }),

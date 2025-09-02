@@ -477,6 +477,45 @@ class DocumentStore {
       request.onerror = () => reject(request.error);
     });
   }
+
+  async deleteCover(documentId: string): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['covers'], 'readwrite');
+      const store = transaction.objectStore('covers');
+      
+      const request = store.delete(documentId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteDocument(documentId: string): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['documents'], 'readwrite');
+      const store = transaction.objectStore('documents');
+      
+      const request = store.delete(documentId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteWorksheetData(documentId: string): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['worksheetData'], 'readwrite');
+      const store = transaction.objectStore('worksheetData');
+      
+      const request = store.delete(documentId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 export const documentStore = new DocumentStore();
