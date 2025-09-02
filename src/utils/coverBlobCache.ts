@@ -42,7 +42,9 @@ export const downloadAndCacheCover = async (
       extension,
       lastModified,
       size: blob.size,
-      contentType: blob.type
+      contentType: blob.type,
+      etag: response.headers.get('etag') || `${documentId}_${lastModified}`,
+      version: 1
     });
 
     // Return blob URL for immediate use
@@ -92,17 +94,38 @@ export const getCachedCover = async (documentId: string): Promise<string | null>
 };
 
 /**
- * Update cached cover if it has changed
+ * Update cached cover if it has changed based on server metadata
  */
 export const updateCoverIfChanged = async (
   documentId: string, 
-  serverLastModified: number
+  serverLastModified: number,
+  serverEtag?: string,
+  serverSize?: number
 ): Promise<boolean> => {
   try {
     const cachedMetadata = await documentStore.getCoverMetadata(documentId);
     
-    // If not cached or server version is newer, update
-    if (!cachedMetadata || cachedMetadata.lastModified < serverLastModified) {
+    // If not cached, download it
+    if (!cachedMetadata) {
+      const result = await findAndCacheCover(documentId);
+      return result.success;
+    }
+    
+    // Check if server version is newer or different
+    let needsUpdate = false;
+    
+    if (serverEtag && cachedMetadata.etag !== serverEtag) {
+      needsUpdate = true;
+      console.log(`Cover needs update - etag changed: ${cachedMetadata.etag} -> ${serverEtag}`);
+    } else if (serverLastModified && cachedMetadata.lastModified < serverLastModified) {
+      needsUpdate = true;
+      console.log(`Cover needs update - timestamp changed: ${cachedMetadata.lastModified} -> ${serverLastModified}`);
+    } else if (serverSize && cachedMetadata.size !== serverSize) {
+      needsUpdate = true;
+      console.log(`Cover needs update - size changed: ${cachedMetadata.size} -> ${serverSize}`);
+    }
+    
+    if (needsUpdate) {
       const result = await findAndCacheCover(documentId);
       return result.success;
     }
