@@ -49,84 +49,71 @@ serve(async (req) => {
       throw new Error(`Failed to fetch documents: ${docsError.message}`)
     }
 
-    // Enhanced cover information fetch with change detection
+    // Fetch cover information for documents that have covers
     const documentIds = documents?.map(doc => doc.id) || []
     const covers: any[] = []
-    const deletedCovers: string[] = []
 
     if (documentIds.length > 0) {
-      // Get all cover files from storage
+      // Check which documents have covers in storage
       const { data: coverFiles, error: storageError } = await supabaseClient.storage
         .from('covers')
         .list('', {
           limit: 1000,
-          sortBy: { column: 'updated_at', order: 'desc' }
         })
 
       if (!storageError && coverFiles) {
-        // Process covers for each document
         for (const doc of documents || []) {
-          const docCoverFiles = coverFiles.filter(file => 
+          // Check if cover exists for this document
+          const coverFile = coverFiles.find(file => 
             file.name.startsWith(doc.id) && 
-            (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || 
-             file.name.endsWith('.png') || file.name.endsWith('.webp'))
+            (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png') || file.name.endsWith('.webp'))
           )
 
-          if (docCoverFiles.length > 0) {
-            // Use the most recently updated cover file
-            const latestCover = docCoverFiles[0]
-            
-            // Generate signed URL for downloading
+          if (coverFile) {
             const { data: signedUrlData } = await supabaseClient.storage
               .from('covers')
-              .createSignedUrl(latestCover.name, 60 * 60) // 1 hour expiry
+              .createSignedUrl(coverFile.name, 60 * 60) // 1 hour expiry
 
             if (signedUrlData?.signedUrl) {
-              const coverInfo = {
+              covers.push({
                 documentId: doc.id,
                 url: signedUrlData.signedUrl,
-                fileName: latestCover.name,
-                updatedAt: new Date(latestCover.updated_at || latestCover.created_at || Date.now()).getTime(),
-                extension: latestCover.name.split('.').pop() || 'jpg',
-                size: latestCover.metadata?.size || 0,
-                lastModified: new Date(latestCover.updated_at || latestCover.created_at || Date.now()).getTime(),
-                etag: latestCover.metadata?.eTag || `${latestCover.id}_${latestCover.updated_at}`,
-                version: latestCover.metadata?.httpStatusCode || 1
-              }
-              
-              // Only include covers that have been updated since the sync timestamp
-              const coverUpdateTime = coverInfo.updatedAt
-              const syncTime = new Date(since).getTime()
-              
-              if (coverUpdateTime >= syncTime) {
-                covers.push(coverInfo)
-              }
+                updatedAt: new Date(coverFile.updated_at || coverFile.created_at || Date.now()).getTime(),
+                extension: coverFile.name.split('.').pop() || 'jpg',
+                size: coverFile.metadata?.size || 0,
+                lastModified: new Date(coverFile.updated_at || coverFile.created_at || Date.now()).getTime()
+              })
             }
-          }
-        }
-
-        // Find orphaned cover files (covers without corresponding documents)
-        const allDocIds = new Set(documents?.map(doc => doc.id) || [])
-        for (const file of coverFiles) {
-          const docId = file.name.split('.')[0]
-          if (!allDocIds.has(docId)) {
-            deletedCovers.push(docId)
           }
         }
       }
     }
 
-    // Check for deleted documents (tombstones) by comparing with previous sync
+    // Since there's no soft delete tracking, tombstones will be empty for now
     const tombstones: string[] = []
     
-    // Additional check for recently deleted documents if we have a proper since timestamp
-    if (since > 0) {
-      try {
-        // We can't easily detect deleted documents without a tombstone table
-        // This would require a separate tracking mechanism
-        // For now, we'll rely on the deletedCovers detection above
-      } catch (error) {
-        console.warn('Could not check for deleted documents:', error)
+    // Check for deleted covers by comparing storage with database
+    const deletedCovers: string[] = []
+    if (documentIds.length > 0) {
+      const { data: allDbDocs } = await supabaseClient
+        .from('documents')
+        .select('id')
+        .in('id', documentIds)
+      
+      const existingDocIds = new Set(allDbDocs?.map(doc => doc.id) || [])
+      
+      // Find covers that exist in storage but not in database (deleted documents)
+      const { data: allCoverFiles } = await supabaseClient.storage
+        .from('covers')
+        .list('', { limit: 1000 })
+      
+      if (allCoverFiles) {
+        for (const file of allCoverFiles) {
+          const docId = file.name.split('.')[0]
+          if (!existingDocIds.has(docId)) {
+            deletedCovers.push(docId)
+          }
+        }
       }
     }
 
