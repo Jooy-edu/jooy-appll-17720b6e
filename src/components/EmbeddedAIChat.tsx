@@ -23,12 +23,14 @@ interface EmbeddedAIChatProps {
   };
   guidance: GuidanceItem;
   pageData: AutoModePageData;
+  inline?: boolean;
 }
 
 const EmbeddedAIChat: React.FC<EmbeddedAIChatProps> = ({
   worksheetData,
   guidance,
-  pageData
+  pageData,
+  inline = false
 }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -152,6 +154,105 @@ Analyze the student's question carefully. Respond in the same language as the le
     }
   };
 
+  if (inline) {
+    // Inline version - just show additional chat messages and input
+    return (
+      <div className="space-y-4">
+        {/* Only show new chat messages (after lesson steps) */}
+        {messages
+          .filter(msg => msg.role !== 'system' && !guidance.description?.includes(msg.content))
+          .map((message, index) => (
+            <div
+              key={index}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              {message.role === 'user' ? (
+                // User message - gradient bubble on the right
+                <div 
+                  className="max-w-[80%] bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl px-4 py-3 shadow-sm"
+                  dir={getTextDirection(message.content)}
+                >
+                  <div className="whitespace-pre-wrap break-words text-sm">
+                    {message.content}
+                  </div>
+                </div>
+              ) : (
+                // AI message - styled as chat message
+                <div className="w-full">
+                  <div 
+                    className="chat-message ai-response"
+                    dir={getTextDirection(message.content)}
+                  >
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]} 
+                      className="prose prose-sm prose-gray max-w-none prose-headings:text-gray-900 prose-p:text-gray-800 prose-strong:text-gray-900 prose-em:text-gray-800 prose-code:bg-gray-100 prose-code:text-gray-900 prose-pre:bg-gray-100 prose-pre:text-gray-900 prose-li:text-gray-800 prose-a:text-blue-600 prose-blockquote:text-gray-700 prose-blockquote:border-gray-300"
+                      components={{
+                        p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                        h1: ({ children }) => <h1 className="text-lg font-bold mb-3">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-semibold mb-2">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-medium mb-2">{children}</h3>,
+                        ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                        li: ({ children }) => <li className="text-gray-800">{children}</li>,
+                        code: ({ children, ...props }) => {
+                          const isInline = !props.className;
+                          return isInline ? (
+                            <code className="bg-gray-100 text-gray-900 px-1 py-0.5 rounded text-xs font-mono">
+                              {children}
+                            </code>
+                          ) : (
+                            <code {...props} className="block bg-gray-100 text-gray-900 p-2 rounded text-xs font-mono overflow-x-auto">
+                              {children}
+                            </code>
+                          );
+                        }
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+              <span className="text-sm text-gray-600">AI is thinking...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Input Container */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="flex gap-2">
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={t('aiChat.typeMessage')}
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={isLoading || !inputMessage.trim()}
+              size="icon"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        <div ref={messagesEndRef} />
+      </div>
+    );
+  }
+
+  // Full version for non-inline usage
   return (
     <div className="bg-white rounded-lg shadow-sm border mt-6">
       {/* Chat Header */}

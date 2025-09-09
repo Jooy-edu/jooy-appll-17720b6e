@@ -425,6 +425,18 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                   <p>{message}</p>
                 </div>
               ))}
+              
+              {/* Embedded Chat integrated within the guidance steps */}
+              {showEmbeddedChat && activeGuidance && (
+                <div className="mt-4">
+                  <EmbeddedAIChat
+                    worksheetData={worksheetData}
+                    guidance={activeGuidance}
+                    pageData={autoModePageData}
+                    inline={true}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -451,15 +463,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           </Button>
         )}
 
-        {showEmbeddedChat && activeGuidance && (
-          <div className="px-4 pb-4">
-            <EmbeddedAIChat
-              worksheetData={worksheetData}
-              guidance={activeGuidance}
-              pageData={autoModePageData}
-            />
-          </div>
-        )}
         
         <VirtualTutorSelectionModal
           isOpen={showTutorSelectionModal}
