@@ -493,7 +493,7 @@ Analyze the student's question carefully. If they're asking for a specific works
       {/* Fixed Input Area */}
       <div className="fixed bottom-0 left-0 right-0 z-60 bg-white border-t border-gray-200 p-4">
         <div className="max-w-3xl mx-auto">
-          <div className="flex gap-3">
+          <div className="flex gap-3" dir="rtl">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -501,14 +501,14 @@ Analyze the student's question carefully. If they're asking for a specific works
               placeholder={t('aiChat.placeholder')}
               disabled={isLoading || isGeneratingImage}
               className="flex-1 min-h-[44px] text-base border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-              dir={getTextDirection(inputMessage)}
+              dir="rtl"
             />
             <Button
               onClick={handleSendMessage}
               disabled={isLoading || !inputMessage.trim() || isGeneratingImage}
               className="bg-gradient-orange-magenta hover:bg-gradient-orange-magenta min-w-[44px] h-[44px] px-3"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4 scale-x-[-1]" />
             </Button>
           </div>
         </div>
