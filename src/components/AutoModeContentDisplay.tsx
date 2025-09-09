@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { AutoModePageData, GuidanceItem } from "@/types/worksheet";
 
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
 }
@@ -354,15 +354,29 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const initializeChatPanel = () => {
     if (!activeGuidance || !activeGuidance.description) return;
     
+    const systemMessage: ChatMessage = {
+      role: 'system',
+      content: `📚 الدرس: ${autoModePageData.page_number} - ${activeGuidance.title}\n\n✅ تم إكمال جميع الخطوات التوجيهية`,
+      timestamp: new Date()
+    };
+    
     // Convert guidance steps to chat messages
     const guidanceMessages: ChatMessage[] = activeGuidance.description.map((message, index) => ({
-      role: 'assistant' as const,
-      content: message,
+      role: 'system' as const,
+      content: `**الخطوة ${index + 1}:** ${message}`,
       timestamp: new Date()
     }));
+
+    const welcomeMessage: ChatMessage = {
+      role: 'assistant',
+      content: 'تم إكمال الخطوات التوجيهية! 🎉\n\nكيف يمكنني مساعدتك الآن؟ يمكنك سؤالي عن:\n• توضيح أي خطوة من الخطوات\n• معلومات إضافية حول الموضوع\n• أمثلة أكثر\n• أي سؤال آخر متعلق بالدرس',
+      timestamp: new Date()
+    };
     
-    setChatMessages(guidanceMessages);
-    setShowChatPanel(true);
+    setChatMessages([systemMessage, ...guidanceMessages, welcomeMessage]);
+    
+    // Add smooth animation delay
+    setTimeout(() => setShowChatPanel(true), 300);
   };
 
   // Chat functionality
@@ -506,17 +520,28 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           onSelectTutor={handleTutorSelected}
         />
 
-        {/* Chat Panel */}
+        {/* Enhanced Chat Panel */}
         {showChatPanel && (
-          <div className={`fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 transition-transform duration-300 ${isChatExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
-            {/* Chat Header */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 border-b border-border cursor-pointer" onClick={() => setIsChatExpanded(!isChatExpanded)}>
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-foreground">مساعد الذكي</h3>
+          <div className={`fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t shadow-2xl z-50 transition-all duration-500 ease-out ${isChatExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-5rem)]'}`}>
+            {/* Enhanced Chat Header */}
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-accent/10 border-b border-border/50 cursor-pointer hover:bg-gradient-to-r hover:from-primary/15 hover:to-accent/15 transition-colors duration-200" onClick={() => setIsChatExpanded(!isChatExpanded)}>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <MessageCircle className="h-5 w-5 text-primary" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse"></div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">المساعد الذكي</h3>
+                  <span className="text-xs text-muted-foreground bg-accent/20 px-2 py-0.5 rounded-full">
+                    متصل بالدرس
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                {isChatExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded-full">
+                  {isChatExpanded ? 'إخفاء' : 'توسيع'}
+                </div>
+                {isChatExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -524,58 +549,72 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                     e.stopPropagation();
                     setShowChatPanel(false);
                   }}
+                  className="hover:bg-destructive/20 hover:text-destructive"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Chat Messages */}
+            {/* Enhanced Chat Messages */}
             {isChatExpanded && (
-              <div className="h-96 flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="h-96 flex flex-col animate-fade-in">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-card/20 to-background/50">
                   {chatMessages.map((message, index) => (
                     <div
                       key={index}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-scale-in`}
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div
-                        className={`max-w-[70%] rounded-lg p-3 ${
+                        className={`max-w-[85%] rounded-xl p-4 shadow-sm transition-all duration-200 hover:shadow-md ${
                           message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
+                            ? 'bg-primary text-primary-foreground ml-4 border border-primary/20'
+                            : message.role === 'system'
+                            ? 'bg-accent/20 border border-accent/40 mr-4 text-accent-foreground'
+                            : 'bg-card mr-4 border border-border/50 text-card-foreground'
                         }`}
                         dir={getTextDirection(message.content)}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        {message.role === 'system' && (
+                          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-accent/30">
+                            <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                            <span className="text-xs font-medium text-accent-foreground/80">خطوة التوجيه</span>
+                          </div>
+                        )}
+                        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                          {message.content}
+                        </div>
+                        <div className="text-xs opacity-60 mt-2">
+                          {message.timestamp.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       </div>
                     </div>
                   ))}
                   {isLoadingChat && (
-                    <div className="flex justify-start">
-                      <div className="bg-muted rounded-lg p-3">
-                        <div className="flex items-center gap-2">
-                          <div className="animate-pulse">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                            </div>
+                    <div className="flex justify-start animate-fade-in">
+                      <div className="bg-card border border-border/50 rounded-xl p-4 mr-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                           </div>
+                          <span className="text-sm text-muted-foreground font-medium">المساعد يكتب...</span>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Chat Input */}
-                <div className="border-t border-border p-4">
-                  <div className="flex gap-2">
+                {/* Enhanced Chat Input */}
+                <div className="border-t border-border/50 p-4 bg-gradient-to-r from-background/50 to-card/30">
+                  <div className="flex gap-3">
                     <Input
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       placeholder="اكتب سؤالك هنا..."
-                      className="flex-1"
+                      className="flex-1 border-accent/30 focus:border-accent bg-background/70 backdrop-blur-sm transition-all duration-200 focus:shadow-md"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -589,6 +628,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                       onClick={sendMessage} 
                       disabled={isLoadingChat || !inputMessage.trim()}
                       size="icon"
+                      className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 shadow-md"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
