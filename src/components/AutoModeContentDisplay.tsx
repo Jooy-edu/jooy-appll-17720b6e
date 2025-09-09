@@ -4,12 +4,17 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Sparkles, UserRound } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
-import type { AutoModePageData, GuidanceItem } from "@/types/worksheet";
+import EmbeddedAIChat from "./EmbeddedAIChat";
+import type { AutoModePageData, GuidanceItem, WorksheetMetadata } from "@/types/worksheet";
 
 interface AutoModeContentDisplayProps {
   worksheetId: string;
   pageNumber: number;
   autoModePageData: AutoModePageData;
+  worksheetData: {
+    meta: WorksheetMetadata;
+    pdfUrl: string;
+  };
   pdfUrl: string;
   onTextModeChange?: (isTextMode: boolean) => void;
   onGuidanceStateChange?: (guidance: GuidanceItem | null, stepIndex: number) => void;
@@ -22,6 +27,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   worksheetId,
   pageNumber,
   autoModePageData,
+  worksheetData,
   pdfUrl,
   onTextModeChange,
   onGuidanceStateChange,
@@ -37,6 +43,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
+  const [showEmbeddedChat, setShowEmbeddedChat] = useState<boolean>(false);
   
   // Virtual tutor selection state
   const [selectedTutorVideoUrl, setSelectedTutorVideoUrl] = useState<string>(() => {
@@ -264,6 +271,9 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           playAudioSegment(activeGuidance.audioName, nextStepIndex);
         }, 500);
       }
+    } else if (activeGuidance && currentStepIndex >= activeGuidance.description.length - 1) {
+      // We've reached the final step, show embedded chat
+      setShowEmbeddedChat(true);
     }
   };
 
@@ -271,6 +281,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
+    setShowEmbeddedChat(false);
     
     if (audioRef.current) {
       audioRef.current.pause();
@@ -398,6 +409,16 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           >
             <Sparkles className="!h-6 !w-6" />
           </Button>
+        )}
+
+        {showEmbeddedChat && activeGuidance && (
+          <div className="px-4 pb-4">
+            <EmbeddedAIChat
+              worksheetData={worksheetData}
+              guidance={activeGuidance}
+              pageData={autoModePageData}
+            />
+          </div>
         )}
         
         <VirtualTutorSelectionModal

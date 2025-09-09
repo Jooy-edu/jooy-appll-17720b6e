@@ -458,6 +458,7 @@ const WorksheetPage: React.FC = () => {
           worksheetId={id}
           pageNumber={pageIndex}
           autoModePageData={currentPageData}
+          worksheetData={worksheetData}
           pdfUrl={worksheetData.pdfUrl}
           onTextModeChange={setIsTextModeActive}
           onGuidanceStateChange={handleGuidanceStateChange}
@@ -478,17 +479,21 @@ const WorksheetPage: React.FC = () => {
           allRegionsState={allRegionsState}
         />
       )}
-      <AIChatButton 
-        worksheetId={id} 
-        pageNumber={pageIndex} 
-        isTextModeActive={isTextModeActive}
-        activeRegion={worksheetData.meta.mode === 'auto' ? null : currentActiveRegion}
-        currentStepIndex={worksheetData.meta.mode === 'auto' ? currentGuidanceStepIndex : currentStepIndex}
-        pdfUrl={worksheetData.pdfUrl}
-        worksheetMeta={worksheetData.meta}
-        pageDescriptionForAI={pageDescriptionForAI}
-        activeGuidance={worksheetData.meta.mode === 'auto' ? currentActiveGuidance : null}
-      />
+      
+      {/* Only show AIChatButton for non-auto modes */}
+      {worksheetData.meta.mode !== 'auto' && (
+        <AIChatButton 
+          worksheetId={id} 
+          pageNumber={pageIndex} 
+          isTextModeActive={isTextModeActive}
+          activeRegion={currentActiveRegion}
+          currentStepIndex={currentStepIndex}
+          pdfUrl={worksheetData.pdfUrl}
+          worksheetMeta={worksheetData.meta}
+          pageDescriptionForAI={pageDescriptionForAI}
+          activeGuidance={null}
+        />
+      )}
     </div>
   );
 };
