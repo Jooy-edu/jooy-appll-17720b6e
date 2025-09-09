@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Sparkles, UserRound } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
+import EmbeddedAIChat from "./EmbeddedAIChat";
 import type { AutoModePageData, GuidanceItem } from "@/types/worksheet";
 
 interface AutoModeContentDisplayProps {
@@ -37,6 +38,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
+  const [showEmbeddedChat, setShowEmbeddedChat] = useState<boolean>(false);
   
   // Virtual tutor selection state
   const [selectedTutorVideoUrl, setSelectedTutorVideoUrl] = useState<string>(() => {
@@ -264,6 +266,9 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           playAudioSegment(activeGuidance.audioName, nextStepIndex);
         }, 500);
       }
+    } else if (activeGuidance && activeGuidance.description && currentStepIndex === activeGuidance.description.length - 1) {
+      // User has reached the final step, show embedded AI chat
+      setShowEmbeddedChat(true);
     }
   };
 
@@ -271,6 +276,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
+    setShowEmbeddedChat(false);
     
     if (audioRef.current) {
       audioRef.current.pause();
@@ -324,6 +330,20 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   };
 
   const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
+  const isLastStep = activeGuidance?.description && currentStepIndex === activeGuidance.description.length - 1;
+
+  // Show embedded AI chat if requested
+  if (showEmbeddedChat && activeGuidance) {
+    return (
+      <EmbeddedAIChat
+        worksheetData={autoModePageData}
+        guidance={activeGuidance}
+        worksheetId={worksheetId}
+        pageNumber={pageNumber}
+        onBack={handleBackToTitles}
+      />
+    );
+  }
 
   if (activeGuidance) {
     // Text mode - showing guidance description
@@ -390,7 +410,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           </div>
         </div>
 
-        {hasNextStep && (
+        {(hasNextStep || isLastStep) && (
           <Button 
             onClick={handleNextStep} 
             className="next-button"

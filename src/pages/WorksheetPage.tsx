@@ -478,17 +478,18 @@ const WorksheetPage: React.FC = () => {
           allRegionsState={allRegionsState}
         />
       )}
-      <AIChatButton 
-        worksheetId={id} 
-        pageNumber={pageIndex} 
-        isTextModeActive={isTextModeActive}
-        activeRegion={worksheetData.meta.mode === 'auto' ? null : currentActiveRegion}
-        currentStepIndex={worksheetData.meta.mode === 'auto' ? currentGuidanceStepIndex : currentStepIndex}
-        pdfUrl={worksheetData.pdfUrl}
-        worksheetMeta={worksheetData.meta}
-        pageDescriptionForAI={pageDescriptionForAI}
-        activeGuidance={worksheetData.meta.mode === 'auto' ? currentActiveGuidance : null}
-      />
+      {/* AI Chat Button only for regions mode */}
+      {worksheetData.meta.mode !== 'auto' && (
+        <AIChatButton 
+          worksheetId={id} 
+          pageNumber={pageIndex} 
+          isTextModeActive={isTextModeActive}
+          activeRegion={currentActiveRegion}
+          currentStepIndex={currentStepIndex}
+          pdfUrl={worksheetData.pdfUrl}
+          worksheetMeta={worksheetData.meta}
+        />
+      )}
     </div>
   );
 };
