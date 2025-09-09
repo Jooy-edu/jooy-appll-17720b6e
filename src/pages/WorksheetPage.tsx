@@ -530,8 +530,8 @@ const WorksheetPage: React.FC = () => {
         />
       )}
       
-      {/* Show AIChatButton for non-auto modes OR auto mode without active guidance */}
-      {(worksheetData.meta.mode !== 'auto' || !currentActiveGuidance) && (
+      {/* Show AIChatButton for non-auto modes OR auto mode without active guidance AND no embedded chat */}
+      {(worksheetData.meta.mode !== 'auto' || (!currentActiveGuidance && !showEmbeddedChat)) && (
         <AIChatButton 
           worksheetId={id} 
           pageNumber={pageIndex} 
