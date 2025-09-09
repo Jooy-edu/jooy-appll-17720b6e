@@ -38,6 +38,9 @@ const EmbeddedAIChat: React.FC<EmbeddedAIChatProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Generate storage key for this specific worksheet page
+  const storageKey = `embedded-ai-chat-${worksheetData.meta.documentId}-${pageData.page_number}`;
+
   // Initialize chat with contextual system message and guidance steps as conversation history
   useEffect(() => {
     // Build detailed context for the AI
@@ -75,8 +78,25 @@ Always respond in the same language as the lesson content. If the student asks f
       content: t('aiChat.welcome')
     });
 
+    // Load saved conversation if it exists
+    try {
+      const savedMessages = localStorage.getItem(storageKey);
+      if (savedMessages) {
+        const parsedMessages = JSON.parse(savedMessages);
+        // Only load user and assistant messages (exclude system and guidance messages)
+        const chatMessages = parsedMessages.filter((msg: any) => 
+          msg.role !== 'system' && 
+          !guidance.description?.includes(msg.content) &&
+          msg.content !== t('aiChat.welcome')
+        ) as ChatMessage[];
+        initialMessages.push(...chatMessages);
+      }
+    } catch (error) {
+      console.error('Error loading saved chat messages:', error);
+    }
+
     setMessages(initialMessages);
-  }, [guidance, pageData, t]);
+  }, [guidance, pageData, t, storageKey]);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -101,7 +121,7 @@ Always respond in the same language as the lesson content. If the student asks f
     setIsLoading(true);
 
     // Add user message to chat
-    const newMessages: ChatMessage[] = [...messages, { role: 'user', content: userMessage }];
+    const newMessages = [...messages, { role: 'user' as const, content: userMessage }];
     setMessages(newMessages);
 
     try {
@@ -131,7 +151,16 @@ Analyze the student's question carefully. Respond in the same language as the le
       const aiResponse = response.text();
 
       // Add AI response to chat
-      setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
+      const updatedMessages = [...newMessages, { role: 'assistant' as const, content: aiResponse }];
+      setMessages(updatedMessages);
+
+      // Save only user and assistant messages (exclude system and guidance messages)
+      const messagesToSave = updatedMessages.filter(msg => 
+        msg.role !== 'system' && 
+        !guidance.description?.includes(msg.content) &&
+        msg.content !== t('aiChat.welcome')
+      );
+      localStorage.setItem(storageKey, JSON.stringify(messagesToSave));
 
     } catch (error) {
       toast({
@@ -169,7 +198,7 @@ Analyze the student's question carefully. Respond in the same language as the le
               {message.role === 'user' ? (
                 // User message - gradient bubble on the right
                 <div 
-                  className="max-w-[80%] bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl px-4 py-3 shadow-sm"
+                  className="max-w-[80%] bg-gradient-orange-magenta text-white rounded-2xl px-4 py-3 shadow-sm"
                   dir={getTextDirection(message.content)}
                 >
                   <div className="whitespace-pre-wrap break-words text-sm">
@@ -240,7 +269,7 @@ Analyze the student's question carefully. Respond in the same language as the le
               onClick={handleSendMessage}
               disabled={isLoading || !inputMessage.trim()}
               size="icon"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+              className="bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white"
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -280,7 +309,7 @@ Analyze the student's question carefully. Respond in the same language as the le
                   {message.role === 'user' ? (
                     // User message - gradient bubble on the right
                     <div 
-                      className="max-w-[80%] bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl px-4 py-3 shadow-sm"
+                      className="max-w-[80%] bg-gradient-orange-magenta text-white rounded-2xl px-4 py-3 shadow-sm"
                       dir={getTextDirection(message.content)}
                     >
                       <div className="whitespace-pre-wrap break-words text-sm">
@@ -354,7 +383,7 @@ Analyze the student's question carefully. Respond in the same language as the le
             onClick={handleSendMessage}
             disabled={isLoading || !inputMessage.trim()}
             size="icon"
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+            className="bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white"
           >
             <Send className="h-4 w-4" />
           </Button>

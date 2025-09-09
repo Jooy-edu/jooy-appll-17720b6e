@@ -456,7 +456,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
               console.log('🔍 [DEBUG] Current showEmbeddedChat state:', showEmbeddedChat);
               onEmbeddedChatChange(true);
             }} 
-            className="next-button z-[60]"
+            className="next-button z-[80]"
             variant="default"
           >
             <MessageSquare className="!h-6 !w-6" />
