@@ -482,6 +482,22 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             </div>
           ))}
         </div>
+
+        {/* Embedded Chat on Main Page - shown after any lesson completion */}
+        {showEmbeddedChat && (
+          <div className="mt-8">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                {t('common.language') === 'العربية' ? 'اسأل عن هذه الصفحة' : 'Ask about this page'}
+              </h3>
+              <EmbeddedAIChat
+                worksheetData={worksheetData}
+                guidance={null}
+                pageData={autoModePageData}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

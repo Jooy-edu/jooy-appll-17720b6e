@@ -305,6 +305,41 @@ const WorksheetPage: React.FC = () => {
     }
   }, [id, n, allGuidanceState, currentActiveRegion, currentStepIndex]); // Include current state in dependencies
 
+  // Handle embedded chat state changes
+  const handleEmbeddedChatChange = useCallback((showChat: boolean) => {
+    console.log('🔍 [DEBUG] handleEmbeddedChatChange called with showChat:', showChat);
+    setShowEmbeddedChat(showChat);
+    
+    // Update session storage immediately
+    if (id && n) {
+      const sessionKey = `worksheet_page_state_${id}_${n}`;
+      try {
+        const currentStoredState = sessionStorage.getItem(sessionKey);
+        let currentSessionData: SessionPageData = {
+          lastActiveRegionId: null,
+          lastActiveGuidanceIndex: null,
+          showEmbeddedChat: false,
+          regions: {},
+          guidance: {}
+        };
+        
+        if (currentStoredState) {
+          currentSessionData = JSON.parse(currentStoredState);
+        }
+        
+        const stateToSave: SessionPageData = {
+          ...currentSessionData,
+          showEmbeddedChat: showChat
+        };
+        
+        sessionStorage.setItem(sessionKey, JSON.stringify(stateToSave));
+        console.log('🔍 [DEBUG] Updated embedded chat state in session storage:', showChat);
+      } catch (error) {
+        console.warn('🔍 [DEBUG] Failed to update embedded chat state in session:', error);
+      }
+    }
+  }, [id, n]);
+
   // Handle guidance state changes for Auto Mode
   const handleGuidanceStateChange = useCallback((guidance: GuidanceItem | null, stepIndex: number) => {
     console.log('🔍 [DEBUG] handleGuidanceStateChange called with guidance:', guidance?.title, 'stepIndex:', stepIndex);
@@ -321,8 +356,7 @@ const WorksheetPage: React.FC = () => {
     if (guidanceChanged) {
       console.log('🔍 [DEBUG] Guidance changed from', currentActiveGuidance?.title, 'to', guidance?.title);
       setCurrentActiveGuidance(guidance);
-      // Reset embedded chat when guidance changes
-      setShowEmbeddedChat(false);
+      // Don't reset embedded chat when guidance changes - let it persist
     }
     
     if (stepChanged) {
@@ -476,9 +510,11 @@ const WorksheetPage: React.FC = () => {
           pdfUrl={worksheetData.pdfUrl}
           onTextModeChange={setIsTextModeActive}
           onGuidanceStateChange={handleGuidanceStateChange}
+          onEmbeddedChatChange={handleEmbeddedChatChange}
           initialActiveGuidance={initialActiveGuidance}
           initialGuidanceStepIndex={initialGuidanceStepIndex}
           allGuidanceState={allGuidanceState}
+          showEmbeddedChat={showEmbeddedChat}
         />
       ) : (
         <WorksheetViewer 
