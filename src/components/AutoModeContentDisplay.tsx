@@ -1,17 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ChevronLeft, Sparkles, UserRound, Send } from "lucide-react";
+import { ChevronLeft, Sparkles, UserRound } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { AutoModePageData, GuidanceItem } from "@/types/worksheet";
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
 
 interface AutoModeContentDisplayProps {
   worksheetId: string;
@@ -44,10 +37,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
-  const [showChatBox, setShowChatBox] = useState<boolean>(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState<string>("");
-  const [isLoadingChat, setIsLoadingChat] = useState<boolean>(false);
   
   // Virtual tutor selection state
   const [selectedTutorVideoUrl, setSelectedTutorVideoUrl] = useState<string>(() => {
@@ -142,15 +131,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       textDisplay.scrollTop = textDisplay.scrollHeight;
     }
   }, [displayedMessages]);
-
-  // Auto-initialize chat when final step is reached
-  useEffect(() => {
-    if (activeGuidance && activeGuidance.description && 
-        currentStepIndex === activeGuidance.description.length - 1 && 
-        !showChatBox) {
-      initializeChatWithGuidance();
-    }
-  }, [activeGuidance, currentStepIndex, showChatBox]);
 
   // Audio and video synchronization
   useEffect(() => {
@@ -291,9 +271,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
-    setShowChatBox(false);
-    setChatMessages([]);
-    setInputMessage("");
     
     if (audioRef.current) {
       audioRef.current.pause();
@@ -305,75 +282,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     }
     
     setIsAudioPlaying(false);
-  };
-
-  const initializeChatWithGuidance = () => {
-    if (!activeGuidance) return;
-    
-    const guidanceMessages: ChatMessage[] = displayedMessages.map(message => ({
-      role: 'assistant' as const,
-      content: message
-    }));
-    
-    setChatMessages(guidanceMessages);
-    setShowChatBox(true);
-  };
-
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoadingChat) return;
-    
-    const userMessage = inputMessage.trim();
-    setInputMessage("");
-    
-    // Add user message
-    const newUserMessage: ChatMessage = { role: 'user', content: userMessage };
-    setChatMessages(prev => [...prev, newUserMessage]);
-    setIsLoadingChat(true);
-    
-    try {
-      const apiKey = localStorage.getItem('gemini_api_key');
-      if (!apiKey) {
-        throw new Error('No API key found. Please set your Gemini API key.');
-      }
-      
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      
-      // Build context
-      const context = `You are an AI tutor helping with worksheet content. 
-      
-Current worksheet page: ${autoModePageData.page_number}
-Page description: ${autoModePageData.page_description}
-Current guidance topic: ${activeGuidance?.title || 'General guidance'}
-
-Previous guidance steps shown:
-${displayedMessages.map((msg, idx) => `${idx + 1}. ${msg}`).join('\n')}
-
-Please provide helpful, concise responses related to this educational content.`;
-      
-      const conversation = chatMessages.map(msg => 
-        `${msg.role === 'user' ? 'Student' : 'Tutor'}: ${msg.content}`
-      ).join('\n');
-      
-      const prompt = `${context}\n\nConversation so far:\n${conversation}\nStudent: ${userMessage}\nTutor:`;
-      
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      const assistantMessage: ChatMessage = { role: 'assistant', content: text };
-      setChatMessages(prev => [...prev, assistantMessage]);
-      
-    } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage: ChatMessage = { 
-        role: 'assistant', 
-        content: 'Sorry, I encountered an error. Please check your API key or try again.' 
-      };
-      setChatMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoadingChat(false);
-    }
   };
 
   const handleMessageClick = (index: number) => {
@@ -416,7 +324,6 @@ Please provide helpful, concise responses related to this educational content.`;
   };
 
   const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
-  const isLastStep = activeGuidance?.description && currentStepIndex === activeGuidance.description.length - 1;
 
   if (activeGuidance) {
     // Text mode - showing guidance description
@@ -483,7 +390,7 @@ Please provide helpful, concise responses related to this educational content.`;
           </div>
         </div>
 
-        {hasNextStep && !showChatBox && (
+        {hasNextStep && (
           <Button 
             onClick={handleNextStep} 
             className="next-button"
@@ -491,54 +398,6 @@ Please provide helpful, concise responses related to this educational content.`;
           >
             <Sparkles className="!h-6 !w-6" />
           </Button>
-        )}
-
-        {showChatBox && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-h-96 flex flex-col">
-            <div className="flex-1 overflow-y-auto mb-4 space-y-3">
-              {chatMessages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded-lg ${
-                    message.role === 'user' 
-                      ? 'bg-blue-100 ml-8 text-right' 
-                      : 'bg-gray-100 mr-8'
-                  }`}
-                  dir={getTextDirection(message.content)}
-                >
-                  <p className="text-sm">{message.content}</p>
-                </div>
-              ))}
-              {isLoadingChat && (
-                <div className="bg-gray-100 mr-8 p-3 rounded-lg">
-                  <p className="text-sm text-gray-500">Thinking...</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              <Input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Ask a question..."
-                className="flex-1"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                dir={getTextDirection(inputMessage)}
-              />
-              <Button 
-                onClick={sendMessage}
-                disabled={!inputMessage.trim() || isLoadingChat}
-                size="icon"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
         )}
         
         <VirtualTutorSelectionModal
