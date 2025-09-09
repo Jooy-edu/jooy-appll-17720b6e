@@ -38,8 +38,8 @@ const EmbeddedAIChat: React.FC<EmbeddedAIChatProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Generate storage key for this specific worksheet page
-  const storageKey = `embedded-ai-chat-${worksheetData.meta.documentId}-${pageData.page_number}`;
+  // Generate storage key for this specific worksheet page and guidance title
+  const storageKey = `embedded-ai-chat-${worksheetData.meta.documentId}-${pageData.page_number}-${guidance.title}`;
 
   // Initialize chat with contextual system message and guidance steps as conversation history
   useEffect(() => {
