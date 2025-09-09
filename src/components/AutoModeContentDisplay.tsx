@@ -494,7 +494,7 @@ Please provide helpful, concise responses related to this educational content.`;
         )}
 
         {showChatBox && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-h-96 flex flex-col">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-h-96 flex flex-col z-80">
             <div className="flex-1 overflow-y-auto mb-4 space-y-3">
               {chatMessages.map((message, index) => (
                 <div
