@@ -305,6 +305,52 @@ const WorksheetPage: React.FC = () => {
     }
   }, [id, n, allGuidanceState, currentActiveRegion, currentStepIndex]); // Include current state in dependencies
 
+  // Handle embedded chat state changes
+  const handleEmbeddedChatChange = useCallback((showChat: boolean) => {
+    console.log('🔍 [DEBUG] handleEmbeddedChatChange called with showChat:', showChat);
+    
+    setShowEmbeddedChat(prevShowChat => {
+      if (prevShowChat !== showChat) {
+        console.log('🔍 [DEBUG] Embedded chat state changed from', prevShowChat, 'to', showChat);
+        
+        // Update session storage with new embedded chat state
+        if (id && n) {
+          const sessionKey = `worksheet_page_state_${id}_${n}`;
+          
+          try {
+            const currentStoredState = sessionStorage.getItem(sessionKey);
+            let currentSessionData: SessionPageData = {
+              lastActiveRegionId: null,
+              lastActiveGuidanceIndex: null,
+              showEmbeddedChat: false,
+              regions: allRegionsState,
+              guidance: allGuidanceState
+            };
+            
+            if (currentStoredState) {
+              currentSessionData = JSON.parse(currentStoredState);
+            }
+            
+            const stateToSave: SessionPageData = {
+              ...currentSessionData,
+              showEmbeddedChat: showChat,
+              regions: allRegionsState,
+              guidance: allGuidanceState
+            };
+            
+            sessionStorage.setItem(sessionKey, JSON.stringify(stateToSave));
+            console.log('🔍 [DEBUG] Successfully saved embedded chat state to sessionStorage:', showChat);
+          } catch (error) {
+            console.warn('🔍 [DEBUG] Failed to save embedded chat state to session:', error);
+          }
+        }
+        
+        return showChat;
+      }
+      return prevShowChat;
+    });
+  }, [id, n, allRegionsState, allGuidanceState]);
+
   // Handle guidance state changes for Auto Mode
   const handleGuidanceStateChange = useCallback((guidance: GuidanceItem | null, stepIndex: number) => {
     console.log('🔍 [DEBUG] handleGuidanceStateChange called with guidance:', guidance?.title, 'stepIndex:', stepIndex);
@@ -348,10 +394,16 @@ const WorksheetPage: React.FC = () => {
               }
             };
             
+            // Check if this is the final step to determine embedded chat state
+            const isLastStep = stepIndex >= guidance.description.length - 1;
+            const shouldShowEmbeddedChat = isLastStep ? true : showEmbeddedChat;
+            
+            console.log('🔍 [DEBUG] Guidance step update - isLastStep:', isLastStep, 'shouldShowEmbeddedChat:', shouldShowEmbeddedChat);
+            
             const stateToSave: SessionPageData = {
               lastActiveRegionId: null,
               lastActiveGuidanceIndex: guidanceIndex,
-              showEmbeddedChat: showEmbeddedChat,
+              showEmbeddedChat: shouldShowEmbeddedChat,
               regions: allRegionsState,
               guidance: updatedAllGuidanceState
             };
@@ -476,9 +528,11 @@ const WorksheetPage: React.FC = () => {
           pdfUrl={worksheetData.pdfUrl}
           onTextModeChange={setIsTextModeActive}
           onGuidanceStateChange={handleGuidanceStateChange}
+          onEmbeddedChatChange={handleEmbeddedChatChange}
           initialActiveGuidance={initialActiveGuidance}
           initialGuidanceStepIndex={initialGuidanceStepIndex}
           allGuidanceState={allGuidanceState}
+          showEmbeddedChat={showEmbeddedChat}
         />
       ) : (
         <WorksheetViewer 

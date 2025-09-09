@@ -208,9 +208,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
         
         // Check if we should show embedded chat based on initial state
         if (initialGuidanceStepIndex >= initialActiveGuidance.description.length - 1) {
-          console.log('🔍 [DEBUG] Initial state shows final step, triggering embedded chat');
+          console.log('🔍 [DEBUG] Initial state shows final step, triggering embedded chat for guidance:', initialActiveGuidance.title);
+          console.log('🔍 [DEBUG] initialGuidanceStepIndex:', initialGuidanceStepIndex, 'totalSteps:', initialActiveGuidance.description.length);
           if (onEmbeddedChatChange) {
             onEmbeddedChatChange(true);
+          } else {
+            console.warn('🔍 [DEBUG] onEmbeddedChatChange is not defined in initial state!');
           }
         }
       }
@@ -296,9 +299,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       }
     } else if (activeGuidance && currentStepIndex >= activeGuidance.description.length - 1) {
       // We've reached the final step, show embedded chat
-      console.log('🔍 [DEBUG] Final step reached, showing embedded chat');
+      console.log('🔍 [DEBUG] Final step reached for guidance:', activeGuidance.title, 'currentStepIndex:', currentStepIndex, 'totalSteps:', activeGuidance.description.length);
+      console.log('🔍 [DEBUG] Calling onEmbeddedChatChange(true)');
       if (onEmbeddedChatChange) {
         onEmbeddedChatChange(true);
+      } else {
+        console.warn('🔍 [DEBUG] onEmbeddedChatChange is not defined!');
       }
     }
   };
@@ -441,6 +447,11 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
 
         {showEmbeddedChat && activeGuidance && (
           <div className="px-4 pb-4">
+            <div className="bg-blue-50 p-3 rounded-lg mb-3">
+              <p className="text-sm text-blue-700">
+                🤖 Ask me anything about this lesson!
+              </p>
+            </div>
             <EmbeddedAIChat
               worksheetData={worksheetData}
               guidance={activeGuidance}
@@ -448,6 +459,11 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             />
           </div>
         )}
+        
+        {showEmbeddedChat && !activeGuidance && (() => {
+          console.log('🔍 [DEBUG] showEmbeddedChat is true but no activeGuidance:', !!activeGuidance);
+          return null;
+        })()}
         
         <VirtualTutorSelectionModal
           isOpen={showTutorSelectionModal}
