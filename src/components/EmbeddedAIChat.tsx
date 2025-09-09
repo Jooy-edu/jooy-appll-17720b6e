@@ -36,7 +36,7 @@ const EmbeddedAIChat: React.FC<EmbeddedAIChatProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize chat with contextual system message
+  // Initialize chat with contextual system message and guidance steps as conversation history
   useEffect(() => {
     // Build detailed context for the AI
     const contextString = `You are an AI assistant helping a student. Please use the following context to answer their questions.
@@ -45,21 +45,35 @@ Page Context: ${pageData.page_description}
 
 Topic Title: ${guidance.title}
 
-Lesson Details:
-${guidance.description.map((step, index) => `- ${step}`).join('\n')}
+The student has just completed a lesson with the following steps. This conversation history shows what was explained to them. Answer their questions based on this context.
 
-The student has just finished this lesson. Now, answer their questions. Always respond in the same language as the lesson content. If the student asks for specific answers to worksheet exercises, guide them with hints and leading questions rather than giving direct answers. If they ask conceptual questions for understanding, provide clear explanations.`;
+Always respond in the same language as the lesson content. If the student asks for specific answers to worksheet exercises, guide them with hints and leading questions rather than giving direct answers. If they ask conceptual questions for understanding, provide clear explanations.`;
 
-    setMessages([
+    // Create initial messages including guidance steps as conversation history
+    const initialMessages: ChatMessage[] = [
       {
         role: 'system',
         content: contextString
-      },
-      {
-        role: 'assistant',
-        content: t('aiChat.welcome')
       }
-    ]);
+    ];
+
+    // Add each guidance step as an assistant message (lesson conversation history)
+    if (guidance.description && Array.isArray(guidance.description)) {
+      guidance.description.forEach((step, index) => {
+        initialMessages.push({
+          role: 'assistant',
+          content: step
+        });
+      });
+    }
+
+    // Add a final welcome message
+    initialMessages.push({
+      role: 'assistant',
+      content: t('aiChat.welcome')
+    });
+
+    setMessages(initialMessages);
   }, [guidance, pageData, t]);
 
   // Auto-scroll to bottom when new messages are added
