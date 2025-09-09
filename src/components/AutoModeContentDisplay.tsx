@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Sparkles, UserRound } from "lucide-react";
+import { ChevronLeft, Sparkles, UserRound, MessageSquare } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
 import EmbeddedAIChat from "./EmbeddedAIChat";
@@ -429,13 +429,24 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           </div>
         </div>
 
-        {hasNextStep && (
+        {hasNextStep ? (
           <Button 
             onClick={handleNextStep} 
             className="next-button"
             variant="default"
           >
             <Sparkles className="!h-6 !w-6" />
+          </Button>
+        ) : activeGuidance && (
+          <Button 
+            onClick={() => {
+              console.log('🔍 [DEBUG] Complete lesson button clicked, triggering embedded chat');
+              onEmbeddedChatChange(true);
+            }} 
+            className="next-button"
+            variant="default"
+          >
+            <MessageSquare className="!h-6 !w-6" />
           </Button>
         )}
 
