@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Sparkles, UserRound } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronLeft, Sparkles, UserRound, Send, MessageCircle, X } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
-import EmbeddedAIChat from "./EmbeddedAIChat";
+import ApiKeyManager from "./ApiKeyManager";
+import ReactMarkdown from 'react-markdown';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { toast } from "@/hooks/use-toast";
 import type { AutoModePageData, GuidanceItem } from "@/types/worksheet";
+
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
 
 interface AutoModeContentDisplayProps {
   worksheetId: string;
@@ -38,7 +47,13 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
-  const [showEmbeddedChat, setShowEmbeddedChat] = useState<boolean>(false);
+  const [showChatPanel, setShowChatPanel] = useState<boolean>(false);
+  
+  // Chat-related states
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [userInput, setUserInput] = useState('');
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   
   // Virtual tutor selection state
   const [selectedTutorVideoUrl, setSelectedTutorVideoUrl] = useState<string>(() => {
@@ -49,6 +64,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Initial audio availability check
   useEffect(() => {
@@ -267,8 +283,9 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
         }, 500);
       }
     } else if (activeGuidance && activeGuidance.description && currentStepIndex === activeGuidance.description.length - 1) {
-      // User has reached the final step, show embedded AI chat
-      setShowEmbeddedChat(true);
+      // User has reached the final step, initialize chat with guidance steps as history
+      initializeChatWithGuidance();
+      setShowChatPanel(true);
     }
   };
 
@@ -276,7 +293,9 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
-    setShowEmbeddedChat(false);
+    setShowChatPanel(false);
+    setChatMessages([]);
+    setUserInput('');
     
     if (audioRef.current) {
       audioRef.current.pause();
@@ -329,21 +348,100 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     e.preventDefault();
   };
 
+  const initializeChatWithGuidance = () => {
+    if (!activeGuidance) return;
+
+    const systemContext = `You are an AI assistant helping a student. Please use the following context to answer their questions.
+
+Page Context: ${autoModePageData.page_description}
+
+Topic Title: ${activeGuidance.title}
+
+The student has just completed this lesson. Now, answer their questions based on this context.`;
+
+    // Convert guidance steps to assistant messages
+    const guidanceAsMessages: ChatMessage[] = [
+      { role: 'system', content: systemContext },
+      ...activeGuidance.description.map(step => ({
+        role: 'assistant' as const,
+        content: step
+      }))
+    ];
+
+    setChatMessages(guidanceAsMessages);
+  };
+
+  const handleSendMessage = async () => {
+    if (!userInput.trim() || isLoadingResponse) return;
+
+    const apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) {
+      setShowApiKeyModal(true);
+      return;
+    }
+
+    const newUserMessage: ChatMessage = { role: 'user', content: userInput.trim() };
+    const updatedMessages = [...chatMessages, newUserMessage];
+    setChatMessages(updatedMessages);
+    setUserInput('');
+    setIsLoadingResponse(true);
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      // Prepare conversation history for the API
+      const conversationHistory = updatedMessages
+        .filter(msg => msg.role !== 'system')
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n\n');
+
+      const systemContext = updatedMessages.find(msg => msg.role === 'system')?.content || '';
+      
+      const prompt = `${systemContext}
+
+Previous conversation:
+${conversationHistory}
+
+Please respond to the user's latest message. Be helpful and educational.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const assistantMessage: ChatMessage = { 
+        role: 'assistant', 
+        content: response.text() 
+      };
+
+      setChatMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please check your API key and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingResponse(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
   const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
   const isLastStep = activeGuidance?.description && currentStepIndex === activeGuidance.description.length - 1;
 
-  // Show embedded AI chat if requested
-  if (showEmbeddedChat && activeGuidance) {
-    return (
-      <EmbeddedAIChat
-        worksheetData={autoModePageData}
-        guidance={activeGuidance}
-        worksheetId={worksheetId}
-        pageNumber={pageNumber}
-        onBack={handleBackToTitles}
-      />
-    );
-  }
 
   if (activeGuidance) {
     // Text mode - showing guidance description
@@ -419,11 +517,101 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             <Sparkles className="!h-6 !w-6" />
           </Button>
         )}
+
+        {/* Chat Panel */}
+        {showChatPanel && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+              </div>
+              <Button
+                onClick={() => setShowChatPanel(false)}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="h-96 flex flex-col">
+              {/* Chat Messages */}
+              <div 
+                ref={chatScrollRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4"
+              >
+                {chatMessages
+                  .filter(msg => msg.role !== 'system')
+                  .map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-lg p-3 ${
+                        message.role === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                      dir={getTextDirection(message.content)}
+                    >
+                      {message.role === 'assistant' ? (
+                        <ReactMarkdown className="prose prose-sm max-w-none">
+                          {message.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <p>{message.content}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {isLoadingResponse && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span>Thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Input Area */}
+              <div className="border-t border-gray-200 p-4">
+                <div className="flex gap-2">
+                  <Input
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask a question about the lesson..."
+                    className="flex-1"
+                    disabled={isLoadingResponse}
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!userInput.trim() || isLoadingResponse}
+                    size="icon"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         <VirtualTutorSelectionModal
           isOpen={showTutorSelectionModal}
           onClose={() => setShowTutorSelectionModal(false)}
           onSelectTutor={handleTutorSelected}
+        />
+
+        <ApiKeyManager
+          isOpen={showApiKeyModal}
+          onClose={() => setShowApiKeyModal(false)}
         />
       </div>
     );
