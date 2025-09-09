@@ -143,6 +143,15 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     }
   }, [displayedMessages]);
 
+  // Auto-initialize chat when final step is reached
+  useEffect(() => {
+    if (activeGuidance && activeGuidance.description && 
+        currentStepIndex === activeGuidance.description.length - 1 && 
+        !showChatBox) {
+      initializeChatWithGuidance();
+    }
+  }, [activeGuidance, currentStepIndex, showChatBox]);
+
   // Audio and video synchronization
   useEffect(() => {
     if (!videoRef.current || !audioRef.current) return;
@@ -275,9 +284,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           playAudioSegment(activeGuidance.audioName, nextStepIndex);
         }, 500);
       }
-    } else if (activeGuidance && activeGuidance.description && currentStepIndex === activeGuidance.description.length - 1) {
-      // User has reached the final step, show chatbox
-      initializeChatWithGuidance();
     }
   };
 
