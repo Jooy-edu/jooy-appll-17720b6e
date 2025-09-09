@@ -449,7 +449,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           >
             <Sparkles className="!h-6 !w-6" />
           </Button>
-        ) : activeGuidance && (
+        ) : activeGuidance && !showEmbeddedChat && (
           <Button 
             onClick={() => {
               console.log('🔍 [DEBUG] Complete lesson button clicked, triggering embedded chat');

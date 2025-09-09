@@ -72,12 +72,6 @@ Always respond in the same language as the lesson content. If the student asks f
       });
     }
 
-    // Add a final welcome message
-    initialMessages.push({
-      role: 'assistant',
-      content: t('aiChat.welcome')
-    });
-
     // Load saved conversation if it exists
     try {
       const savedMessages = localStorage.getItem(storageKey);
@@ -86,8 +80,7 @@ Always respond in the same language as the lesson content. If the student asks f
         // Only load user and assistant messages (exclude system and guidance messages)
         const chatMessages = parsedMessages.filter((msg: any) => 
           msg.role !== 'system' && 
-          !guidance.description?.includes(msg.content) &&
-          msg.content !== t('aiChat.welcome')
+          !guidance.description?.includes(msg.content)
         ) as ChatMessage[];
         initialMessages.push(...chatMessages);
       }
@@ -157,8 +150,7 @@ Analyze the student's question carefully. Respond in the same language as the le
       // Save only user and assistant messages (exclude system and guidance messages)
       const messagesToSave = updatedMessages.filter(msg => 
         msg.role !== 'system' && 
-        !guidance.description?.includes(msg.content) &&
-        msg.content !== t('aiChat.welcome')
+        !guidance.description?.includes(msg.content)
       );
       localStorage.setItem(storageKey, JSON.stringify(messagesToSave));
 
