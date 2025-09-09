@@ -273,6 +273,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       }
     } else if (activeGuidance && currentStepIndex >= activeGuidance.description.length - 1) {
       // We've reached the final step, show embedded chat
+      console.log('🔍 [DEBUG] Final step reached, showing embedded chat');
       setShowEmbeddedChat(true);
     }
   };

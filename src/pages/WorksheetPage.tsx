@@ -480,8 +480,8 @@ const WorksheetPage: React.FC = () => {
         />
       )}
       
-      {/* Only show AIChatButton for non-auto modes */}
-      {worksheetData.meta.mode !== 'auto' && (
+      {/* Show AIChatButton for non-auto modes OR auto mode without active guidance */}
+      {(worksheetData.meta.mode !== 'auto' || !currentActiveGuidance) && (
         <AIChatButton 
           worksheetId={id} 
           pageNumber={pageIndex} 
@@ -491,7 +491,7 @@ const WorksheetPage: React.FC = () => {
           pdfUrl={worksheetData.pdfUrl}
           worksheetMeta={worksheetData.meta}
           pageDescriptionForAI={pageDescriptionForAI}
-          activeGuidance={null}
+          activeGuidance={currentActiveGuidance}
         />
       )}
     </div>
