@@ -19,6 +19,7 @@ interface StoredGuidanceData {
 interface SessionPageData {
   lastActiveRegionId: string | null;
   lastActiveGuidanceIndex: number | null;
+  showEmbeddedChat: boolean;
   regions: Record<string, StoredRegionData>;
   guidance: Record<number, StoredGuidanceData>;
 }
@@ -34,6 +35,7 @@ const WorksheetPage: React.FC = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [currentActiveGuidance, setCurrentActiveGuidance] = useState<GuidanceItem | null>(null);
   const [currentGuidanceStepIndex, setCurrentGuidanceStepIndex] = useState<number>(0);
+  const [showEmbeddedChat, setShowEmbeddedChat] = useState<boolean>(false);
   const [allRegionsState, setAllRegionsState] = useState<Record<string, StoredRegionData>>({});
   const [allGuidanceState, setAllGuidanceState] = useState<Record<number, StoredGuidanceData>>({});
   const [initialActiveRegion, setInitialActiveRegion] = useState<RegionData | null>(null);
@@ -125,6 +127,9 @@ const WorksheetPage: React.FC = () => {
         
         // Set all guidance state
         setAllGuidanceState(parsedState.guidance || {});
+        
+        // Set embedded chat state
+        setShowEmbeddedChat(parsedState.showEmbeddedChat || false);
         
         // If we have location state (from AI chat), prioritize that
         if (locationState?.initialActiveRegion) {
@@ -239,6 +244,7 @@ const WorksheetPage: React.FC = () => {
           const stateToSave: SessionPageData = {
             lastActiveRegionId: region.id,
             lastActiveGuidanceIndex: null,
+            showEmbeddedChat: false,
             regions: updatedAllRegionsState,
             guidance: allGuidanceState
           };
@@ -272,6 +278,7 @@ const WorksheetPage: React.FC = () => {
               const stateToSave: SessionPageData = {
                 lastActiveRegionId: null,
                 lastActiveGuidanceIndex: null,
+                showEmbeddedChat: false,
                 regions: currentAllRegionsState,
                 guidance: allGuidanceState
               };
@@ -296,27 +303,32 @@ const WorksheetPage: React.FC = () => {
         }
       });
     }
-  }, [id, n, allGuidanceState]); // Include allGuidanceState in dependencies
+  }, [id, n, allGuidanceState, currentActiveRegion, currentStepIndex]); // Include current state in dependencies
 
   // Handle guidance state changes for Auto Mode
   const handleGuidanceStateChange = useCallback((guidance: GuidanceItem | null, stepIndex: number) => {
     console.log('🔍 [DEBUG] handleGuidanceStateChange called with guidance:', guidance?.title, 'stepIndex:', stepIndex);
     
-    setCurrentActiveGuidance(prevGuidance => {
-      const guidanceChanged = prevGuidance?.title !== guidance?.title;
-      if (guidanceChanged) {
-        console.log('🔍 [DEBUG] Guidance changed from', prevGuidance?.title, 'to', guidance?.title);
-      }
-      return guidanceChanged ? guidance : prevGuidance;
-    });
+    // Check if there's actually a change to prevent infinite loops
+    const guidanceChanged = currentActiveGuidance?.title !== guidance?.title;
+    const stepChanged = currentGuidanceStepIndex !== stepIndex;
     
-    setCurrentGuidanceStepIndex(prevStepIndex => {
-      const stepChanged = prevStepIndex !== stepIndex;
-      if (stepChanged) {
-        console.log('🔍 [DEBUG] Guidance step index changed from', prevStepIndex, 'to', stepIndex);
-      }
-      return stepChanged ? stepIndex : prevStepIndex;
-    });
+    if (!guidanceChanged && !stepChanged) {
+      console.log('🔍 [DEBUG] No changes detected, skipping update');
+      return;
+    }
+    
+    if (guidanceChanged) {
+      console.log('🔍 [DEBUG] Guidance changed from', currentActiveGuidance?.title, 'to', guidance?.title);
+      setCurrentActiveGuidance(guidance);
+      // Reset embedded chat when guidance changes
+      setShowEmbeddedChat(false);
+    }
+    
+    if (stepChanged) {
+      console.log('🔍 [DEBUG] Guidance step index changed from', currentGuidanceStepIndex, 'to', stepIndex);
+      setCurrentGuidanceStepIndex(stepIndex);
+    }
     
     // Update guidance state and save to session storage
     if (id && n && worksheetData?.meta?.mode === 'auto' && 'data' in worksheetData.meta) {
@@ -339,6 +351,7 @@ const WorksheetPage: React.FC = () => {
             const stateToSave: SessionPageData = {
               lastActiveRegionId: null,
               lastActiveGuidanceIndex: guidanceIndex,
+              showEmbeddedChat: showEmbeddedChat,
               regions: allRegionsState,
               guidance: updatedAllGuidanceState
             };
@@ -367,6 +380,7 @@ const WorksheetPage: React.FC = () => {
             const stateToSave: SessionPageData = {
               lastActiveRegionId: null,
               lastActiveGuidanceIndex: null,
+              showEmbeddedChat: false,
               regions: allRegionsState,
               guidance: allGuidanceState
             };
@@ -379,7 +393,7 @@ const WorksheetPage: React.FC = () => {
         }
       }
     }
-  }, [id, n, worksheetData, allRegionsState, allGuidanceState]);
+  }, [id, n, worksheetData, allRegionsState, allGuidanceState, currentActiveGuidance, currentGuidanceStepIndex, showEmbeddedChat]);
   
   if (!id || !n) {
     return (

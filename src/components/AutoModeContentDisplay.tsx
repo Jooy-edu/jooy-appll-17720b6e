@@ -18,9 +18,11 @@ interface AutoModeContentDisplayProps {
   pdfUrl: string;
   onTextModeChange?: (isTextMode: boolean) => void;
   onGuidanceStateChange?: (guidance: GuidanceItem | null, stepIndex: number) => void;
+  onEmbeddedChatChange?: (showChat: boolean) => void;
   initialActiveGuidance?: GuidanceItem | null;
   initialGuidanceStepIndex?: number;
   allGuidanceState?: Record<number, { currentStepIndex: number }>;
+  showEmbeddedChat?: boolean;
 }
 
 const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
@@ -31,9 +33,11 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   pdfUrl,
   onTextModeChange,
   onGuidanceStateChange,
+  onEmbeddedChatChange,
   initialActiveGuidance,
   initialGuidanceStepIndex = 0,
-  allGuidanceState = {}
+  allGuidanceState = {},
+  showEmbeddedChat = false
 }) => {
   const { t } = useTranslation();
   
@@ -43,7 +47,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
-  const [showEmbeddedChat, setShowEmbeddedChat] = useState<boolean>(false);
   
   // Virtual tutor selection state
   const [selectedTutorVideoUrl, setSelectedTutorVideoUrl] = useState<string>(() => {
@@ -194,6 +197,26 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     };
   }, [videoRef.current, audioRef.current, isAudioPlaying]);
 
+  // Initialize guidance state from props if available
+  useEffect(() => {
+    if (initialActiveGuidance && initialGuidanceStepIndex >= 0) {
+      setActiveGuidance(initialActiveGuidance);
+      setCurrentStepIndex(initialGuidanceStepIndex);
+      if (initialActiveGuidance.description) {
+        const messages = initialActiveGuidance.description.slice(0, initialGuidanceStepIndex + 1);
+        setDisplayedMessages(messages);
+        
+        // Check if we should show embedded chat based on initial state
+        if (initialGuidanceStepIndex >= initialActiveGuidance.description.length - 1) {
+          console.log('🔍 [DEBUG] Initial state shows final step, triggering embedded chat');
+          if (onEmbeddedChatChange) {
+            onEmbeddedChatChange(true);
+          }
+        }
+      }
+    }
+  }, [initialActiveGuidance, initialGuidanceStepIndex, onEmbeddedChatChange]);
+
   const playAudioSegment = (audioName: string, stepIndex: number) => {
     console.log('🎵 [AUTO MODE] Attempting to play audio:', audioName, 'step:', stepIndex);
     if (!audioRef.current) {
@@ -274,7 +297,9 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     } else if (activeGuidance && currentStepIndex >= activeGuidance.description.length - 1) {
       // We've reached the final step, show embedded chat
       console.log('🔍 [DEBUG] Final step reached, showing embedded chat');
-      setShowEmbeddedChat(true);
+      if (onEmbeddedChatChange) {
+        onEmbeddedChatChange(true);
+      }
     }
   };
 
@@ -282,7 +307,9 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
-    setShowEmbeddedChat(false);
+    if (onEmbeddedChatChange) {
+      onEmbeddedChatChange(false);
+    }
     
     if (audioRef.current) {
       audioRef.current.pause();
