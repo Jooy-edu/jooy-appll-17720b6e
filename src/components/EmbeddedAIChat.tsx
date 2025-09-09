@@ -269,7 +269,7 @@ Analyze the student's question carefully. Respond in the same language as the le
               size="icon"
               className="bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4 scale-x-[-1]" />
             </Button>
           </div>
         </div>
@@ -384,7 +384,7 @@ Analyze the student's question carefully. Respond in the same language as the le
             size="icon"
             className="bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4 scale-x-[-1]" />
           </Button>
         </div>
       </div>
