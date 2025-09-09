@@ -38,6 +38,11 @@ const EmbeddedAIChat: React.FC<EmbeddedAIChatProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Early return if guidance is null
+  if (!guidance) {
+    return null;
+  }
+
   // Generate storage key for this specific worksheet page and guidance title
   const storageKey = `embedded-ai-chat-${worksheetData.meta.documentId}-${pageData.page_number}-${guidance.title}`;
 
