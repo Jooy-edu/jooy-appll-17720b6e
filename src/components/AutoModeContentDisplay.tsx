@@ -310,8 +310,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const initializeChatWithGuidance = () => {
     if (!activeGuidance) return;
     
-    // Start with empty chat messages (no duplication of guidance)
-    setChatMessages([]);
+    const guidanceMessages: ChatMessage[] = displayedMessages.map(message => ({
+      role: 'assistant' as const,
+      content: message
+    }));
+    
+    setChatMessages(guidanceMessages);
     setShowChatBox(true);
   };
 
@@ -490,28 +494,27 @@ Please provide helpful, concise responses related to this educational content.`;
         )}
 
         {showChatBox && (
-          <div className="mt-6 bg-white border-t border-gray-200 p-4">
-            {/* Show Q&A history below guidance */}
-            {chatMessages.length > 0 && (
-              <div className="mb-4 space-y-3 max-h-60 overflow-y-auto">
-                {chatMessages.map((message, index) => (
-                  <div
-                    key={index}
-                    className="text-sm"
-                    dir={getTextDirection(message.content)}
-                  >
-                    {message.role === 'user' ? (
-                      <div className="font-medium text-blue-700">Q: {message.content}</div>
-                    ) : (
-                      <div className="text-gray-700 mt-1">A: {message.content}</div>
-                    )}
-                  </div>
-                ))}
-                {isLoadingChat && (
-                  <div className="text-sm text-gray-500">A: Thinking...</div>
-                )}
-              </div>
-            )}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-h-96 flex flex-col">
+            <div className="flex-1 overflow-y-auto mb-4 space-y-3">
+              {chatMessages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg ${
+                    message.role === 'user' 
+                      ? 'bg-blue-100 ml-8 text-right' 
+                      : 'bg-gray-100 mr-8'
+                  }`}
+                  dir={getTextDirection(message.content)}
+                >
+                  <p className="text-sm">{message.content}</p>
+                </div>
+              ))}
+              {isLoadingChat && (
+                <div className="bg-gray-100 mr-8 p-3 rounded-lg">
+                  <p className="text-sm text-gray-500">Thinking...</p>
+                </div>
+              )}
+            </div>
             
             <div className="flex gap-2">
               <Input
