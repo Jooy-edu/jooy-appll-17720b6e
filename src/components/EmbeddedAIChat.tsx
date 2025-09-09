@@ -241,7 +241,7 @@ Analyze the student's question carefully. Respond in the same language as the le
           <div className="flex justify-start">
             <div className="bg-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-              <span className="text-sm text-gray-600">AI is thinking...</span>
+              <span className="text-sm text-gray-600">{t('aiChat.thinking')}</span>
             </div>
           </div>
         )}
@@ -253,7 +253,7 @@ Analyze the student's question carefully. Respond in the same language as the le
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={t('aiChat.typeMessage')}
+              placeholder={t('aiChat.placeholder')}
               disabled={isLoading}
               className="flex-1"
             />
@@ -351,7 +351,7 @@ Analyze the student's question carefully. Respond in the same language as the le
               <div className="flex justify-start">
                 <div className="bg-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-                  <span className="text-sm text-gray-600">AI is thinking...</span>
+                  <span className="text-sm text-gray-600">{t('aiChat.thinking')}</span>
                 </div>
               </div>
             )}
@@ -367,7 +367,7 @@ Analyze the student's question carefully. Respond in the same language as the le
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={t('aiChat.typeMessage')}
+            placeholder={t('aiChat.placeholder')}
             disabled={isLoading}
             className="flex-1"
           />
