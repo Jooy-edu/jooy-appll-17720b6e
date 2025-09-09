@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Sparkles, UserRound } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronLeft, Sparkles, UserRound, Send, MessageCircle, X, ChevronDown, ChevronUp } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
-import EmbeddedAIChat from "./EmbeddedAIChat";
+import ApiKeyManager from "./ApiKeyManager";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { useToast } from "@/hooks/use-toast";
 import type { AutoModePageData, GuidanceItem } from "@/types/worksheet";
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 interface AutoModeContentDisplayProps {
   worksheetId: string;
@@ -31,6 +40,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   allGuidanceState = {}
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   
   const [activeGuidance, setActiveGuidance] = useState<GuidanceItem | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -38,7 +48,14 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
-  const [showEmbeddedChat, setShowEmbeddedChat] = useState<boolean>(false);
+  
+  // Chat panel states
+  const [showChatPanel, setShowChatPanel] = useState<boolean>(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState<string>('');
+  const [isLoadingChat, setIsLoadingChat] = useState<boolean>(false);
+  const [isChatExpanded, setIsChatExpanded] = useState<boolean>(true);
+  const [showApiKeyManager, setShowApiKeyManager] = useState<boolean>(false);
   
   // Virtual tutor selection state
   const [selectedTutorVideoUrl, setSelectedTutorVideoUrl] = useState<string>(() => {
@@ -267,8 +284,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
         }, 500);
       }
     } else if (activeGuidance && activeGuidance.description && currentStepIndex === activeGuidance.description.length - 1) {
-      // User has reached the final step, show embedded AI chat
-      setShowEmbeddedChat(true);
+      // User has reached the final step, show chat panel
+      initializeChatPanel();
     }
   };
 
@@ -276,7 +293,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
-    setShowEmbeddedChat(false);
+    setShowChatPanel(false);
+    setChatMessages([]);
     
     if (audioRef.current) {
       audioRef.current.pause();
@@ -332,18 +350,80 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
   const isLastStep = activeGuidance?.description && currentStepIndex === activeGuidance.description.length - 1;
 
-  // Show embedded AI chat if requested
-  if (showEmbeddedChat && activeGuidance) {
-    return (
-      <EmbeddedAIChat
-        worksheetData={autoModePageData}
-        guidance={activeGuidance}
-        worksheetId={worksheetId}
-        pageNumber={pageNumber}
-        onBack={handleBackToTitles}
-      />
-    );
-  }
+  // Chat initialization function
+  const initializeChatPanel = () => {
+    if (!activeGuidance || !activeGuidance.description) return;
+    
+    // Convert guidance steps to chat messages
+    const guidanceMessages: ChatMessage[] = activeGuidance.description.map((message, index) => ({
+      role: 'assistant' as const,
+      content: message,
+      timestamp: new Date()
+    }));
+    
+    setChatMessages(guidanceMessages);
+    setShowChatPanel(true);
+  };
+
+  // Chat functionality
+  const sendMessage = async () => {
+    if (!inputMessage.trim()) return;
+    
+    const apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) {
+      setShowApiKeyManager(true);
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: inputMessage.trim(),
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoadingChat(true);
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      // Create context from worksheet and guidance
+      const context = `
+        Worksheet Page: ${pageNumber}
+        Guidance Topic: ${activeGuidance?.title || 'Learning guidance'}
+        Previous guidance steps: ${activeGuidance?.description?.join('\n') || ''}
+      `;
+
+      const chatHistory = chatMessages
+        .filter(msg => msg.role === 'user')
+        .map(msg => `User: ${msg.content}`)
+        .join('\n');
+
+      const prompt = `${context}\n\nPrevious conversation:\n${chatHistory}\n\nUser question: ${userMessage.content}\n\nPlease provide a helpful response in the same language as the user's question.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: response.text(),
+        timestamp: new Date()
+      };
+
+      setChatMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: ChatMessage = {
+        role: 'assistant',
+        content: 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoadingChat(false);
+    }
+  };
 
   if (activeGuidance) {
     // Text mode - showing guidance description
@@ -424,6 +504,112 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           isOpen={showTutorSelectionModal}
           onClose={() => setShowTutorSelectionModal(false)}
           onSelectTutor={handleTutorSelected}
+        />
+
+        {/* Chat Panel */}
+        {showChatPanel && (
+          <div className={`fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 transition-transform duration-300 ${isChatExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
+            {/* Chat Header */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 border-b border-border cursor-pointer" onClick={() => setIsChatExpanded(!isChatExpanded)}>
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-foreground">مساعد الذكي</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {isChatExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowChatPanel(false);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            {isChatExpanded && (
+              <div className="h-96 flex flex-col">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {chatMessages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[70%] rounded-lg p-3 ${
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
+                        }`}
+                        dir={getTextDirection(message.content)}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {isLoadingChat && (
+                    <div className="flex justify-start">
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="animate-pulse">
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Chat Input */}
+                <div className="border-t border-border p-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="اكتب سؤالك هنا..."
+                      className="flex-1"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      disabled={isLoadingChat}
+                      dir="auto"
+                    />
+                    <Button 
+                      onClick={sendMessage} 
+                      disabled={isLoadingChat || !inputMessage.trim()}
+                      size="icon"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* API Key Manager */}
+        <ApiKeyManager
+          isOpen={showApiKeyManager}
+          onClose={() => setShowApiKeyManager(false)}
+          onApiKeySet={() => {
+            setShowApiKeyManager(false);
+            // Retry sending message after API key is set
+            if (inputMessage.trim()) {
+              sendMessage();
+            }
+          }}
         />
       </div>
     );
