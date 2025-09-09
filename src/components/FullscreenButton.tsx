@@ -60,7 +60,7 @@ const FullscreenButton: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="text-center space-y-6">
         <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-auto">
           <Maximize className="h-24 w-24 text-orange-500 mx-auto mb-4" />
@@ -70,14 +70,9 @@ const FullscreenButton: React.FC = () => {
           <p className="text-gray-600 mb-6">
             For the best learning experience, please enable fullscreen mode
           </p>
-          <Button
-            onClick={handleClick}
-            className="w-full h-14 text-lg font-semibold bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white rounded-xl shadow-lg"
-            aria-label="Enable Fullscreen"
-          >
-            <Maximize className="h-6 w-6 mr-2" />
-            Go Fullscreen
-          </Button>
+          <p className="text-sm text-gray-500">
+            Press F11 or use your browser's fullscreen option
+          </p>
         </div>
       </div>
     </div>
