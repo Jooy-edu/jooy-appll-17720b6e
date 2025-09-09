@@ -253,15 +253,7 @@ Analyze the student's question carefully. Respond in the same language as the le
 
         {/* Input Container - Fixed at bottom */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
-          <div className="max-w-4xl mx-auto flex gap-2">
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={t('aiChat.placeholder')}
-              disabled={isLoading}
-              className="flex-1"
-            />
+          <div className="max-w-4xl mx-auto flex gap-2" dir="rtl">
             <Button
               onClick={handleSendMessage}
               disabled={isLoading || !inputMessage.trim()}
@@ -270,6 +262,15 @@ Analyze the student's question carefully. Respond in the same language as the le
             >
               <Send className="h-4 w-4" />
             </Button>
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={t('aiChat.placeholder')}
+              disabled={isLoading}
+              className="flex-1"
+              dir="rtl"
+            />
           </div>
         </div>
         
@@ -367,15 +368,7 @@ Analyze the student's question carefully. Respond in the same language as the le
 
       {/* Input Container */}
       <div className="border-t border-gray-200 p-4">
-        <div className="flex gap-2">
-          <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={t('aiChat.placeholder')}
-            disabled={isLoading}
-            className="flex-1"
-          />
+        <div className="flex gap-2" dir="rtl">
           <Button
             onClick={handleSendMessage}
             disabled={isLoading || !inputMessage.trim()}
@@ -384,6 +377,15 @@ Analyze the student's question carefully. Respond in the same language as the le
           >
             <Send className="h-4 w-4" />
           </Button>
+          <Input
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={t('aiChat.placeholder')}
+            disabled={isLoading}
+            className="flex-1"
+            dir="rtl"
+          />
         </div>
       </div>
     </div>
