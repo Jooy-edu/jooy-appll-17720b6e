@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Sparkles, UserRound, MessageSquare } from "lucide-react";
+import { ChevronLeft, Sparkles, UserRound, MessageSquare, ToggleLeft } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
 import EmbeddedAIChat from "./EmbeddedAIChat";
@@ -48,6 +48,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
   
+  // Guidance mode state (student or parent)
+  const [guidanceMode, setGuidanceMode] = useState<'student' | 'parent'>(() => {
+    const stored = sessionStorage.getItem(`guidanceMode_${worksheetId}_${pageNumber}`);
+    return (stored as 'student' | 'parent') || 'student';
+  });
+  
   // Virtual tutor selection state
   const [selectedTutorVideoUrl, setSelectedTutorVideoUrl] = useState<string>(() => {
     return localStorage.getItem('selectedVirtualTutor') || '/video/1.mp4';
@@ -58,11 +64,21 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
 
+  // Get current guidance array based on mode
+  const currentGuidance = guidanceMode === 'parent' && autoModePageData.parent_guidance 
+    ? autoModePageData.parent_guidance 
+    : autoModePageData.guidance;
+
+  // Save guidance mode to session storage
+  useEffect(() => {
+    sessionStorage.setItem(`guidanceMode_${worksheetId}_${pageNumber}`, guidanceMode);
+  }, [guidanceMode, worksheetId, pageNumber]);
+
   // Initial audio availability check
   useEffect(() => {
-    if (!audioCheckPerformed && autoModePageData.guidance.length > 0) {
+    if (!audioCheckPerformed && currentGuidance.length > 0) {
       console.log('🎵 [AUTO MODE] Starting audio availability check');
-      const firstGuidance = autoModePageData.guidance[0];
+      const firstGuidance = currentGuidance[0];
       if (!firstGuidance || !firstGuidance.audioName) {
         console.log('🎵 [AUTO MODE] No first guidance or audioName found, marking audio unavailable');
         setAudioAvailable(false);
@@ -118,7 +134,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
         }
       };
     }
-  }, [worksheetId, autoModePageData.guidance, audioCheckPerformed]);
+  }, [worksheetId, currentGuidance, audioCheckPerformed]);
 
   // Notify parent about text mode changes
   useEffect(() => {
@@ -362,7 +378,32 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     e.preventDefault();
   };
 
+  const handleGuidanceModeToggle = () => {
+    const newMode = guidanceMode === 'student' ? 'parent' : 'student';
+    setGuidanceMode(newMode);
+    
+    // Reset active guidance when switching modes
+    setActiveGuidance(null);
+    setCurrentStepIndex(0);
+    setDisplayedMessages([]);
+    if (onEmbeddedChatChange) {
+      onEmbeddedChatChange(false);
+    }
+    
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+    
+    setIsAudioPlaying(false);
+  };
+
   const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
+  const hasParentGuidance = autoModePageData.parent_guidance && autoModePageData.parent_guidance.length > 0;
 
   if (activeGuidance) {
     // Text mode - showing guidance description
@@ -477,15 +518,37 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Guidance Mode Switch Button */}
+        {hasParentGuidance && (
+          <div className="flex justify-center mt-4 mb-6">
+            <Button
+              onClick={handleGuidanceModeToggle}
+              variant="outline"
+              className="flex items-center gap-2 bg-white border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+            >
+              <ToggleLeft className="h-4 w-4" />
+              <span dir={getTextDirection(t('common.language'))}>
+                {guidanceMode === 'student' 
+                  ? (t('common.language') === 'العربية' ? 'دليل الوالدين' : 'Parent Guidance')
+                  : (t('common.language') === 'العربية' ? 'دليل الطالب' : 'Student Guidance')
+                }
+              </span>
+            </Button>
+          </div>
+        )}
+
         {/* Guidance Titles */}
         <div className="space-y-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Page {autoModePageData.page_number}
           </h1>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {t('common.language') === 'العربية' ? 'التوجيهات' : 'Guidance'}
+            {guidanceMode === 'parent' 
+              ? (t('common.language') === 'العربية' ? 'دليل الوالدين' : 'Parent Guidance')
+              : (t('common.language') === 'العربية' ? 'التوجيهات' : 'Student Guidance')
+            }
           </h2>
-          {autoModePageData.guidance.map((guidance, index) => (
+          {currentGuidance.map((guidance, index) => (
             <div
               key={index}
               className="bg-white rounded-lg shadow-sm p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:bg-blue-50 border-2 border-transparent hover:border-blue-200"

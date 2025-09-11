@@ -24,6 +24,7 @@ export interface AutoModePageData {
   page_number: number;
   page_description: string;
   guidance: GuidanceItem[];
+  parent_guidance?: GuidanceItem[];
 }
 
 export interface RegionsModeMetadata {

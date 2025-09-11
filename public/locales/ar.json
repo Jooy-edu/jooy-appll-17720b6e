@@ -46,6 +46,12 @@
     "english": "English",
     "arabic": "العربية"
   },
+  "guidance": {
+    "student": "دليل الطالب",
+    "parent": "دليل الوالدين",
+    "switchToParent": "التبديل إلى دليل الوالدين",
+    "switchToStudent": "التبديل إلى دليل الطالب"
+  },
   "profile": {
     "title": "الملف الشخصي",
     "description": "إدارة معلومات حسابك وإعدادات الملف الشخصي",

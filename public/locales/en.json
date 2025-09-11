@@ -46,6 +46,12 @@
     "english": "English",
     "arabic": "العربية"
   },
+  "guidance": {
+    "student": "Student Guidance",
+    "parent": "Parent Guidance",
+    "switchToParent": "Switch to Parent Guidance",
+    "switchToStudent": "Switch to Student Guidance"
+  },
   "profile": {
     "title": "Profile Settings",
     "subtitle": "Manage your account information and preferences",
