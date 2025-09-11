@@ -77,10 +77,10 @@ serve(async (req) => {
       // Auto Mode: Use metadata from documents table
       const autoModeData = document.metadata.data || []
       
-      // Process guidance descriptions to ensure they are arrays of paragraphs
-      const processedAutoModeData = autoModeData.map(pageData => ({
-        ...pageData,
-        guidance: pageData.guidance ? pageData.guidance.map(guidanceItem => ({
+      // Helper function to normalize guidance items
+      const normalizeGuidance = (guidance) => {
+        if (!guidance) return []
+        return guidance.map(guidanceItem => ({
           ...guidanceItem,
           title: guidanceItem.title || 'Untitled Guidance',
           description: Array.isArray(guidanceItem.description) 
@@ -88,8 +88,15 @@ serve(async (req) => {
             : typeof guidanceItem.description === 'string' 
               ? guidanceItem.description.split('\n').map(desc => desc.trim()).filter(desc => desc !== '')
               : [],
-          audioName: guidanceItem.audioName || `${pageData.page_number}_${pageData.guidance.indexOf(guidanceItem) + 1}`
-        })) : []
+          audioName: guidanceItem.audioName || `${pageData.page_number}_${guidance.indexOf(guidanceItem) + 1}`
+        }))
+      }
+
+      // Process guidance descriptions to ensure they are arrays of paragraphs
+      const processedAutoModeData = autoModeData.map(pageData => ({
+        ...pageData,
+        guidance: normalizeGuidance(pageData.guidance),
+        parent_guidance: normalizeGuidance(pageData.parent_guidance || pageData.parentGuidance)
       }))
       
       console.log(`Successfully processed worksheet: ${worksheetId}, auto mode data:`, JSON.stringify(processedAutoModeData, null, 2))

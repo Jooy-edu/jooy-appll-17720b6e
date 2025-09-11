@@ -64,8 +64,11 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
 
-  // Determine if parent guidance exists
-  const hasParentGuidance = autoModePageData && autoModePageData.parent_guidance && autoModePageData.parent_guidance.length > 0;
+  // Determine if parent guidance exists (check both parent_guidance and parentGuidance for compatibility)
+  const hasParentGuidance = autoModePageData && (
+    (autoModePageData.parent_guidance && autoModePageData.parent_guidance.length > 0) ||
+    (autoModePageData.parentGuidance && autoModePageData.parentGuidance.length > 0)
+  );
   
   // Debug logging
   console.log('AutoModeContentDisplay Debug:', {
