@@ -11,6 +11,7 @@ import { Loader2, User, Mail, Calendar, Shield, Clock, AlertTriangle, LogOut } f
 import { getTextDirection } from '@/lib/textDirection';
 import { useTranslation } from 'react-i18next';
 import { useUserLevelActivations } from '@/hooks/useLevelAccess';
+import { ParentalControlsCard } from '@/components/ParentalControlsCard';
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
@@ -332,6 +333,9 @@ const ProfilePage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Parental Controls Card */}
+            <ParentalControlsCard />
 
             {/* Sign Out Card */}
             <Card>

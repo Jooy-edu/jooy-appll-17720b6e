@@ -41,11 +41,6 @@
     "message": "Oops! Page not found",
     "returnHome": "Return to Home"
   },
-  "common": {
-    "language": "Language",
-    "english": "English",
-    "arabic": "العربية"
-  },
   "guidance": {
     "student": "Student Guidance",
     "parent": "Parent Guidance",
@@ -85,5 +80,48 @@
     "expiringWarning": "Your access will expire soon. Please renew to continue using all features.",
     "expiredWarning": "Your access has expired. Please renew to continue using the app.",
     "notActivatedWarning": "Please activate your account to access all features and content."
+  },
+  "parentalControls": {
+    "title": "Parental Controls",
+    "description": "Manage PIN protection for parent guidance access",
+    "setupTitle": "Parental Controls Setup",
+    "setupDescription": "Set up PIN protection for parent guidance to ensure appropriate content access control.",
+    "whySetupPin": "Why set up a PIN?",
+    "protectContent": "Protect access to parent guidance content",
+    "controlAccess": "Control who can access parent mode",
+    "manageSettings": "Manage parental control settings",
+    "setupPin": "Set Up PIN",
+    "skipForNow": "Skip for Now",
+    "createPin": "Create PIN",
+    "createPinDescription": "Choose a 4-6 digit PIN to protect parent guidance access.",
+    "newPin": "New PIN",
+    "confirmPin": "Confirm PIN",
+    "currentPin": "Current PIN",
+    "changePin": "Change PIN",
+    "changePinDescription": "Enter your current PIN and choose a new one.",
+    "removePin": "Remove PIN Protection",
+    "enableProtection": "Enable PIN Protection",
+    "protectionDescription": "Require PIN to access parent guidance mode",
+    "protectionEnabled": "PIN protection is enabled",
+    "protectionDisabled": "PIN protection is disabled",
+    "enterPinTitle": "Enter PIN",
+    "enterPinDescription": "Enter your PIN to access parent guidance.",
+    "pinCode": "PIN Code",
+    "verify": "Verify",
+    "enterPin": "Please enter your PIN",
+    "pinTooShort": "PIN must be at least 4 digits",
+    "pinsDoNotMatch": "PINs do not match",
+    "incorrectPin": "Incorrect PIN. {{remaining}} attempts remaining.",
+    "incorrectCurrentPin": "Current PIN is incorrect",
+    "tooManyAttempts": "Too many failed attempts. Please try again in {{seconds}} seconds.",
+    "tryAgainIn": "Try again in {{seconds}} seconds",
+    "setupError": "Failed to set up PIN. Please try again."
+  },
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية",
+    "cancel": "Cancel",
+    "back": "Back"
   }
 }

@@ -6,6 +6,13 @@ import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
 import EmbeddedAIChat from "./EmbeddedAIChat";
 import type { AutoModePageData, GuidanceItem, WorksheetMetadata } from "@/types/worksheet";
+import { ParentalPinDialog } from "./ParentalPinDialog";
+import { ParentalPinSetupDialog } from "./ParentalPinSetupDialog";
+import {
+  isFirstTimeSetup,
+  shouldShowPinPrompt,
+  setSessionValidated
+} from "@/utils/parentalControls";
 
 interface AutoModeContentDisplayProps {
   worksheetId: string;
@@ -59,6 +66,11 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     return localStorage.getItem('selectedVirtualTutor') || '/video/1.mp4';
   });
   const [showTutorSelectionModal, setShowTutorSelectionModal] = useState<boolean>(false);
+  
+  // Parental controls state
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [showPinSetupDialog, setShowPinSetupDialog] = useState(false);
+  const [pendingModeSwitch, setPendingModeSwitch] = useState<'parent' | null>(null);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -397,6 +409,25 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
 
   const handleGuidanceModeToggle = () => {
     const newMode = guidanceMode === 'student' ? 'parent' : 'student';
+    
+    if (newMode === 'parent') {
+      // Check if PIN protection is needed
+      if (isFirstTimeSetup()) {
+        setPendingModeSwitch('parent');
+        setShowPinSetupDialog(true);
+        return;
+      } else if (shouldShowPinPrompt()) {
+        setPendingModeSwitch('parent');
+        setShowPinDialog(true);
+        return;
+      }
+    }
+    
+    // Switch immediately if no PIN protection needed
+    switchGuidanceMode(newMode);
+  };
+
+  const switchGuidanceMode = (newMode: 'student' | 'parent') => {
     setGuidanceMode(newMode);
     
     // Reset active guidance when switching modes
@@ -417,6 +448,27 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     }
     
     setIsAudioPlaying(false);
+  };
+
+  const handlePinValidated = () => {
+    setShowPinDialog(false);
+    if (pendingModeSwitch) {
+      switchGuidanceMode(pendingModeSwitch);
+      setPendingModeSwitch(null);
+    }
+  };
+
+  const handlePinDialogCancel = () => {
+    setShowPinDialog(false);
+    setPendingModeSwitch(null);
+  };
+
+  const handlePinSetupCompleted = () => {
+    setShowPinSetupDialog(false);
+    if (pendingModeSwitch) {
+      switchGuidanceMode(pendingModeSwitch);
+      setPendingModeSwitch(null);
+    }
   };
 
   const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
@@ -526,6 +578,17 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           onClose={() => setShowTutorSelectionModal(false)}
           onSelectTutor={handleTutorSelected}
         />
+
+        <ParentalPinDialog
+          open={showPinDialog}
+          onValidated={handlePinValidated}
+          onCancel={handlePinDialogCancel}
+        />
+
+        <ParentalPinSetupDialog
+          open={showPinSetupDialog}
+          onCompleted={handlePinSetupCompleted}
+        />
       </div>
     );
   }
@@ -534,24 +597,22 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Guidance Mode Switch Button */}
-        {hasParentGuidance && (
-          <div className="flex justify-center mt-4 mb-6">
-            <Button
-              onClick={handleGuidanceModeToggle}
-              variant="outline"
-              className="flex items-center gap-2 bg-white border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
-            >
-              <ArrowUpDown className="h-4 w-4" />
-              <span dir={getTextDirection(t('common.language'))}>
-                {guidanceMode === 'student' 
-                  ? (t('common.language') === 'العربية' ? 'دليل الوالدين' : 'Parent Guidance')
-                  : (t('common.language') === 'العربية' ? 'دليل الطالب' : 'Student Guidance')
-                }
-              </span>
-            </Button>
-          </div>
-        )}
+        {/* Guidance Mode Switch Button - Always show in auto mode */}
+        <div className="flex justify-center mt-4 mb-6">
+          <Button
+            onClick={handleGuidanceModeToggle}
+            variant="outline"
+            className="flex items-center gap-2 bg-white border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+            <span dir={getTextDirection(t('common.language'))}>
+              {guidanceMode === 'student' 
+                ? (t('common.language') === 'العربية' ? 'دليل الوالدين' : 'Parent Guidance')
+                : (t('common.language') === 'العربية' ? 'دليل الطالب' : 'Student Guidance')
+              }
+            </span>
+          </Button>
+        </div>
 
         {/* Guidance Titles */}
         <div className="space-y-4">
@@ -564,17 +625,28 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
               : (t('common.language') === 'العربية' ? 'التوجيهات' : 'Student Guidance')
             }
           </h2>
-          {currentGuidance.map((guidance, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg shadow-sm p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:bg-blue-50 border-2 border-transparent hover:border-blue-200"
-              onClick={() => handleGuidanceClick(guidance)}
-            >
-              <h3 className="text-lg font-medium text-gray-900" dir={getTextDirection(guidance.title)}>
-                {guidance.title}
-              </h3>
+          {currentGuidance && currentGuidance.length > 0 ? (
+            currentGuidance.map((guidance, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg shadow-sm p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:bg-blue-50 border-2 border-transparent hover:border-blue-200"
+                onClick={() => handleGuidanceClick(guidance)}
+              >
+                <h3 className="text-lg font-medium text-gray-900" dir={getTextDirection(guidance.title)}>
+                  {guidance.title}
+                </h3>
+              </div>
+            ))
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm p-4 text-center">
+              <p className="text-gray-500" dir={getTextDirection(t('common.language'))}>
+                {guidanceMode === 'parent' 
+                  ? (t('common.language') === 'العربية' ? 'لا يوجد دليل للوالدين متاح لهذه الصفحة' : 'No parent guidance available for this page.')
+                  : (t('common.language') === 'العربية' ? 'لا يوجد دليل للطالب متاح لهذه الصفحة' : 'No student guidance available for this page.')
+                }
+              </p>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Embedded Chat on Main Page - shown after any lesson completion */}
@@ -592,6 +664,17 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             </div>
           </div>
         )}
+
+        <ParentalPinDialog
+          open={showPinDialog}
+          onValidated={handlePinValidated}
+          onCancel={handlePinDialogCancel}
+        />
+
+        <ParentalPinSetupDialog
+          open={showPinSetupDialog}
+          onCompleted={handlePinSetupCompleted}
+        />
       </div>
     </div>
   );
