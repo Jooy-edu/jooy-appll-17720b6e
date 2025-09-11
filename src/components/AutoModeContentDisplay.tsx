@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Sparkles, UserRound, MessageSquare, ToggleLeft } from "lucide-react";
+import { ChevronLeft, Sparkles, UserRound, MessageSquare, ArrowUpDown } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
 import EmbeddedAIChat from "./EmbeddedAIChat";
@@ -526,7 +526,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
               variant="outline"
               className="flex items-center gap-2 bg-white border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
             >
-              <ToggleLeft className="h-4 w-4" />
+              <ArrowUpDown className="h-4 w-4" />
               <span dir={getTextDirection(t('common.language'))}>
                 {guidanceMode === 'student' 
                   ? (t('common.language') === 'العربية' ? 'دليل الوالدين' : 'Parent Guidance')
