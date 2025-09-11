@@ -1,238 +1,96 @@
 {
+  "mode": "auto",
   "documentName": "Colorful Illustrative Adjectives English Worksheet_2.pdf",
   "documentId": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
   "drmProtectedPages": [1],
-  "regions": [
+  "data": [
     {
-      "id": "9802e233-624b-46a3-8368-8b441f5cbd3c",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 1,
-      "x": 48.5,
-      "y": 277.666667938232,
-      "width": 481,
-      "height": 103,
-      "type": "area",
-      "name": "1_1",
-      "description": [
-        "Think about different ways you can describe a house. You might talk about its size (is it big or small?), its age (is it old or new?), or how it looks in general (is it pretty, plain, colorful?). The words in the box give you some options.",
-        "What words come to mind when you first look at the house, even before checking the box?",
-        "Now, look at the words provided: \"new,\" \"small,\" \"cute,\" \"big,\" \"fat.\" Which of these words could you use to describe a house? For instance, does it make sense to say a \"fat house\"? Probably not. But a house could certainly be \"big\" or \"small.\"",
-        "Go through each word in the box. Does it make sense with the word \"house\"?",
-        "Look closely at the picture of the house. Does it seem very large and grand, or does it look more cozy and perhaps not so big? Compare the image to your idea of what a \"big\" house looks like versus a \"small\" one.",
-        "Which word from the box best matches what you see in the picture of the house?"
+      "page_number": 1,
+      "page_description": "Adjective matching exercise with colorful illustrations",
+      "guidance": [
+        {
+          "title": "House Description",
+          "description": [
+            "Think about different ways you can describe a house. You might talk about its size (is it big or small?), its age (is it old or new?), or how it looks in general (is it pretty, plain, colorful?). The words in the box give you some options.",
+            "What words come to mind when you first look at the house, even before checking the box?",
+            "Now, look at the words provided: \"new,\" \"small,\" \"cute,\" \"big,\" \"fat.\" Which of these words could you use to describe a house? For instance, does it make sense to say a \"fat house\"? Probably not. But a house could certainly be \"big\" or \"small.\"",
+            "Go through each word in the box. Does it make sense with the word \"house\"?",
+            "Look closely at the picture of the house. Does it seem very large and grand, or does it look more cozy and perhaps not so big? Compare the image to your idea of what a \"big\" house looks like versus a \"small\" one.",
+            "Which word from the box best matches what you see in the picture of the house?"
+          ],
+          "audioName": "1_1"
+        },
+        {
+          "title": "Yellow Car",
+          "description": [
+            "Cars can be described in many ways too! They can be fast or slow, old or modern, and of course, they come in different sizes. We're looking for one word from the box that fits this particular yellow car.",
+            "What's the first feature of this yellow car that you notice and could describe?",
+            "Consider the adjectives available: \"new,\" \"small,\" \"cute,\" \"big,\" \"fat.\" Which of these could apply to a car? Can a car be \"fat\"? Not really. But it could be \"new,\" \"small,\" \"cute,\" or \"big.\"",
+            "Which of the words from the box sound like they could describe some kind of car?",
+            "Now focus on the picture of the yellow car. Does it look like it just rolled out of the factory, or has it been around for a while? Does it seem particularly large, or is it more of a compact size? Sometimes, smaller, cheerful-looking things are described with a particular word from our list.",
+            "Which adjective from the box do you think best describes this specific yellow car?"
+          ],
+          "audioName": "1_2"
+        }
       ],
-      "created_at": "2025-05-11T13:27:38.982555+00:00"
+      "parent_guidance": [
+        {
+          "title": "Supporting House Description Learning",
+          "description": [
+            "Help your child understand that adjectives describe nouns. Start by pointing out the house in the picture together.",
+            "Ask open-ended questions: 'What do you notice about this house?' Let them observe before showing the word choices.",
+            "When they see the word options, discuss which ones make sense. Guide them to eliminate 'fat' as it doesn't typically describe houses.",
+            "Encourage them to look closely at the size of the house in the picture. Is it a mansion or more modest in size?",
+            "Celebrate their thinking process, not just the right answer. Say things like 'I love how you're really looking at the picture!'",
+            "If they struggle, point to specific features: 'Look at how this house compares to the trees around it. Does that help you think about its size?'"
+          ],
+          "audioName": "1_1"
+        },
+        {
+          "title": "Guiding Car Description Discussion",
+          "description": [
+            "This exercise helps children think about appropriate adjectives for different objects. Start by admiring the yellow car together.",
+            "Before showing the word choices, ask: 'How would you describe this car to a friend?' Listen to their natural language.",
+            "When reviewing the word options, help them think logically: 'Could a car be fat? What does fat usually describe?'",
+            "Guide them to observe the car's features. Point out its compact size, bright color, and friendly appearance.",
+            "The goal is 'cute' - help them see how the car's design elements (round features, bright color, small size) make it appear cute.",
+            "Praise their reasoning: 'You're thinking like a detective, looking for clues in the picture!'"
+          ],
+          "audioName": "1_2"
+        }
+      ]
     },
     {
-      "id": "f6b88fd9-3dc1-4569-9b70-846c769d7f61",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 1,
-      "x": 50.5,
-      "y": 386.666667938232,
-      "width": 479,
-      "height": 100,
-      "type": "area",
-      "name": "1_2",
-      "description": [
-        "Cars can be described in many ways too! They can be fast or slow, old or modern, and of course, they come in different sizes. We're looking for one word from the box that fits this particular yellow car.",
-        "What's the first feature of this yellow car that you notice and could describe?",
-        "Consider the adjectives available: \"new,\" \"small,\" \"cute,\" \"big,\" \"fat.\" Which of these could apply to a car? Can a car be \"fat\"? Not really. But it could be \"new,\" \"small,\" \"cute,\" or \"big.\"",
-        "Which of the words from the box sound like they could describe some kind of car?",
-        "Now focus on the picture of the yellow car. Does it look like it just rolled out of the factory, or has it been around for a while? Does it seem particularly large, or is it more of a compact size? Sometimes, smaller, cheerful-looking things are described with a particular word from our list.",
-        "Which adjective from the box do you think best describes this specific yellow car?"
+      "page_number": 2,
+      "page_description": "Weather identification exercise with visual cues",
+      "guidance": [
+        {
+          "title": "Sunny Weather",
+          "description": [
+            "Think about what you see. There's a big, bright sun, and a fluffy cloud. When the sun is out, even if there are some clouds, what do we usually call that kind of day?",
+            "What's the main source of light you notice in this picture?",
+            "Now, look at your word bank: Rainy, Cloudy, Sunny, Tornado, Snowing, Lightning. Which of these words best describes a day where the sun is shining? Some words clearly don't fit, like \"Tornado\" or \"Snowing.\"",
+            "Can you narrow down the choices in the word bank to ones that involve the sun or clouds?",
+            "Even though there's a cloud, the sun is very visible and bright. One word in your bank perfectly captures the idea of the sun being the main feature of the weather.",
+            "Which word from the bank do you think best describes this weather?"
+          ],
+          "audioName": "2_1"
+        }
       ],
-      "created_at": "2025-05-11T13:27:45.780834+00:00"
-    },
-    {
-      "id": "eff7f2ad-8b8c-4e55-8444-d91839d419ae",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 1,
-      "x": 50.5,
-      "y": 495.66667175293,
-      "width": 479,
-      "height": 99,
-      "type": "area",
-      "name": "1_3",
-      "description": [
-        "This car is quite different from the last one! Think about what makes this vehicle stand out. Its most noticeable features will probably guide you to the best adjective.",
-        "What is the most obvious difference between this car and a typical car you see on the road?",
-        "Let's check our list of adjectives again: \"new,\" \"small,\" \"cute,\" \"big,\" \"fat.\" We already thought about which ones can describe a car. Now, think about which ones might fit this specific type of car.",
-        "Looking at this powerful-looking car, which adjectives from the box seem like good possibilities, and which ones definitely don't fit?",
-        "Observe the monster truck. Pay special attention to its wheels and overall size compared to how you imagine a standard car. Would \"small\" be a good description? How about \"cute\"? Or does another word from the list capture its impressive appearance much better?",
-        "Considering its size and features, which word from the box is the most accurate way to describe this car?"
-      ],
-      "created_at": "2025-05-11T13:27:53.695118+00:00"
-    },
-    {
-      "id": "0151d944-3f72-4d49-b5f3-e8154d823fc3",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 1,
-      "x": 50.5,
-      "y": 604.66667175293,
-      "width": 478,
-      "height": 96,
-      "type": "area",
-      "name": "1_4",
-      "description": [
-        "Rabbits are often described with words that talk about their appearance or how they make us feel. Think about common words you hear people use when they see a rabbit.",
-        "What are some words that usually come to mind when you see a fluffy animal like this rabbit?",
-        "Our adjectives are \"new,\" \"small,\" \"cute,\" \"big,\" \"fat.\" Can a rabbit be any of these things? A baby rabbit could be \"new.\" Rabbits can certainly be \"small,\" \"cute,\" or even grow to be \"big\" or look \"fat.\"",
-        "Which of these adjectives could you use to describe a rabbit in general?",
-        "Look closely at the rabbit in the picture. Does it look particularly large for a rabbit, or is it a more typical size? Does it have features like soft fur, long ears, and a sweet face that might lead you to a specific adjective from the list?",
-        "Which word from the box do you feel best suits this particular rabbit?"
-      ],
-      "created_at": "2025-05-11T13:27:59.548095+00:00"
-    },
-    {
-      "id": "0bc5fcf7-ef9d-40c6-82bd-8338fb7f7d67",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 1,
-      "x": 49.5,
-      "y": 711.66667175293,
-      "width": 478,
-      "height": 97,
-      "type": "area",
-      "name": "1_5",
-      "description": [
-        "Cats are very common pets, and people use lots of different words to describe them. Think about cats you've seen or know. What are some of their characteristics?",
-        "What are some general describing words you might use for any cat?",
-        "Let's look at our word box one last time: \"new,\" \"small,\" \"cute,\" \"big,\" \"fat.\" Can a cat be described by these words? A kitten is often \"new\" and \"small.\" Some cats are quite \"big,\" and some might be a bit \"fat.\" And many people find cats to be \"cute.\"",
-        "Which of these words from the box could apply to different kinds of cats you can imagine?",
-        "Now, observe the cat in the drawing. Consider its friendly expression, its size as it's drawn, and its overall appearance. Does it look like a very large cat, or a particularly plump one? Or does it have a certain charm or appeal that one of the other words might capture best?",
-        "Thinking about this specific drawing, which word from the box seems like the most fitting description for this cat?"
-      ],
-      "created_at": "2025-05-11T13:28:07.301248+00:00"
-    },
-    {
-      "id": "92914235-8743-4de6-8279-2378e2f8e8fd",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 2,
-      "x": 7.5,
-      "y": 300.666667938232,
-      "width": 154,
-      "height": 199,
-      "type": "area",
-      "name": "2_1",
-      "description": [
-        "Think about what you see. There's a big, bright sun, and a fluffy cloud. When the sun is out, even if there are some clouds, what do we usually call that kind of day?",
-        "What's the main source of light you notice in this picture?",
-        "Now, look at your word bank: Rainy, Cloudy, Sunny, Tornado, Snowing, Lightning. Which of these words best describes a day where the sun is shining? Some words clearly don't fit, like \"Tornado\" or \"Snowing.\"",
-        "Can you narrow down the choices in the word bank to ones that involve the sun or clouds?",
-        "Even though there's a cloud, the sun is very visible and bright. One word in your bank perfectly captures the idea of the sun being the main feature of the weather.",
-        "Which word from the bank do you think best describes this weather?"
-      ],
-      "created_at": "2025-05-11T13:28:28.031841+00:00"
-    },
-    {
-      "id": "512d7592-22c2-4087-b7eb-99feda13498b",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 2,
-      "x": 222.5,
-      "y": 301.666667938232,
-      "width": 182,
-      "height": 196,
-      "type": "area",
-      "name": "2_2",
-      "description": [
-        "This picture shows a few things happening! We see dark clouds, drops of water falling, and a very bright zigzag line. What is that bright flash of light called when it happens during a storm?",
-        "What's the most electrifying part of this weather scene?",
-        "Let's scan the word bank: Rainy, Cloudy, Sunny, Tornado, Snowing, Lightning. While it might be rainy and cloudy too, one of those words specifically names that flash of light.",
-        "Which word in the bank refers to a bright flash in a stormy sky?",
-        "The picture definitely shows rain, but the most striking event shown, which has its own name in the word bank, is that powerful spark. That's the specific weather event it's highlighting.",
-        "Which word from the bank names that flash?"
-      ],
-      "created_at": "2025-05-11T13:28:37.248807+00:00"
-    },
-    {
-      "id": "a91b824b-e532-43fb-a5e3-16da752e6826",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 2,
-      "x": 436.5,
-      "y": 300.666667938232,
-      "width": 152,
-      "height": 198,
-      "type": "area",
-      "name": "2_3",
-      "description": [
-        "Wow, this picture shows a very powerful weather event! Look at its shape – it's like a spinning cone reaching down from the clouds. What do we call this kind of rapidly rotating column of air?",
-        "What does the shape and movement in this picture remind you of?",
-        "Check your word bank: Rainy, Cloudy, Sunny, Tornado, Snowing, Lightning. Only one of these words describes this specific, intense, spinning weather phenomenon.",
-        "Which word from the list sounds like a very strong and windy weather event?",
-        "This isn't just any wind; it's a very distinct and often destructive weather pattern. The picture clearly shows its characteristic shape.",
-        "Which word from your bank matches this swirling weather?"
-      ],
-      "created_at": "2025-05-11T13:28:43.667376+00:00"
-    },
-    {
-      "id": "5310cf64-4754-49a8-92fa-6b01c61011b8",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 2,
-      "x": 8.5,
-      "y": 552.66667175293,
-      "width": 186,
-      "height": 236,
-      "type": "area",
-      "name": "2_4",
-      "description": [
-        "This picture is quite clear! What's the main thing you see, shining brightly all by itself with no clouds around? When the sky looks like this, what kind of day is it?",
-        "How would you describe a day where this is the main thing you see in the sky?",
-        "Look at the words in your bank again: Rainy, Cloudy, Sunny, Tornado, Snowing, Lightning. Which word best fits a day that is bright and clear because of this big star?",
-        "Which words from the bank definitely don't fit this bright, clear picture?",
-        "When there are no clouds to block its light, and no rain or snow, we use a simple word to describe this weather. It’s all about the light and warmth.",
-        "Which word from the list best describes this kind of day?"
-      ],
-      "created_at": "2025-05-11T13:28:51.451407+00:00"
-    },
-    {
-      "id": "219131a9-057f-4a26-a2cb-91f2b8df2c0c",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 2,
-      "x": 221.5,
-      "y": 552.66667175293,
-      "width": 175,
-      "height": 234,
-      "type": "area",
-      "name": "2_5",
-      "description": [
-        "In this image, you can see clouds, and you can see drops falling from them. What do we call it when water falls from the clouds like this?",
-        "What are those drops falling from the sky made of?",
-        "Let's look at the word bank: Rainy, Cloudy, Sunny, Tornado, Snowing, Lightning. Which of these words describes water falling from the sky? You can probably rule out a few options pretty quickly.",
-        "Think about what you wear or carry when the weather looks like this. What word describes it?",
-        "The picture clearly shows precipitation. It's not frozen, and it's not a violent storm. It's just water droplets.",
-        "Which word from your bank means that water is falling like this?"
-      ],
-      "created_at": "2025-05-11T13:28:59.380639+00:00"
-    },
-    {
-      "id": "49122176-abc0-4848-88b6-0615d311dbb6",
-      "document_id": "34cc093b-bb1e-47d6-b61c-0bde12a283da",
-      "user_id": "aca58306-5faf-44fe-9222-b00a39ece772",
-      "page": 2,
-      "x": 434.5,
-      "y": 544.66667175293,
-      "width": 153,
-      "height": 244,
-      "type": "area",
-      "name": "2_6",
-      "description": [
-        "Look closely at what's falling from the clouds here. They aren't raindrops like in the last picture. These have a different, more complex shape. What do we call these frozen crystals that fall from the sky?",
-        "What season does this kind of weather make you think of?",
-        "Consider your word bank one last time: Rainy, Cloudy, Sunny, Tornado, Snowing, Lightning. Which of these words describes weather where frozen flakes fall from the clouds?",
-        "How are these falling things different from what you saw in the picture just before this one?",
-        "When it's cold enough, water in the clouds freezes into these beautiful shapes and falls to the ground. There's a specific word for this in your list.",
-        "Which word from the bank describes this wintry weather?"
-      ],
-      "created_at": "2025-05-11T13:29:07.384821+00:00"
+      "parent_guidance": [
+        {
+          "title": "Weather Learning Support",
+          "description": [
+            "Weather identification helps children connect visual cues with descriptive words. Look at the picture together first.",
+            "Ask: 'What do you see in the sky?' Let them point out the sun and clouds before discussing the weather type.",
+            "Help them understand that even with some clouds, if the sun is shining brightly, we call it sunny weather.",
+            "Discuss the word choices together. Ask: 'Which of these words talks about bright, sunny days?'",
+            "Connect to their experience: 'Remember sunny days when we go to the park? What does the sky look like then?'",
+            "Encourage observation skills: 'You're becoming a great weather detective by looking at all the clues in the picture!'"
+          ],
+          "audioName": "2_1"
+        }
+      ]
     }
   ]
 }
