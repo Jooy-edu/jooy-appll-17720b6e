@@ -64,6 +64,20 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
 
+  // Determine if parent guidance exists
+  const hasParentGuidance = autoModePageData && autoModePageData.parent_guidance && autoModePageData.parent_guidance.length > 0;
+  
+  // Debug logging
+  console.log('AutoModeContentDisplay Debug:', {
+    autoModePageData,
+    hasParentGuidance,
+    parentGuidanceLength: autoModePageData?.parent_guidance?.length,
+    guidanceLength: autoModePageData?.guidance?.length,
+    guidanceMode,
+    worksheetId,
+    pageNumber
+  });
+
   // Get current guidance array based on mode
   const currentGuidance = guidanceMode === 'parent' && autoModePageData.parent_guidance 
     ? autoModePageData.parent_guidance 
@@ -403,7 +417,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   };
 
   const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
-  const hasParentGuidance = autoModePageData.parent_guidance && autoModePageData.parent_guidance.length > 0;
 
   if (activeGuidance) {
     // Text mode - showing guidance description

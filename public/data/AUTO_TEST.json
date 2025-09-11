@@ -1,0 +1,52 @@
+{
+  "mode": "auto",
+  "documentName": "Test Auto Mode Worksheet.pdf",
+  "documentId": "test-auto-mode-id",
+  "drmProtectedPages": [],
+  "data": [
+    {
+      "page_number": 1,
+      "page_description": "Math Problems Page",
+      "guidance": [
+        {
+          "title": "Addition Problems",
+          "description": [
+            "Let's start with simple addition.",
+            "Look at the first problem: 2 + 3.",
+            "Count on your fingers or use objects to help."
+          ],
+          "audioName": "1_1"
+        },
+        {
+          "title": "Subtraction Problems", 
+          "description": [
+            "Now let's try subtraction.",
+            "Look at the problem: 5 - 2.",
+            "Take away objects to find the answer."
+          ],
+          "audioName": "1_2"
+        }
+      ],
+      "parent_guidance": [
+        {
+          "title": "How to Help with Addition",
+          "description": [
+            "Encourage your child to use manipulatives like blocks or toys.",
+            "Show them how to count forward from the first number.",
+            "Praise their efforts, not just correct answers."
+          ],
+          "audioName": "1_1"
+        },
+        {
+          "title": "Supporting Subtraction Learning",
+          "description": [
+            "Help your child visualize taking away by using physical objects.",
+            "Practice counting backwards together.",
+            "Be patient as this concept takes time to master."
+          ],
+          "audioName": "1_2"
+        }
+      ]
+    }
+  ]
+}
