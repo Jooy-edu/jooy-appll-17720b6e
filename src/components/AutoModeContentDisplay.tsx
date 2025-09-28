@@ -525,23 +525,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           </Button>
         )}
         
-        {/* Section and Subsection Title Header */}
-        {(activeSectionTitle || activeSubsectionTitle) && (
-          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-60 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-4 py-2 max-w-md">
-            <div className="text-center">
-              {activeSectionTitle && (
-                <div className="text-lg font-bold text-gray-900" dir={getTextDirection(activeSectionTitle)}>
-                  {activeSectionTitle}
-                </div>
-              )}
-              {activeSubsectionTitle && (
-                <div className="text-sm font-medium text-gray-600 mt-1" dir={getTextDirection(activeSubsectionTitle)}>
-                  {activeSubsectionTitle}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
         
         <div className="worksheet-text-display-container active">
           {audioAvailable && (
@@ -562,6 +545,21 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             ref={textDisplayRef}
           >
             <div className="text-content chat-messages">
+              {/* Section and Subsection Title Header */}
+              {(activeSectionTitle || activeSubsectionTitle) && (
+                <div className="mb-4 pb-3 border-b border-muted">
+                  {activeSectionTitle && (
+                    <div className="text-base font-bold text-foreground mb-1" dir={getTextDirection(activeSectionTitle)}>
+                      {activeSectionTitle}
+                    </div>
+                  )}
+                  {activeSubsectionTitle && (
+                    <div className="text-sm font-semibold text-muted-foreground" dir={getTextDirection(activeSubsectionTitle)}>
+                      {activeSubsectionTitle.replace(/^#+\s*/, '').replace(/^\*\*(.*)\*\*$/, '$1')}
+                    </div>
+                  )}
+                </div>
+              )}
               {displayedMessages.map((message, index) => (
                 <div 
                   key={index} 
