@@ -776,7 +776,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                             <AccordionTrigger className="hover:no-underline">
                               <div className="flex items-center gap-3 w-full">
                                 <div className="flex-1 text-left">
-                                  <div className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                                  <div className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors" dir={getTextDirection(cleanTitle)}>
                                     <ReactMarkdown className="prose prose-sm max-w-none inline">
                                       {cleanTitle}
                                     </ReactMarkdown>
@@ -834,7 +834,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                                     >
                                       <div className="flex items-center gap-3">
                                         <div className="flex-1">
-                                          <div className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors">
+                                          <div className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors" dir={getTextDirection(subTitle)}>
                                             <ReactMarkdown className="prose prose-sm max-w-none">
                                               {subTitle}
                                             </ReactMarkdown>
@@ -869,7 +869,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                           >
                             <div className="flex items-center gap-3">
                               <div className="flex-1">
-                                <div className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                <div className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors" dir={getTextDirection(cleanTitle)}>
                                   <ReactMarkdown className="prose prose-sm max-w-none">
                                     {cleanTitle}
                                   </ReactMarkdown>
@@ -885,7 +885,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                         // Sections without subsections and without descriptions - render as static titles
                         return (
                           <div key={groupIndex} className="p-2">
-                            <div className="text-lg font-bold text-gray-900">
+                            <div className="text-lg font-bold text-gray-900" dir={getTextDirection(cleanTitle)}>
                               <ReactMarkdown className="prose prose-sm max-w-none">
                                 {cleanTitle}
                               </ReactMarkdown>
