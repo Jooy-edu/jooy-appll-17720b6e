@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ import { User, Settings, LogOut } from 'lucide-react';
 const UserMenu: React.FC = () => {
   const { user, profile, signOut, loading } = useAuth();
   const [isInitialRender, setIsInitialRender] = useState(true);
+  const { t } = useTranslation();
 
   const getInitials = (name: string) => {
     return name
@@ -95,13 +97,13 @@ const UserMenu: React.FC = () => {
             <DropdownMenuItem asChild>
               <Link to="/profile" className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
-                <span>Profile Settings</span>
+                <span>{t('navigation.profileSettings')}</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign Out</span>
+              <span>{t('navigation.signOut')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -143,13 +145,13 @@ const UserMenu: React.FC = () => {
         <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
-            <span>Profile Settings</span>
+            <span>{t('navigation.profileSettings')}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sign Out</span>
+          <span>{t('navigation.signOut')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

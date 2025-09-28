@@ -45,7 +45,9 @@
     "student": "دليل الطالب",
     "parent": "دليل الوالدين",
     "switchToParent": "التبديل إلى دليل الوالدين",
-    "switchToStudent": "التبديل إلى دليل الطالب"
+    "switchToStudent": "التبديل إلى دليل الطالب",
+    "noParentGuidance": "لا يوجد دليل للوالدين متاح لهذه الصفحة.",
+    "noStudentGuidance": "لا يوجد دليل للطالب متاح لهذه الصفحة."
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -234,6 +236,21 @@
     "description": "أضف إلى الشاشة الرئيسية للوصول السريع",
     "installButton": "تثبيت",
     "notNow": "ليس الآن"
+  },
+  "library": {
+    "title": "المكتبة"
+  },
+  "navigation": {
+    "profileSettings": "إعدادات الملف الشخصي",
+    "signOut": "تسجيل الخروج"
+  },
+  "pageSelector": {
+    "pageNumber": "رقم الصفحة",
+    "availablePages": "الصفحات المتاحة: {{min}} - {{max}}",
+    "cancel": "إلغاء",
+    "goToPage": "انتقل إلى الصفحة",
+    "enterPageNumber": "أدخل رقم الصفحة",
+    "loadingPageInfo": "جاري تحميل معلومات الصفحة..."
   },
   "common": {
     "language": "اللغة",

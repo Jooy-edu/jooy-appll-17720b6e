@@ -45,7 +45,9 @@
     "student": "Student Guidance",
     "parent": "Parent Guidance",
     "switchToParent": "Switch to Parent Guidance",
-    "switchToStudent": "Switch to Student Guidance"
+    "switchToStudent": "Switch to Student Guidance",
+    "noParentGuidance": "No parent guidance available for this page.",
+    "noStudentGuidance": "No student guidance available for this page."
   },
   "profile": {
     "title": "Profile Settings",
@@ -238,6 +240,21 @@
     "description": "Add to your home screen for quick access",
     "installButton": "Install",
     "notNow": "Not now"
+  },
+  "library": {
+    "title": "Library"
+  },
+  "navigation": {
+    "profileSettings": "Profile Settings",
+    "signOut": "Sign Out"
+  },
+  "pageSelector": {
+    "pageNumber": "Page Number",
+    "availablePages": "Available pages: {{min}} - {{max}}",
+    "cancel": "Cancel",
+    "goToPage": "Go to Page",
+    "enterPageNumber": "Enter page number",
+    "loadingPageInfo": "Loading page info..."
   },
   "common": {
     "language": "Language",

@@ -651,8 +651,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             <ArrowUpDown className="h-4 w-4" />
             <span dir={getTextDirection(t('common.language'))}>
               {guidanceMode === 'student' 
-                ? (t('common.language') === 'العربية' ? 'دليل الوالدين' : 'Parent Guidance')
-                : (t('common.language') === 'العربية' ? 'دليل الطالب' : 'Student Guidance')
+                ? t('guidance.switchToParent')
+                : t('guidance.switchToStudent')
               }
             </span>
           </Button>
@@ -969,8 +969,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             <div className="bg-white rounded-lg shadow-sm p-4 text-center">
               <p className="text-gray-500" dir={getTextDirection(t('common.language'))}>
                 {guidanceMode === 'parent' 
-                  ? (t('common.language') === 'العربية' ? 'لا يوجد دليل للوالدين متاح لهذه الصفحة' : 'No parent guidance available for this page.')
-                  : (t('common.language') === 'العربية' ? 'لا يوجد دليل للطالب متاح لهذه الصفحة' : 'No student guidance available for this page.')
+                  ? t('guidance.noParentGuidance')
+                  : t('guidance.noStudentGuidance')
                 }
               </p>
             </div>
