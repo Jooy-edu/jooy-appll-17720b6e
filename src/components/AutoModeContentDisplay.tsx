@@ -885,7 +885,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                         // Sections without subsections and without descriptions - render as static titles
                         return (
                           <div key={groupIndex} className="p-2">
-                            <div className="text-lg font-medium text-gray-900">
+                            <div className="text-lg font-bold text-gray-900">
                               <ReactMarkdown className="prose prose-sm max-w-none">
                                 {cleanTitle}
                               </ReactMarkdown>
