@@ -621,7 +621,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           </Button>
         </div>
 
-        {/* Guidance Titles with Accordion */}
+        {/* Guidance Titles with Markdown Hierarchy */}
         <div className="space-y-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Page {autoModePageData.page_number}
@@ -633,45 +633,70 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             }
           </h2>
           {currentGuidance && currentGuidance.length > 0 ? (
-            <div className="bg-white rounded-lg shadow-sm">
-              <Accordion type="single" collapsible className="w-full">
-                {currentGuidance.map((guidance, index) => (
-                  <AccordionItem key={index} value={`guidance-${index}`}>
-                    <AccordionTrigger 
-                      className="px-4 py-4 hover:no-underline text-left"
-                      dir={getTextDirection(guidance.title)}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              {currentGuidance.map((guidance, index) => {
+                const title = guidance.title;
+                const isH2 = title.startsWith('## ');
+                const isH3 = title.startsWith('### ');
+                
+                // Clean title text by removing markdown markers
+                const cleanTitle = title.replace(/^#{2,3}\s*/, '');
+                
+                return (
+                  <div 
+                    key={index} 
+                    className={`cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 ${
+                      isH3 ? 'ml-6' : ''
+                    }`}
+                    onClick={() => handleGuidanceClick(guidance)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleGuidanceClick(guidance);
+                      }
+                    }}
+                  >
+                    <div 
+                      className="flex items-center gap-3"
+                      dir={getTextDirection(cleanTitle)}
                     >
-                      <div className="flex items-center gap-3 w-full">
-                        <div className="flex-1">
-                          <ReactMarkdown className="text-lg font-medium text-gray-900 prose prose-sm max-w-none">
-                            {guidance.title}
-                          </ReactMarkdown>
-                        </div>
-                        {audioAvailable && guidance.audioName && (
-                          <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <div className="space-y-3">
-                        {guidance.description && guidance.description.length > 0 && (
-                          <div className="text-gray-600" dir={getTextDirection(guidance.description[0])}>
+                      <div className="flex-1">
+                        {isH2 ? (
+                          <h2 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                            {cleanTitle}
+                          </h2>
+                        ) : isH3 ? (
+                          <h3 className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors">
+                            {cleanTitle}
+                          </h3>
+                        ) : (
+                          <div className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
                             <ReactMarkdown className="prose prose-sm max-w-none">
-                              {guidance.description[0]}
+                              {title}
                             </ReactMarkdown>
                           </div>
                         )}
-                        <Button
-                          onClick={() => handleGuidanceClick(guidance)}
-                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
-                        >
-                          {t('common.language') === 'العربية' ? 'ابدأ التعلم' : 'Start Learning'}
-                        </Button>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                      {audioAvailable && guidance.audioName && (
+                        <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                      )}
+                    </div>
+                    
+                    {/* Show first description as preview */}
+                    {guidance.description && guidance.description.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-600 opacity-75" dir={getTextDirection(guidance.description[0])}>
+                        <ReactMarkdown className="prose prose-sm max-w-none">
+                          {guidance.description[0].length > 100 
+                            ? guidance.description[0].substring(0, 100) + '...'
+                            : guidance.description[0]
+                          }
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm p-4 text-center">
