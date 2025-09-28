@@ -73,7 +73,10 @@ serve(async (req) => {
     // Check if document has metadata and determine mode
     let responseData
     
+    console.log(`Document ${worksheetId} metadata:`, JSON.stringify(document.metadata, null, 2))
+    
     if (document.metadata && document.metadata.mode === 'auto') {
+      console.log(`Document ${worksheetId} is configured for AUTO MODE`)
       // Auto Mode: Use metadata from documents table
       const autoModeData = document.metadata.data || []
       
@@ -112,6 +115,7 @@ serve(async (req) => {
         pdfUrl
       }
     } else {
+      console.log(`Document ${worksheetId} falling back to REGIONS MODE (PDF viewer) - metadata is NULL or mode !== 'auto'`)
       // Regions Mode: First try to fetch regions from document_regions table
       const { data: regions, error: regionsError } = await supabase
         .from('document_regions')
