@@ -621,7 +621,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           </Button>
         </div>
 
-        {/* Guidance Titles with Markdown Hierarchy */}
+        {/* Guidance Titles with Hierarchical Markdown Structure */}
         <div className="space-y-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Page {autoModePageData.page_number}
@@ -633,70 +633,216 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             }
           </h2>
           {currentGuidance && currentGuidance.length > 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-              {currentGuidance.map((guidance, index) => {
-                const title = guidance.title;
-                const isH2 = title.startsWith('## ');
-                const isH3 = title.startsWith('### ');
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              {(() => {
+                // Group guidance items hierarchically
+                const groupedGuidance: Array<{
+                  section: GuidanceItem;
+                  subsections: GuidanceItem[];
+                }> = [];
                 
-                // Clean title text by removing markdown markers
-                const cleanTitle = title.replace(/^#{2,3}\s*/, '');
+                let currentSection: GuidanceItem | null = null;
+                let currentSubsections: GuidanceItem[] = [];
+                
+                currentGuidance.forEach((guidance) => {
+                  const title = guidance.title;
+                  const isH2 = title.startsWith('## ');
+                  const isH3 = title.startsWith('### ');
+                  
+                  if (isH2) {
+                    // Save previous section if exists
+                    if (currentSection) {
+                      groupedGuidance.push({
+                        section: currentSection,
+                        subsections: [...currentSubsections]
+                      });
+                    }
+                    // Start new section
+                    currentSection = guidance;
+                    currentSubsections = [];
+                  } else if (isH3 && currentSection) {
+                    // Add subsection to current section
+                    currentSubsections.push(guidance);
+                  } else {
+                    // Regular guidance item (no ## or ###)
+                    if (currentSection) {
+                      groupedGuidance.push({
+                        section: currentSection,
+                        subsections: [...currentSubsections]
+                      });
+                      currentSection = null;
+                      currentSubsections = [];
+                    }
+                    // Add as standalone item
+                    groupedGuidance.push({
+                      section: guidance,
+                      subsections: []
+                    });
+                  }
+                });
+                
+                // Don't forget the last section
+                if (currentSection) {
+                  groupedGuidance.push({
+                    section: currentSection,
+                    subsections: [...currentSubsections]
+                  });
+                }
                 
                 return (
-                  <div 
-                    key={index} 
-                    className={`cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 ${
-                      isH3 ? 'ml-6' : ''
-                    }`}
-                    onClick={() => handleGuidanceClick(guidance)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        handleGuidanceClick(guidance);
-                      }
-                    }}
-                  >
-                    <div 
-                      className="flex items-center gap-3"
-                      dir={getTextDirection(cleanTitle)}
-                    >
-                      <div className="flex-1">
-                        {isH2 ? (
-                          <h2 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
-                            {cleanTitle}
-                          </h2>
-                        ) : isH3 ? (
-                          <h3 className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors">
-                            {cleanTitle}
-                          </h3>
-                        ) : (
-                          <div className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
-                            <ReactMarkdown className="prose prose-sm max-w-none">
-                              {title}
-                            </ReactMarkdown>
+                  <Accordion type="multiple" className="space-y-2">
+                    {groupedGuidance.map((group, groupIndex) => {
+                      const sectionTitle = group.section.title;
+                      const isH2Section = sectionTitle.startsWith('## ');
+                      const hasSubsections = group.subsections.length > 0;
+                      
+                      // Clean title text by removing markdown markers but keep markdown formatting
+                      const cleanTitle = sectionTitle.replace(/^#{2,3}\s*/, '');
+                      
+                      if (hasSubsections) {
+                        return (
+                          <AccordionItem key={groupIndex} value={`section-${groupIndex}`}>
+                            <AccordionTrigger className="hover:no-underline">
+                              <div className="flex items-center gap-3 w-full">
+                                <div className="flex-1 text-left">
+                                  <div className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                                    <ReactMarkdown className="prose prose-sm max-w-none inline">
+                                      {cleanTitle}
+                                    </ReactMarkdown>
+                                  </div>
+                                </div>
+                                {audioAvailable && group.section.audioName && (
+                                  <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                )}
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2 pt-2">
+                                {/* Main section clickable area */}
+                                <div 
+                                  className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 border-l-4 border-blue-500"
+                                  onClick={() => handleGuidanceClick(group.section)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      handleGuidanceClick(group.section);
+                                    }
+                                  }}
+                                >
+                                  <div className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                    <ReactMarkdown className="prose prose-sm max-w-none">
+                                      {cleanTitle}
+                                    </ReactMarkdown>
+                                  </div>
+                                  {/* Show first description as preview */}
+                                  {group.section.description && group.section.description.length > 0 && (
+                                    <div className="mt-2 text-sm text-gray-600 opacity-75" dir={getTextDirection(group.section.description[0])}>
+                                      <ReactMarkdown className="prose prose-sm max-w-none">
+                                        {group.section.description[0].length > 100 
+                                          ? group.section.description[0].substring(0, 100) + '...'
+                                          : group.section.description[0]
+                                        }
+                                      </ReactMarkdown>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Subsections */}
+                                {group.subsections.map((subsection, subIndex) => {
+                                  const subTitle = subsection.title.replace(/^#{2,3}\s*/, '');
+                                  return (
+                                    <div 
+                                      key={subIndex}
+                                      className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 ml-4 border-l-2 border-gray-300"
+                                      onClick={() => handleGuidanceClick(subsection)}
+                                      role="button"
+                                      tabIndex={0}
+                                      onKeyPress={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                          handleGuidanceClick(subsection);
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex-1">
+                                          <div className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors">
+                                            <ReactMarkdown className="prose prose-sm max-w-none">
+                                              {subTitle}
+                                            </ReactMarkdown>
+                                          </div>
+                                        </div>
+                                        {audioAvailable && subsection.audioName && (
+                                          <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        )}
+                                      </div>
+                                      
+                                      {/* Show first description as preview */}
+                                      {subsection.description && subsection.description.length > 0 && (
+                                        <div className="mt-2 text-sm text-gray-600 opacity-75" dir={getTextDirection(subsection.description[0])}>
+                                          <ReactMarkdown className="prose prose-sm max-w-none">
+                                            {subsection.description[0].length > 100 
+                                              ? subsection.description[0].substring(0, 100) + '...'
+                                              : subsection.description[0]
+                                            }
+                                          </ReactMarkdown>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      } else {
+                        // Regular guidance item without subsections
+                        return (
+                          <div 
+                            key={groupIndex}
+                            className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-4 border border-gray-200"
+                            onClick={() => handleGuidanceClick(group.section)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                handleGuidanceClick(group.section);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <div className={`font-medium hover:text-blue-600 transition-colors ${
+                                  isH2Section ? 'text-xl font-bold text-gray-900' : 'text-lg text-gray-900'
+                                }`}>
+                                  <ReactMarkdown className="prose prose-sm max-w-none">
+                                    {cleanTitle}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
+                              {audioAvailable && group.section.audioName && (
+                                <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                              )}
+                            </div>
+                            
+                            {/* Show first description as preview */}
+                            {group.section.description && group.section.description.length > 0 && (
+                              <div className="mt-2 text-sm text-gray-600 opacity-75" dir={getTextDirection(group.section.description[0])}>
+                                <ReactMarkdown className="prose prose-sm max-w-none">
+                                  {group.section.description[0].length > 100 
+                                    ? group.section.description[0].substring(0, 100) + '...'
+                                    : group.section.description[0]
+                                  }
+                                </ReactMarkdown>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      {audioAvailable && guidance.audioName && (
-                        <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                      )}
-                    </div>
-                    
-                    {/* Show first description as preview */}
-                    {guidance.description && guidance.description.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-600 opacity-75" dir={getTextDirection(guidance.description[0])}>
-                        <ReactMarkdown className="prose prose-sm max-w-none">
-                          {guidance.description[0].length > 100 
-                            ? guidance.description[0].substring(0, 100) + '...'
-                            : guidance.description[0]
-                          }
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
+                        );
+                      }
+                    })}
+                  </Accordion>
                 );
-              })}
+              })()}
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm p-4 text-center">
