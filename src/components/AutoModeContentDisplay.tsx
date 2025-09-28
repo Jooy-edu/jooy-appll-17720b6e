@@ -66,6 +66,21 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [activeSectionTitle, setActiveSectionTitle] = useState<string>('');
   const [activeSubsectionTitle, setActiveSubsectionTitle] = useState<string>('');
   
+  // Swipe navigation state
+  const [navigationData, setNavigationData] = useState<Array<{
+    guidance: GuidanceItem;
+    sectionTitle: string;
+    subsectionTitle?: string;
+  }>>([]);
+  const [currentNavigationIndex, setCurrentNavigationIndex] = useState<number>(0);
+  
+  // Swipe detection state
+  const [touchStartX, setTouchStartX] = useState<number>(0);
+  const [touchStartY, setTouchStartY] = useState<number>(0);
+  const [mouseStartX, setMouseStartX] = useState<number>(0);
+  const [mouseStartY, setMouseStartY] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  
   // Guidance mode state (student or parent)
   const [guidanceMode, setGuidanceMode] = useState<'student' | 'parent'>(() => {
     const stored = sessionStorage.getItem(`guidanceMode_${worksheetId}_${pageNumber}`);
@@ -109,10 +124,112 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     ? autoModePageData.parent_guidance 
     : autoModePageData.guidance;
 
+  // Build flat navigation data structure from hierarchical guidance
+  const buildNavigationData = (guidance: GuidanceItem[]) => {
+    const navData: Array<{
+      guidance: GuidanceItem;
+      sectionTitle: string;
+      subsectionTitle?: string;
+    }> = [];
+    
+    // Same grouping logic as the main view
+    const hasLevel2 = guidance.some(item => item.title.startsWith('## '));
+    const hasLevel3 = guidance.some(item => item.title.startsWith('### '));
+    const hasBoldTitles = guidance.some(item => 
+      item.title.includes('**') && !item.title.startsWith('##') && !item.title.startsWith('###')
+    );
+    
+    let currentSection: GuidanceItem | null = null;
+    
+    guidance.forEach((item) => {
+      const title = item.title;
+      const isH2 = title.startsWith('## ');
+      const isH3 = title.startsWith('### ');
+      const isBoldTitle = title.includes('**') && !isH2 && !isH3;
+      
+      const cleanTitle = title
+        .replace(/^#{2,3}\s*/, '')
+        .replace(/\*\*(.*?)\*\*/g, '$1');
+      
+      if (hasLevel2) {
+        if (isH2) {
+          currentSection = item;
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanTitle
+          });
+        } else if ((isH3 || isBoldTitle) && currentSection) {
+          const cleanSectionTitle = currentSection.title
+            .replace(/^#{2,3}\s*/, '')
+            .replace(/\*\*(.*?)\*\*/g, '$1');
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanSectionTitle,
+            subsectionTitle: cleanTitle
+          });
+        } else {
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanTitle
+          });
+        }
+      } else if (hasLevel3) {
+        if (isH3) {
+          currentSection = item;
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanTitle
+          });
+        } else if (isBoldTitle && currentSection) {
+          const cleanSectionTitle = currentSection.title
+            .replace(/^#{2,3}\s*/, '')
+            .replace(/\*\*(.*?)\*\*/g, '$1');
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanSectionTitle,
+            subsectionTitle: cleanTitle
+          });
+        } else {
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanTitle
+          });
+        }
+      } else {
+        if (hasBoldTitles && isBoldTitle && currentSection) {
+          const cleanSectionTitle = currentSection.title
+            .replace(/^#{2,3}\s*/, '')
+            .replace(/\*\*(.*?)\*\*/g, '$1');
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanSectionTitle,
+            subsectionTitle: cleanTitle
+          });
+        } else {
+          currentSection = item;
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanTitle
+          });
+        }
+      }
+    });
+    
+    return navData;
+  };
+
   // Save guidance mode to session storage
   useEffect(() => {
     sessionStorage.setItem(`guidanceMode_${worksheetId}_${pageNumber}`, guidanceMode);
   }, [guidanceMode, worksheetId, pageNumber]);
+
+  // Build navigation data when guidance changes
+  useEffect(() => {
+    if (currentGuidance && currentGuidance.length > 0) {
+      const navData = buildNavigationData(currentGuidance);
+      setNavigationData(navData);
+    }
+  }, [currentGuidance]);
 
   // Initial audio availability check
   useEffect(() => {
@@ -326,6 +443,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       setActiveSubsectionTitle('');
     }
     
+    // Update navigation index
+    const navIndex = navigationData.findIndex(nav => nav.guidance === guidance);
+    if (navIndex !== -1) {
+      setCurrentNavigationIndex(navIndex);
+    }
+    
     if (videoRef.current && audioAvailable) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(err => {
@@ -342,6 +465,85 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     } else if (!guidance.audioName) {
       console.warn('🎵 [AUTO MODE] No audioName found for guidance:', guidance.title);
     }
+  };
+
+  // Navigation functions for swipe
+  const navigateToPrevious = () => {
+    if (currentNavigationIndex > 0) {
+      const prevNav = navigationData[currentNavigationIndex - 1];
+      handleGuidanceClick(prevNav.guidance, prevNav.sectionTitle, prevNav.subsectionTitle);
+    }
+  };
+
+  const navigateToNext = () => {
+    if (currentNavigationIndex < navigationData.length - 1) {
+      const nextNav = navigationData[currentNavigationIndex + 1];
+      handleGuidanceClick(nextNav.guidance, nextNav.sectionTitle, nextNav.subsectionTitle);
+    }
+  };
+
+  // Swipe detection handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    setTouchStartY(touch.clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!e.changedTouches[0]) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    
+    // Minimum swipe distance and ensure it's more horizontal than vertical
+    const minSwipeDistance = 50;
+    const maxVerticalDistance = 100;
+    
+    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaY) < maxVerticalDistance) {
+      e.preventDefault();
+      if (deltaX > 0) {
+        // Swipe right - go to previous
+        navigateToPrevious();
+      } else {
+        // Swipe left - go to next
+        navigateToNext();
+      }
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setMouseStartX(e.clientX);
+    setMouseStartY(e.clientY);
+    setIsDragging(true);
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    const deltaX = e.clientX - mouseStartX;
+    const deltaY = e.clientY - mouseStartY;
+    
+    // Minimum swipe distance and ensure it's more horizontal than vertical
+    const minSwipeDistance = 80;
+    const maxVerticalDistance = 100;
+    
+    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaY) < maxVerticalDistance) {
+      e.preventDefault();
+      if (deltaX > 0) {
+        // Swipe right - go to previous
+        navigateToPrevious();
+      } else {
+        // Swipe left - go to next
+        navigateToNext();
+      }
+    }
+    
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
   };
 
   const handleNextStep = () => {
@@ -543,6 +745,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           <div 
             className="worksheet-text-display"
             ref={textDisplayRef}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+            style={{ touchAction: 'pan-y' }}
           >
             <div className="text-content chat-messages">
               {/* Section and Subsection Title Header */}
