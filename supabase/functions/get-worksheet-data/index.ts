@@ -78,25 +78,25 @@ serve(async (req) => {
       const autoModeData = document.metadata.data || []
       
       // Helper function to normalize guidance items
-      const normalizeGuidance = (guidance) => {
+      const normalizeGuidance = (guidance: any[], pageNumber: number): any[] => {
         if (!guidance) return []
-        return guidance.map(guidanceItem => ({
+        return guidance.map((guidanceItem: any, index: number) => ({
           ...guidanceItem,
           title: guidanceItem.title || 'Untitled Guidance',
           description: Array.isArray(guidanceItem.description) 
-            ? guidanceItem.description.map(desc => typeof desc === 'string' ? desc.trim() : '').filter(desc => desc !== '')
+            ? guidanceItem.description.map((desc: any) => typeof desc === 'string' ? desc.trim() : '').filter((desc: any) => desc !== '')
             : typeof guidanceItem.description === 'string' 
-              ? guidanceItem.description.split('\n').map(desc => desc.trim()).filter(desc => desc !== '')
+              ? guidanceItem.description.split('\n').map((desc: string) => desc.trim()).filter((desc: string) => desc !== '')
               : [],
-          audioName: guidanceItem.audioName || `${pageData.page_number}_${guidance.indexOf(guidanceItem) + 1}`
+          audioName: guidanceItem.audioName || `${pageNumber}_${index + 1}`
         }))
       }
 
       // Process guidance descriptions to ensure they are arrays of paragraphs
-      const processedAutoModeData = autoModeData.map(pageData => ({
+      const processedAutoModeData = autoModeData.map((pageData: any) => ({
         ...pageData,
-        guidance: normalizeGuidance(pageData.guidance),
-        parent_guidance: normalizeGuidance(pageData.parent_guidance || pageData.parentGuidance)
+        guidance: normalizeGuidance(pageData.guidance, pageData.page_number),
+        parent_guidance: normalizeGuidance(pageData.parent_guidance || pageData.parentGuidance, pageData.page_number)
       }))
       
       console.log(`Successfully processed worksheet: ${worksheetId}, auto mode data:`, JSON.stringify(processedAutoModeData, null, 2))
@@ -150,7 +150,7 @@ serve(async (req) => {
             
             // Transform JSON data to regions format
             if (jsonContent.regions) {
-              transformedRegions = jsonContent.regions.map(region => ({
+              transformedRegions = jsonContent.regions.map((region: any) => ({
                 id: region.id,
                 document_id: document.id,
                 user_id: region.user_id,

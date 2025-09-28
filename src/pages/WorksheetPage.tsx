@@ -54,22 +54,47 @@ const WorksheetPage: React.FC = () => {
   // Fetch worksheet data once at the page level
   const { data: worksheetData, isLoading, error } = useWorksheetData(id || '');
   
-  // Debug worksheet data for auto mode
+  // Add comprehensive debugging
   useEffect(() => {
-    if (worksheetData?.meta?.mode === 'auto' && 'data' in worksheetData.meta) {
-      console.log('🎯 [AUTO MODE] Worksheet data loaded:', worksheetData.meta);
-      const pageIndex = parseInt(n || '1', 10);
-      const pageData = worksheetData.meta.data.find(page => page.page_number === pageIndex);
-      console.log('🎯 [AUTO MODE] Page data for page', pageIndex, ':', pageData);
-      if (pageData) {
-        console.log('🎯 [AUTO MODE] Guidance items:', pageData.guidance.map(g => ({
-          title: g.title,
-          audioName: g.audioName,
-          descriptionCount: g.description.length
-        })));
+    console.log('🔍 [DEBUG] WorksheetPage render state:', {
+      worksheetId: id,
+      pageNumber: n,
+      isLoading,
+      error: error?.message,
+      hasWorksheetData: !!worksheetData,
+      worksheetMode: worksheetData?.meta?.mode,
+      userIsOnLoginRoute: location.pathname.includes('/auth/login')
+    });
+
+    if (worksheetData) {
+      console.log('🔍 [DEBUG] Full worksheet data:', worksheetData);
+      
+      const mode = worksheetData.meta?.mode;
+      
+      if (mode === 'auto' && 'data' in worksheetData.meta) {
+        console.log('🎯 [AUTO MODE] Auto mode detected with data:', worksheetData.meta.data);
+        const pageIndex = parseInt(n || '1', 10);
+        const pageData = worksheetData.meta.data.find(page => page.page_number === pageIndex);
+        console.log('🎯 [AUTO MODE] Looking for page:', pageIndex, 'Found page data:', pageData);
+        
+        if (pageData) {
+          console.log('🎯 [AUTO MODE] Page has guidance items:', pageData.guidance?.length || 0);
+          pageData.guidance?.forEach((g, index) => {
+            console.log(`🎯 [AUTO MODE] Guidance ${index}:`, {
+              title: g.title,
+              audioName: g.audioName,
+              descriptionCount: g.description?.length || 0
+            });
+          });
+        } else {
+          console.warn('🎯 [AUTO MODE] No page data found for page:', pageIndex);
+          console.log('🎯 [AUTO MODE] Available pages:', worksheetData.meta.data.map(p => p.page_number));
+        }
+      } else if (mode === 'regions' || !mode) {
+        console.log('🏷️ [REGIONS MODE] Regions mode detected with regions:', 'regions' in worksheetData.meta ? worksheetData.meta.regions?.length : 'no regions data');
       }
     }
-  }, [worksheetData, n]);
+  }, [id, n, worksheetData, isLoading, error, location.pathname]);
   
   // Enable zooming for worksheet page
   useEffect(() => {
