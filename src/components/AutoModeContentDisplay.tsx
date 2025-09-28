@@ -775,7 +775,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                           <AccordionItem key={groupIndex} value={`section-${groupIndex}`}>
                             <AccordionTrigger className="hover:no-underline">
                               <div className="flex items-center gap-3 w-full">
-                                <div className="flex-1 text-left">
+                                <div className={`flex-1 ${getTextDirection(cleanTitle) === 'rtl' ? 'text-right' : 'text-left'}`}>
                                   <div className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors" dir={getTextDirection(cleanTitle)}>
                                     <ReactMarkdown className="prose prose-sm max-w-none inline">
                                       {cleanTitle}
