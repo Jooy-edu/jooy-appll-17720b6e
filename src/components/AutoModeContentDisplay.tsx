@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Sparkles, UserRound, MessageSquare, ArrowUpDown, Volume2 } from "lucide-react";
@@ -66,12 +66,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [activeSectionTitle, setActiveSectionTitle] = useState<string>('');
   const [activeSubsectionTitle, setActiveSubsectionTitle] = useState<string>('');
   
-  // Swipe navigation state
-  const [navigationData, setNavigationData] = useState<Array<{
-    guidance: GuidanceItem;
-    sectionTitle: string;
-    subsectionTitle?: string;
-  }>>([]);
+  // Navigation state for swipe functionality - will be populated by useMemo
   const [currentNavigationIndex, setCurrentNavigationIndex] = useState<number>(0);
   
   // Swipe detection state
@@ -229,22 +224,31 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     sessionStorage.setItem(`guidanceMode_${worksheetId}_${pageNumber}`, guidanceMode);
   }, [guidanceMode, worksheetId, pageNumber]);
 
-  // Build navigation data when guidance changes
-  useEffect(() => {
+  // Build navigation data using useMemo for stability
+  const navigationData = useMemo(() => {
     if (currentGuidance && currentGuidance.length > 0) {
       const navData = buildNavigationData(currentGuidance);
-      setNavigationData(navData);
       console.log('🧭 [NAVIGATION] Built navigation data with', navData.length, 'items');
       navData.forEach((nav, index) => {
         console.log(`🧭 [DEBUG] NavData[${index}]:`, nav.guidance.title, 'section:', nav.sectionTitle, 'subsection:', nav.subsectionTitle);
       });
-      // Reset navigation index when guidance changes
-      setCurrentNavigationIndex(0);
+      return navData;
+    }
+    return [];
+  }, [currentGuidance]);
+
+  // Reset navigation index only when guidance changes completely (not on every build)
+  useEffect(() => {
+    if (currentGuidance && currentGuidance.length > 0) {
+      // Only reset if we don't have a valid current index or if activeGuidance is null
+      if (!activeGuidance || currentNavigationIndex >= navigationData.length) {
+        console.log('🧭 [NAVIGATION] Resetting navigation index to 0 - activeGuidance:', !!activeGuidance, 'currentIndex:', currentNavigationIndex, 'maxIndex:', navigationData.length - 1);
+        setCurrentNavigationIndex(0);
+      }
     } else {
-      setNavigationData([]);
       setCurrentNavigationIndex(0);
     }
-  }, [currentGuidance]);
+  }, [currentGuidance, activeGuidance, navigationData.length, currentNavigationIndex]);
 
   // Initial audio availability check
   useEffect(() => {
@@ -458,21 +462,44 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       setActiveSubsectionTitle('');
     }
     
-    // Update navigation index - use more reliable matching by title and audioName
-    const navIndex = navigationData.findIndex(nav => 
-      nav.guidance.title === guidance.title && 
-      nav.guidance.audioName === guidance.audioName
-    );
-    console.log('🧭 [NAVIGATION] Finding nav index for guidance:', guidance.title, 'found at index:', navIndex, 'total nav items:', navigationData.length);
-    if (navIndex !== -1) {
+    // Update navigation index with improved matching and error handling
+    const navIndex = navigationData.findIndex(nav => {
+      // Try exact match first
+      if (nav.guidance.title === guidance.title && nav.guidance.audioName === guidance.audioName) {
+        return true;
+      }
+      
+      // Fallback: match by audioName only if titles might have formatting differences
+      if (nav.guidance.audioName === guidance.audioName) {
+        const cleanNavTitle = nav.guidance.title.replace(/^#{2,3}\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1');
+        const cleanGuidanceTitle = guidance.title.replace(/^#{2,3}\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1');
+        return cleanNavTitle === cleanGuidanceTitle;
+      }
+      
+      return false;
+    });
+    
+    console.log('🧭 [NAVIGATION] Finding nav index for guidance:', guidance.title, 'audioName:', guidance.audioName, 'found at index:', navIndex, 'total nav items:', navigationData.length);
+    
+    if (navIndex !== -1 && navIndex < navigationData.length) {
       setCurrentNavigationIndex(navIndex);
       console.log('🧭 [NAVIGATION] Updated navigation index to:', navIndex);
     } else {
-      console.warn('🧭 [NAVIGATION] Could not find navigation index for guidance:', guidance.title);
-      // Debug: log all navigation data titles
+      console.warn('🧭 [NAVIGATION] Could not find valid navigation index for guidance:', guidance.title);
+      // Debug: log all navigation data for troubleshooting
+      console.group('🧭 [DEBUG] All navigation data:');
       navigationData.forEach((nav, index) => {
-        console.log(`🧭 [DEBUG] Nav[${index}]:`, nav.guidance.title, 'audioName:', nav.guidance.audioName);
+        console.log(`Nav[${index}]:`, {
+          title: nav.guidance.title,
+          audioName: nav.guidance.audioName,
+          sectionTitle: nav.sectionTitle,
+          subsectionTitle: nav.subsectionTitle
+        });
       });
+      console.groupEnd();
+      
+      // Set to 0 as fallback to prevent navigation issues
+      setCurrentNavigationIndex(0);
     }
     
     if (videoRef.current && audioAvailable) {
