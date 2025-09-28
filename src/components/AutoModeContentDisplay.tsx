@@ -62,6 +62,10 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true);
   const [audioCheckPerformed, setAudioCheckPerformed] = useState<boolean>(false);
   
+  // Section and subsection context for text mode titles
+  const [activeSectionTitle, setActiveSectionTitle] = useState<string>('');
+  const [activeSubsectionTitle, setActiveSubsectionTitle] = useState<string>('');
+  
   // Guidance mode state (student or parent)
   const [guidanceMode, setGuidanceMode] = useState<'student' | 'parent'>(() => {
     const stored = sessionStorage.getItem(`guidanceMode_${worksheetId}_${pageNumber}`);
@@ -297,7 +301,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     });
   };
 
-  const handleGuidanceClick = (guidance: GuidanceItem) => {
+  const handleGuidanceClick = (guidance: GuidanceItem, sectionTitle?: string, subsectionTitle?: string) => {
     console.log('🎯 [AUTO MODE] Guidance clicked:', guidance.title, 'audioName:', guidance.audioName);
     
     if (!guidance.description || guidance.description.length === 0) {
@@ -308,6 +312,19 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(guidance);
     setCurrentStepIndex(0);
     setDisplayedMessages([guidance.description[0]]);
+    
+    // Set section and subsection context for text mode title
+    if (sectionTitle) {
+      setActiveSectionTitle(sectionTitle);
+      setActiveSubsectionTitle(subsectionTitle || '');
+    } else {
+      // Clean the guidance title for display
+      const cleanTitle = guidance.title
+        .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+        .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+      setActiveSectionTitle(cleanTitle);
+      setActiveSubsectionTitle('');
+    }
     
     if (videoRef.current && audioAvailable) {
       videoRef.current.currentTime = 0;
@@ -359,6 +376,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
+    setActiveSectionTitle('');
+    setActiveSubsectionTitle('');
     if (onEmbeddedChatChange) {
       onEmbeddedChatChange(false);
     }
@@ -441,6 +460,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     setActiveGuidance(null);
     setCurrentStepIndex(0);
     setDisplayedMessages([]);
+    setActiveSectionTitle('');
+    setActiveSubsectionTitle('');
     if (onEmbeddedChatChange) {
       onEmbeddedChatChange(false);
     }
@@ -502,6 +523,24 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           >
             <UserRound className="h-4 w-4" />
           </Button>
+        )}
+        
+        {/* Section and Subsection Title Header */}
+        {(activeSectionTitle || activeSubsectionTitle) && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-60 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-4 py-2 max-w-md">
+            <div className="text-center">
+              {activeSectionTitle && (
+                <div className="text-lg font-bold text-gray-900" dir={getTextDirection(activeSectionTitle)}>
+                  {activeSectionTitle}
+                </div>
+              )}
+              {activeSubsectionTitle && (
+                <div className="text-sm font-medium text-gray-600 mt-1" dir={getTextDirection(activeSubsectionTitle)}>
+                  {activeSubsectionTitle}
+                </div>
+              )}
+            </div>
+          </div>
         )}
         
         <div className="worksheet-text-display-container active">
@@ -792,14 +831,22 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                                   {/* Main section clickable area - no duplicate title */}
                                   <div 
                                     className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 border-l-4 border-blue-500"
-                                    onClick={() => handleGuidanceClick(group.section)}
+                                     onClick={() => {
+                                       const cleanSectionTitle = group.section.title
+                                         .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+                                         .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                                       handleGuidanceClick(group.section, cleanSectionTitle);
+                                     }}
                                     role="button"
                                     tabIndex={0}
-                                    onKeyPress={(e) => {
-                                      if (e.key === 'Enter' || e.key === ' ') {
-                                        handleGuidanceClick(group.section);
-                                      }
-                                    }}
+                                     onKeyPress={(e) => {
+                                       if (e.key === 'Enter' || e.key === ' ') {
+                                         const cleanSectionTitle = group.section.title
+                                           .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+                                           .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                                         handleGuidanceClick(group.section, cleanSectionTitle);
+                                       }
+                                     }}
                                   >
                                     {/* Show description preview only */}
                                     {group.section.description && group.section.description.length > 0 && (
@@ -823,14 +870,28 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                                     <div 
                                       key={subIndex}
                                       className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 ml-4 border-l-2 border-gray-300"
-                                      onClick={() => handleGuidanceClick(subsection)}
+                                       onClick={() => {
+                                         const cleanSectionTitle = group.section.title
+                                           .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+                                           .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                                         const cleanSubsectionTitle = subsection.title
+                                           .replace(/^#{2,3}\s*/, '')  // Remove ## or ###
+                                           .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                                         handleGuidanceClick(subsection, cleanSectionTitle, cleanSubsectionTitle);
+                                       }}
                                       role="button"
                                       tabIndex={0}
-                                      onKeyPress={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                          handleGuidanceClick(subsection);
-                                        }
-                                      }}
+                                       onKeyPress={(e) => {
+                                         if (e.key === 'Enter' || e.key === ' ') {
+                                           const cleanSectionTitle = group.section.title
+                                             .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+                                             .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                                           const cleanSubsectionTitle = subsection.title
+                                             .replace(/^#{2,3}\s*/, '')  // Remove ## or ###
+                                             .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                                           handleGuidanceClick(subsection, cleanSectionTitle, cleanSubsectionTitle);
+                                         }
+                                       }}
                                     >
                                       <div className="flex items-center gap-3">
                                         <div className="flex-1">
@@ -858,12 +919,20 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                           <div 
                             key={groupIndex}
                             className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-4 border border-gray-200"
-                            onClick={() => handleGuidanceClick(group.section)}
+                            onClick={() => {
+                              const cleanSectionTitle = group.section.title
+                                .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+                                .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                              handleGuidanceClick(group.section, cleanSectionTitle);
+                            }}
                             role="button"
                             tabIndex={0}
                             onKeyPress={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
-                                handleGuidanceClick(group.section);
+                                const cleanSectionTitle = group.section.title
+                                  .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+                                  .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
+                                handleGuidanceClick(group.section, cleanSectionTitle);
                               }
                             }}
                           >
