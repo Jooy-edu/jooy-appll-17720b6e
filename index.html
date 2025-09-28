@@ -49,12 +49,12 @@
             .then((registration) => {
               console.log('SW registered: ', registration);
               
-              // Check for updates - only show prompt for genuine updates
+              // Check for updates - only show prompt for genuine updates  
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
-                if (newWorker && navigator.serviceWorker.controller) {
+                if (newWorker) {
                   newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed') {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                       // New content is available, prompt user to refresh
                       if (confirm('New version available! Refresh to update?')) {
                         window.location.reload();
