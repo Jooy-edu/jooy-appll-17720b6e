@@ -255,13 +255,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       setActiveGuidance(initialActiveGuidance);
       setCurrentStepIndex(initialGuidanceStepIndex);
       if (initialActiveGuidance.description) {
-        // For parent guidance, show all messages; for student guidance, show up to current step
-        let messages;
-        if (guidanceMode === 'parent') {
-          messages = initialActiveGuidance.description;
-        } else {
-          messages = initialActiveGuidance.description.slice(0, initialGuidanceStepIndex + 1);
-        }
+        const messages = initialActiveGuidance.description.slice(0, initialGuidanceStepIndex + 1);
         setDisplayedMessages(messages);
         
         // Check if we should show embedded chat based on initial state
@@ -313,13 +307,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     
     setActiveGuidance(guidance);
     setCurrentStepIndex(0);
-    
-    // For parent guidance, show all messages at once; for student guidance, show step by step
-    if (guidanceMode === 'parent') {
-      setDisplayedMessages(guidance.description);
-    } else {
-      setDisplayedMessages([guidance.description[0]]);
-    }
+    setDisplayedMessages([guidance.description[0]]);
     
     if (videoRef.current && audioAvailable) {
       videoRef.current.currentTime = 0;
@@ -490,7 +478,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     }
   };
 
-  const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1 && guidanceMode !== 'parent';
+  const hasNextStep = activeGuidance?.description && currentStepIndex < activeGuidance.description.length - 1;
 
   if (activeGuidance) {
     // Text mode - showing guidance description
