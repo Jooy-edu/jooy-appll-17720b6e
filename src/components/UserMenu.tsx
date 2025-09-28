@@ -97,16 +97,15 @@ const UserMenu: React.FC = () => {
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => changeLanguage('ar')} className="cursor-pointer">
-              <Languages className="mr-2 h-4 w-4" />
-              <span>{t('common.arabic')}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => changeLanguage('en')} className="cursor-pointer">
-              <Languages className="mr-2 h-4 w-4" />
-              <span>{t('common.english')}</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => changeLanguage(i18n.language === 'ar' ? 'en' : 'ar')} 
+          className="cursor-pointer"
+        >
+          <Languages className="mr-2 h-4 w-4" />
+          <span>{i18n.language === 'ar' ? t('common.english') : t('common.arabic')}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/profile" className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
@@ -155,13 +154,12 @@ const UserMenu: React.FC = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => changeLanguage('ar')} className="cursor-pointer">
+        <DropdownMenuItem 
+          onClick={() => changeLanguage(i18n.language === 'ar' ? 'en' : 'ar')} 
+          className="cursor-pointer"
+        >
           <Languages className="mr-2 h-4 w-4" />
-          <span>{t('common.arabic')}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => changeLanguage('en')} className="cursor-pointer">
-          <Languages className="mr-2 h-4 w-4" />
-          <span>{t('common.english')}</span>
+          <span>{i18n.language === 'ar' ? t('common.english') : t('common.arabic')}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
