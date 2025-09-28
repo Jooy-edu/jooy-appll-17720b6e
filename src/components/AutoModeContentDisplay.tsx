@@ -538,7 +538,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                     }
                   }}
                 >
-                  <p>{message}</p>
+                  <ReactMarkdown>{message}</ReactMarkdown>
                 </div>
               ))}
               
