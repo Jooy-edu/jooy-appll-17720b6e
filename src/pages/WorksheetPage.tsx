@@ -54,41 +54,22 @@ const WorksheetPage: React.FC = () => {
   // Fetch worksheet data once at the page level
   const { data: worksheetData, isLoading, error } = useWorksheetData(id || '');
   
-  // Enhanced debugging for worksheet data loading
+  // Debug worksheet data for auto mode
   useEffect(() => {
-    console.log('🔍 [DEBUG] WorksheetPage - Current params:', { id, n });
-    console.log('🔍 [DEBUG] WorksheetPage - isLoading:', isLoading);
-    console.log('🔍 [DEBUG] WorksheetPage - error:', error);
-    console.log('🔍 [DEBUG] WorksheetPage - worksheetData:', worksheetData);
-    
-    if (worksheetData?.meta) {
-      console.log('🔍 [DEBUG] WorksheetPage - worksheetData.meta:', worksheetData.meta);
-      const metaMode = worksheetData.meta.mode;
-      console.log('🔍 [DEBUG] WorksheetPage - worksheetData.meta.mode:', metaMode);
-      
-      if (metaMode === 'auto' && 'data' in worksheetData.meta) {
-        console.log('🎯 [AUTO MODE] Worksheet data loaded:', worksheetData.meta);
-        const pageIndex = parseInt(n || '1', 10);
-        console.log('🎯 [AUTO MODE] Looking for pageIndex:', pageIndex);
-        console.log('🎯 [AUTO MODE] Available pages:', worksheetData.meta.data.map(p => p.page_number));
-        const pageData = worksheetData.meta.data.find(page => page.page_number === pageIndex);
-        console.log('🎯 [AUTO MODE] Page data for page', pageIndex, ':', pageData);
-        if (pageData) {
-          console.log('🎯 [AUTO MODE] Guidance items:', pageData.guidance.map(g => ({
-            title: g.title,
-            audioName: g.audioName,
-            descriptionCount: g.description.length
-          })));
-        } else {
-          console.warn('🎯 [AUTO MODE] No page data found for page', pageIndex);
-        }
-      } else if (metaMode === 'regions' && 'regions' in worksheetData.meta) {
-        console.log('🔍 [REGIONS MODE] Regions data:', worksheetData.meta.regions?.length || 0, 'regions');
-      } else {
-        console.warn('🔍 [DEBUG] Unknown or missing mode:', metaMode);
+    if (worksheetData?.meta?.mode === 'auto' && 'data' in worksheetData.meta) {
+      console.log('🎯 [AUTO MODE] Worksheet data loaded:', worksheetData.meta);
+      const pageIndex = parseInt(n || '1', 10);
+      const pageData = worksheetData.meta.data.find(page => page.page_number === pageIndex);
+      console.log('🎯 [AUTO MODE] Page data for page', pageIndex, ':', pageData);
+      if (pageData) {
+        console.log('🎯 [AUTO MODE] Guidance items:', pageData.guidance.map(g => ({
+          title: g.title,
+          audioName: g.audioName,
+          descriptionCount: g.description.length
+        })));
       }
     }
-  }, [worksheetData, n, id, isLoading, error]);
+  }, [worksheetData, n]);
   
   // Enable zooming for worksheet page
   useEffect(() => {
@@ -512,11 +493,6 @@ const WorksheetPage: React.FC = () => {
   };
 
   const currentPageData = getCurrentPageData();
-  
-  // Enhanced render decision logging
-  console.log('🎯 [RENDER DECISION] worksheetData.meta.mode:', worksheetData?.meta?.mode);
-  console.log('🎯 [RENDER DECISION] currentPageData:', currentPageData);
-  console.log('🎯 [RENDER DECISION] Will render AUTO MODE:', worksheetData?.meta?.mode === 'auto' && !!currentPageData);
   
   // Get page description for AI context (only for auto mode)
   const pageDescriptionForAI = worksheetData?.meta?.mode === 'auto' && currentPageData 

@@ -138,7 +138,7 @@ serve(async (req) => {
     console.error('Sync error:', error)
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error.message,
         documents: [],
         covers: [],
         deletedCovers: [],

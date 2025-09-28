@@ -73,33 +73,30 @@ serve(async (req) => {
     // Check if document has metadata and determine mode
     let responseData
     
-    console.log(`Document ${worksheetId} metadata:`, JSON.stringify(document.metadata, null, 2))
-    
     if (document.metadata && document.metadata.mode === 'auto') {
-      console.log(`Document ${worksheetId} is configured for AUTO MODE`)
       // Auto Mode: Use metadata from documents table
       const autoModeData = document.metadata.data || []
       
       // Helper function to normalize guidance items
-      const normalizeGuidance = (guidance: any[], currentPageData: any) => {
+      const normalizeGuidance = (guidance) => {
         if (!guidance) return []
-        return guidance.map((guidanceItem: any) => ({
+        return guidance.map(guidanceItem => ({
           ...guidanceItem,
           title: guidanceItem.title || 'Untitled Guidance',
           description: Array.isArray(guidanceItem.description) 
-            ? guidanceItem.description.map((desc: any) => typeof desc === 'string' ? desc.trim() : '').filter((desc: string) => desc !== '')
+            ? guidanceItem.description.map(desc => typeof desc === 'string' ? desc.trim() : '').filter(desc => desc !== '')
             : typeof guidanceItem.description === 'string' 
-              ? guidanceItem.description.split('\n').map((desc: string) => desc.trim()).filter((desc: string) => desc !== '')
+              ? guidanceItem.description.split('\n').map(desc => desc.trim()).filter(desc => desc !== '')
               : [],
-          audioName: guidanceItem.audioName || `${currentPageData.page_number}_${guidance.indexOf(guidanceItem) + 1}`
+          audioName: guidanceItem.audioName || `${pageData.page_number}_${guidance.indexOf(guidanceItem) + 1}`
         }))
       }
 
       // Process guidance descriptions to ensure they are arrays of paragraphs
-      const processedAutoModeData = autoModeData.map((pageData: any) => ({
+      const processedAutoModeData = autoModeData.map(pageData => ({
         ...pageData,
-        guidance: normalizeGuidance(pageData.guidance, pageData),
-        parent_guidance: normalizeGuidance(pageData.parent_guidance || pageData.parentGuidance, pageData)
+        guidance: normalizeGuidance(pageData.guidance),
+        parent_guidance: normalizeGuidance(pageData.parent_guidance || pageData.parentGuidance)
       }))
       
       console.log(`Successfully processed worksheet: ${worksheetId}, auto mode data:`, JSON.stringify(processedAutoModeData, null, 2))
@@ -115,7 +112,6 @@ serve(async (req) => {
         pdfUrl
       }
     } else {
-      console.log(`Document ${worksheetId} falling back to REGIONS MODE (PDF viewer) - metadata is NULL or mode !== 'auto'`)
       // Regions Mode: First try to fetch regions from document_regions table
       const { data: regions, error: regionsError } = await supabase
         .from('document_regions')
@@ -154,7 +150,7 @@ serve(async (req) => {
             
             // Transform JSON data to regions format
             if (jsonContent.regions) {
-              transformedRegions = jsonContent.regions.map((region: any) => ({
+              transformedRegions = jsonContent.regions.map(region => ({
                 id: region.id,
                 document_id: document.id,
                 user_id: region.user_id,
