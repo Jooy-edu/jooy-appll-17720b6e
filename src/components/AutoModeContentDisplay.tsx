@@ -641,9 +641,12 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                   subsections: GuidanceItem[];
                 }> = [];
                 
-                // First, analyze what markdown levels exist in the guidance
+                // First, analyze what markdown levels and formatting exist in the guidance
                 const hasLevel2 = currentGuidance.some(item => item.title.startsWith('## '));
                 const hasLevel3 = currentGuidance.some(item => item.title.startsWith('### '));
+                const hasBoldTitles = currentGuidance.some(item => 
+                  item.title.includes('**') && !item.title.startsWith('##') && !item.title.startsWith('###')
+                );
                 
                 let currentSection: GuidanceItem | null = null;
                 let currentSubsections: GuidanceItem[] = [];
@@ -652,10 +655,11 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                   const title = guidance.title;
                   const isH2 = title.startsWith('## ');
                   const isH3 = title.startsWith('### ');
+                  const isBoldTitle = title.includes('**') && !isH2 && !isH3;
                   
                   // Adaptive logic based on what levels exist
                   if (hasLevel2) {
-                    // Standard hierarchy: ## = main sections, ### = subsections
+                    // Standard hierarchy: ## = main sections, ### and **bold** = subsections
                     if (isH2) {
                       // Save previous section if exists
                       if (currentSection) {
@@ -667,8 +671,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                       // Start new section
                       currentSection = guidance;
                       currentSubsections = [];
-                    } else if (isH3) {
-                      // Add subsection to current section
+                    } else if (isH3 || isBoldTitle) {
+                      // Add subsection to current section (both ### and **bold** are subsections)
                       if (currentSection) {
                         currentSubsections.push(guidance);
                       } else {
@@ -679,7 +683,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                         });
                       }
                     } else {
-                      // Regular guidance item (no ## or ###)
+                      // Regular guidance item (no ## or ### or **)
                       if (currentSection) {
                         groupedGuidance.push({
                           section: currentSection,
@@ -695,7 +699,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                       });
                     }
                   } else if (hasLevel3) {
-                    // Only ### titles exist, promote them to main sections
+                    // Only ### titles exist, promote them to main sections, **bold** becomes subsections
                     if (isH3) {
                       // Save previous section if exists
                       if (currentSection) {
@@ -707,6 +711,17 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                       // Treat ### as main section
                       currentSection = guidance;
                       currentSubsections = [];
+                    } else if (isBoldTitle) {
+                      // **bold** titles become subsections under current ### section
+                      if (currentSection) {
+                        currentSubsections.push(guidance);
+                      } else {
+                        // No main section exists, treat as standalone
+                        groupedGuidance.push({
+                          section: guidance,
+                          subsections: []
+                        });
+                      }
                     } else {
                       // Regular guidance item
                       if (currentSection) {
@@ -724,11 +739,22 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                       });
                     }
                   } else {
-                    // No markdown headers, treat all as main sections
-                    groupedGuidance.push({
-                      section: guidance,
-                      subsections: []
-                    });
+                    // No markdown headers, but might have **bold** formatting
+                    if (hasBoldTitles && isBoldTitle && currentSection) {
+                      // Group **bold** titles under the previous non-bold section
+                      currentSubsections.push(guidance);
+                    } else {
+                      // Save previous section if exists
+                      if (currentSection) {
+                        groupedGuidance.push({
+                          section: currentSection,
+                          subsections: [...currentSubsections]
+                        });
+                      }
+                      // Start new section
+                      currentSection = guidance;
+                      currentSubsections = [];
+                    }
                   }
                 });
                 
@@ -747,8 +773,10 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                       const isMarkdownSection = sectionTitle.startsWith('## ') || sectionTitle.startsWith('### ');
                       const hasSubsections = group.subsections.length > 0;
                       
-                      // Clean title text by removing markdown markers but keep markdown formatting
-                      const cleanTitle = sectionTitle.replace(/^#{2,3}\s*/, '');
+                      // Clean title text by removing markdown markers and bold formatting
+                      const cleanTitle = sectionTitle
+                        .replace(/^#{2,3}\s*/, '')  // Remove ## or ### 
+                        .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
                       
                       if (hasSubsections) {
                         return (
@@ -767,41 +795,38 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                                 )}
                               </div>
                             </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-2 pt-2">
-                                {/* Main section clickable area */}
-                                <div 
-                                  className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 border-l-4 border-blue-500"
-                                  onClick={() => handleGuidanceClick(group.section)}
-                                  role="button"
-                                  tabIndex={0}
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                      handleGuidanceClick(group.section);
-                                    }
-                                  }}
-                                >
-                                  <div className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
-                                    <ReactMarkdown className="prose prose-sm max-w-none">
-                                      {cleanTitle}
-                                    </ReactMarkdown>
+                              <AccordionContent>
+                                <div className="space-y-2 pt-2">
+                                  {/* Main section clickable area - no duplicate title */}
+                                  <div 
+                                    className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 rounded-lg p-3 border-l-4 border-blue-500"
+                                    onClick={() => handleGuidanceClick(group.section)}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        handleGuidanceClick(group.section);
+                                      }
+                                    }}
+                                  >
+                                    {/* Show description preview only */}
+                                    {group.section.description && group.section.description.length > 0 && (
+                                      <div className="text-sm text-gray-600" dir={getTextDirection(group.section.description[0])}>
+                                        <ReactMarkdown className="prose prose-sm max-w-none">
+                                          {group.section.description[0].length > 100 
+                                            ? group.section.description[0].substring(0, 100) + '...'
+                                            : group.section.description[0]
+                                          }
+                                        </ReactMarkdown>
+                                      </div>
+                                    )}
                                   </div>
-                                  {/* Show first description as preview */}
-                                  {group.section.description && group.section.description.length > 0 && (
-                                    <div className="mt-2 text-sm text-gray-600 opacity-75" dir={getTextDirection(group.section.description[0])}>
-                                      <ReactMarkdown className="prose prose-sm max-w-none">
-                                        {group.section.description[0].length > 100 
-                                          ? group.section.description[0].substring(0, 100) + '...'
-                                          : group.section.description[0]
-                                        }
-                                      </ReactMarkdown>
-                                    </div>
-                                  )}
-                                </div>
                                 
                                 {/* Subsections */}
                                 {group.subsections.map((subsection, subIndex) => {
-                                  const subTitle = subsection.title.replace(/^#{2,3}\s*/, '');
+                                  const subTitle = subsection.title
+                                    .replace(/^#{2,3}\s*/, '')  // Remove ## or ###
+                                    .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold** formatting
                                   return (
                                     <div 
                                       key={subIndex}
@@ -878,14 +903,9 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                                       }
                                     }}
                                   >
-                                    <div className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
-                                      <ReactMarkdown className="prose prose-sm max-w-none">
-                                        {cleanTitle}
-                                      </ReactMarkdown>
-                                    </div>
-                                    {/* Show first description as preview */}
+                                    {/* Show description preview only - no duplicate title */}
                                     {group.section.description && group.section.description.length > 0 && (
-                                      <div className="mt-2 text-sm text-gray-600 opacity-75" dir={getTextDirection(group.section.description[0])}>
+                                      <div className="text-sm text-gray-600" dir={getTextDirection(group.section.description[0])}>
                                         <ReactMarkdown className="prose prose-sm max-w-none">
                                           {group.section.description[0].length > 100 
                                             ? group.section.description[0].substring(0, 100) + '...'
