@@ -40,7 +40,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and notify clients of update
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activating with version', BUILD_TIMESTAMP);
   
@@ -54,10 +54,20 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-     }).then(() => {
+    }).then(() => {
       console.log('Service Worker: Activation complete');
       // Ensure the service worker takes control of all pages immediately
       return self.clients.claim();
+    }).then(() => {
+      // Notify all clients that a new version is available
+      return self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'SW_UPDATE_AVAILABLE',
+            version: BUILD_TIMESTAMP
+          });
+        });
+      });
     })
   );
 });

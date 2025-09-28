@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Sparkles, UserRound, MessageSquare, ArrowUpDown, Volume2 } from "lucide-react";
@@ -66,16 +66,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
   const [activeSectionTitle, setActiveSectionTitle] = useState<string>('');
   const [activeSubsectionTitle, setActiveSubsectionTitle] = useState<string>('');
   
-  // Navigation state for swipe functionality - will be populated by useMemo
-  const [currentNavigationIndex, setCurrentNavigationIndex] = useState<number>(0);
-  
-  // Swipe detection state
-  const [touchStartX, setTouchStartX] = useState<number>(0);
-  const [touchStartY, setTouchStartY] = useState<number>(0);
-  const [mouseStartX, setMouseStartX] = useState<number>(0);
-  const [mouseStartY, setMouseStartY] = useState<number>(0);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  
   // Guidance mode state (student or parent)
   const [guidanceMode, setGuidanceMode] = useState<'student' | 'parent'>(() => {
     const stored = sessionStorage.getItem(`guidanceMode_${worksheetId}_${pageNumber}`);
@@ -119,136 +109,10 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     ? autoModePageData.parent_guidance 
     : autoModePageData.guidance;
 
-  // Build flat navigation data structure from hierarchical guidance
-  const buildNavigationData = (guidance: GuidanceItem[]) => {
-    const navData: Array<{
-      guidance: GuidanceItem;
-      sectionTitle: string;
-      subsectionTitle?: string;
-    }> = [];
-    
-    // Detect structure types
-    const hasLevel2 = guidance.some(item => item.title.startsWith('## '));
-    const hasLevel3 = guidance.some(item => item.title.startsWith('### '));
-    const hasBoldTitles = guidance.some(item => 
-      item.title.includes('**') && !item.title.startsWith('##') && !item.title.startsWith('###')
-    );
-    
-    let currentSectionTitle = '';
-    
-    guidance.forEach((item) => {
-      const title = item.title;
-      const isH2 = title.startsWith('## ');
-      const isH3 = title.startsWith('### ');
-      const isBoldTitle = title.includes('**') && !isH2 && !isH3;
-      
-      const cleanTitle = title
-        .replace(/^#{2,3}\s*/, '')
-        .replace(/\*\*(.*?)\*\*/g, '$1');
-      
-      // Determine hierarchy based on detected structure
-      if (hasLevel2) {
-        if (isH2) {
-          // This is a section header
-          currentSectionTitle = cleanTitle;
-          navData.push({
-            guidance: item,
-            sectionTitle: cleanTitle
-          });
-        } else if (isH3 || isBoldTitle) {
-          // This is a subsection under the current section
-          navData.push({
-            guidance: item,
-            sectionTitle: currentSectionTitle || cleanTitle,
-            subsectionTitle: cleanTitle
-          });
-        } else {
-          // Regular item - treat as standalone section
-          navData.push({
-            guidance: item,
-            sectionTitle: cleanTitle
-          });
-        }
-      } else if (hasLevel3) {
-        if (isH3) {
-          // This is a section header
-          currentSectionTitle = cleanTitle;
-          navData.push({
-            guidance: item,
-            sectionTitle: cleanTitle
-          });
-        } else if (isBoldTitle) {
-          // This is a subsection under the current section
-          navData.push({
-            guidance: item,
-            sectionTitle: currentSectionTitle || cleanTitle,
-            subsectionTitle: cleanTitle
-          });
-        } else {
-          // Regular item - treat as standalone section
-          navData.push({
-            guidance: item,
-            sectionTitle: cleanTitle
-          });
-        }
-      } else if (hasBoldTitles) {
-        if (isBoldTitle) {
-          // This is a subsection under the current section
-          navData.push({
-            guidance: item,
-            sectionTitle: currentSectionTitle || cleanTitle,
-            subsectionTitle: cleanTitle
-          });
-        } else {
-          // This is a section header
-          currentSectionTitle = cleanTitle;
-          navData.push({
-            guidance: item,
-            sectionTitle: cleanTitle
-          });
-        }
-      } else {
-        // No hierarchy detected - all items are standalone sections
-        navData.push({
-          guidance: item,
-          sectionTitle: cleanTitle
-        });
-      }
-    });
-    
-    return navData;
-  };
-
   // Save guidance mode to session storage
   useEffect(() => {
     sessionStorage.setItem(`guidanceMode_${worksheetId}_${pageNumber}`, guidanceMode);
   }, [guidanceMode, worksheetId, pageNumber]);
-
-  // Build navigation data using useMemo for stability
-  const navigationData = useMemo(() => {
-    if (currentGuidance && currentGuidance.length > 0) {
-      const navData = buildNavigationData(currentGuidance);
-      console.log('🧭 [NAVIGATION] Built navigation data with', navData.length, 'items');
-      navData.forEach((nav, index) => {
-        console.log(`🧭 [DEBUG] NavData[${index}]:`, nav.guidance.title, 'section:', nav.sectionTitle, 'subsection:', nav.subsectionTitle);
-      });
-      return navData;
-    }
-    return [];
-  }, [currentGuidance]);
-
-  // Reset navigation index only when guidance changes completely (not on every build)
-  useEffect(() => {
-    if (currentGuidance && currentGuidance.length > 0) {
-      // Only reset if we don't have a valid current index or if activeGuidance is null
-      if (!activeGuidance || currentNavigationIndex >= navigationData.length) {
-        console.log('🧭 [NAVIGATION] Resetting navigation index to 0 - activeGuidance:', !!activeGuidance, 'currentIndex:', currentNavigationIndex, 'maxIndex:', navigationData.length - 1);
-        setCurrentNavigationIndex(0);
-      }
-    } else {
-      setCurrentNavigationIndex(0);
-    }
-  }, [currentGuidance, activeGuidance, navigationData.length, currentNavigationIndex]);
 
   // Initial audio availability check
   useEffect(() => {
@@ -462,46 +326,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       setActiveSubsectionTitle('');
     }
     
-    // Update navigation index with improved matching and error handling
-    const navIndex = navigationData.findIndex(nav => {
-      // Try exact match first
-      if (nav.guidance.title === guidance.title && nav.guidance.audioName === guidance.audioName) {
-        return true;
-      }
-      
-      // Fallback: match by audioName only if titles might have formatting differences
-      if (nav.guidance.audioName === guidance.audioName) {
-        const cleanNavTitle = nav.guidance.title.replace(/^#{2,3}\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1');
-        const cleanGuidanceTitle = guidance.title.replace(/^#{2,3}\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1');
-        return cleanNavTitle === cleanGuidanceTitle;
-      }
-      
-      return false;
-    });
-    
-    console.log('🧭 [NAVIGATION] Finding nav index for guidance:', guidance.title, 'audioName:', guidance.audioName, 'found at index:', navIndex, 'total nav items:', navigationData.length);
-    
-    if (navIndex !== -1 && navIndex < navigationData.length) {
-      setCurrentNavigationIndex(navIndex);
-      console.log('🧭 [NAVIGATION] Updated navigation index to:', navIndex);
-    } else {
-      console.warn('🧭 [NAVIGATION] Could not find valid navigation index for guidance:', guidance.title);
-      // Debug: log all navigation data for troubleshooting
-      console.group('🧭 [DEBUG] All navigation data:');
-      navigationData.forEach((nav, index) => {
-        console.log(`Nav[${index}]:`, {
-          title: nav.guidance.title,
-          audioName: nav.guidance.audioName,
-          sectionTitle: nav.sectionTitle,
-          subsectionTitle: nav.subsectionTitle
-        });
-      });
-      console.groupEnd();
-      
-      // Set to 0 as fallback to prevent navigation issues
-      setCurrentNavigationIndex(0);
-    }
-    
     if (videoRef.current && audioAvailable) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(err => {
@@ -518,93 +342,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     } else if (!guidance.audioName) {
       console.warn('🎵 [AUTO MODE] No audioName found for guidance:', guidance.title);
     }
-  };
-
-  // Navigation functions for swipe
-  const navigateToPrevious = () => {
-    console.log('🧭 [NAVIGATION] Navigate to previous - current index:', currentNavigationIndex, 'total items:', navigationData.length);
-    if (currentNavigationIndex > 0) {
-      const prevNav = navigationData[currentNavigationIndex - 1];
-      console.log('🧭 [NAVIGATION] Moving to previous item:', prevNav.guidance.title);
-      handleGuidanceClick(prevNav.guidance, prevNav.sectionTitle, prevNav.subsectionTitle);
-    } else {
-      console.log('🧭 [NAVIGATION] Already at first item, cannot go to previous');
-    }
-  };
-
-  const navigateToNext = () => {
-    console.log('🧭 [NAVIGATION] Navigate to next - current index:', currentNavigationIndex, 'total items:', navigationData.length);
-    if (currentNavigationIndex < navigationData.length - 1) {
-      const nextNav = navigationData[currentNavigationIndex + 1];
-      console.log('🧭 [NAVIGATION] Moving to next item:', nextNav.guidance.title);
-      handleGuidanceClick(nextNav.guidance, nextNav.sectionTitle, nextNav.subsectionTitle);
-    } else {
-      console.log('🧭 [NAVIGATION] Already at last item, cannot go to next');
-    }
-  };
-
-  // Swipe detection handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setTouchStartX(touch.clientX);
-    setTouchStartY(touch.clientY);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!e.changedTouches[0]) return;
-    
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartX;
-    const deltaY = touch.clientY - touchStartY;
-    
-    // Minimum swipe distance and ensure it's more horizontal than vertical
-    const minSwipeDistance = 50;
-    const maxVerticalDistance = 100;
-    
-    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaY) < maxVerticalDistance) {
-      e.preventDefault();
-      if (deltaX > 0) {
-        // Swipe right - go to previous
-        navigateToPrevious();
-      } else {
-        // Swipe left - go to next
-        navigateToNext();
-      }
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setMouseStartX(e.clientX);
-    setMouseStartY(e.clientY);
-    setIsDragging(true);
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    
-    const deltaX = e.clientX - mouseStartX;
-    const deltaY = e.clientY - mouseStartY;
-    
-    // Minimum swipe distance and ensure it's more horizontal than vertical
-    const minSwipeDistance = 80;
-    const maxVerticalDistance = 100;
-    
-    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaY) < maxVerticalDistance) {
-      e.preventDefault();
-      if (deltaX > 0) {
-        // Swipe right - go to previous
-        navigateToPrevious();
-      } else {
-        // Swipe left - go to next
-        navigateToNext();
-      }
-    }
-    
-    setIsDragging(false);
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
   };
 
   const handleNextStep = () => {
@@ -806,12 +543,6 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           <div 
             className="worksheet-text-display"
             ref={textDisplayRef}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            style={{ touchAction: 'pan-y' }}
           >
             <div className="text-content chat-messages">
               {/* Section and Subsection Title Header */}
