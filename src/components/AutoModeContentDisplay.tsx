@@ -1,13 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Sparkles, UserRound, MessageSquare, ArrowUpDown } from "lucide-react";
+import { ChevronLeft, Sparkles, UserRound, MessageSquare, ArrowUpDown, Volume2 } from "lucide-react";
 import { getTextDirection } from "@/lib/textDirection";
 import VirtualTutorSelectionModal from "./VirtualTutorSelectionModal";
 import EmbeddedAIChat from "./EmbeddedAIChat";
 import type { AutoModePageData, GuidanceItem, WorksheetMetadata } from "@/types/worksheet";
 import { ParentalPinDialog } from "./ParentalPinDialog";
 import { ParentalPinSetupDialog } from "./ParentalPinSetupDialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import ReactMarkdown from "react-markdown";
 import {
   isFirstTimeSetup,
   shouldShowPinPrompt,
@@ -614,7 +621,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
           </Button>
         </div>
 
-        {/* Guidance Titles */}
+        {/* Guidance Titles with Accordion */}
         <div className="space-y-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Page {autoModePageData.page_number}
@@ -626,17 +633,46 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             }
           </h2>
           {currentGuidance && currentGuidance.length > 0 ? (
-            currentGuidance.map((guidance, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg shadow-sm p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:bg-blue-50 border-2 border-transparent hover:border-blue-200"
-                onClick={() => handleGuidanceClick(guidance)}
-              >
-                <h3 className="text-lg font-medium text-gray-900" dir={getTextDirection(guidance.title)}>
-                  {guidance.title}
-                </h3>
-              </div>
-            ))
+            <div className="bg-white rounded-lg shadow-sm">
+              <Accordion type="single" collapsible className="w-full">
+                {currentGuidance.map((guidance, index) => (
+                  <AccordionItem key={index} value={`guidance-${index}`}>
+                    <AccordionTrigger 
+                      className="px-4 py-4 hover:no-underline text-left"
+                      dir={getTextDirection(guidance.title)}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="flex-1">
+                          <ReactMarkdown className="text-lg font-medium text-gray-900 prose prose-sm max-w-none">
+                            {guidance.title}
+                          </ReactMarkdown>
+                        </div>
+                        {audioAvailable && guidance.audioName && (
+                          <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <div className="space-y-3">
+                        {guidance.description && guidance.description.length > 0 && (
+                          <div className="text-gray-600" dir={getTextDirection(guidance.description[0])}>
+                            <ReactMarkdown className="prose prose-sm max-w-none">
+                              {guidance.description[0]}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => handleGuidanceClick(guidance)}
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
+                        >
+                          {t('common.language') === 'العربية' ? 'ابدأ التعلم' : 'Start Learning'}
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm p-4 text-center">
               <p className="text-gray-500" dir={getTextDirection(t('common.language'))}>
