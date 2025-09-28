@@ -633,39 +633,61 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
             }
           </h2>
           {currentGuidance && currentGuidance.length > 0 ? (
-            <div className="bg-white rounded-lg shadow-sm">
-              <Accordion type="single" collapsible className="w-full">
+            <div className="space-y-3">
+              <Accordion 
+                type="single" 
+                collapsible 
+                className="w-full space-y-4"
+                defaultValue="guidance-0"
+              >
                 {currentGuidance.map((guidance, index) => (
-                  <AccordionItem key={index} value={`guidance-${index}`}>
+                  <AccordionItem 
+                    key={index} 
+                    value={`guidance-${index}`}
+                    className="bg-white rounded-xl border-2 border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-300 overflow-hidden"
+                  >
                     <AccordionTrigger 
-                      className="px-4 py-4 hover:no-underline text-left"
+                      className="px-6 py-5 hover:no-underline text-left bg-gradient-to-r from-gray-50 to-blue-50 hover:from-blue-50 hover:to-purple-50 transition-all duration-300 group [&[data-state=open]]:bg-gradient-to-r [&[data-state=open]]:from-blue-100 [&[data-state=open]]:to-purple-100"
                       dir={getTextDirection(guidance.title)}
                     >
-                      <div className="flex items-center gap-3 w-full">
+                      <div className="flex items-center gap-4 w-full">
                         <div className="flex-1">
-                          <ReactMarkdown className="text-lg font-medium text-gray-900 prose prose-sm max-w-none">
+                          <ReactMarkdown className="text-lg font-semibold text-gray-800 group-hover:text-blue-700 transition-colors duration-200 prose prose-sm max-w-none [&>p]:mb-0">
                             {guidance.title}
                           </ReactMarkdown>
                         </div>
-                        {audioAvailable && guidance.audioName && (
-                          <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {audioAvailable && guidance.audioName && (
+                            <div className="flex items-center gap-1 bg-blue-100 px-2 py-1 rounded-full">
+                              <Volume2 className="h-3 w-3 text-blue-600" />
+                              <span className="text-xs text-blue-600 font-medium">Audio</span>
+                            </div>
+                          )}
+                          <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center group-hover:bg-blue-300 transition-colors duration-200">
+                            <span className="text-xs font-bold text-blue-700">{index + 1}</span>
+                          </div>
+                        </div>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <div className="space-y-3">
+                    <AccordionContent className="px-6 pb-6 bg-white">
+                      <div className="space-y-4 pt-2">
                         {guidance.description && guidance.description.length > 0 && (
-                          <div className="text-gray-600" dir={getTextDirection(guidance.description[0])}>
-                            <ReactMarkdown className="prose prose-sm max-w-none">
-                              {guidance.description[0]}
-                            </ReactMarkdown>
+                          <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-400">
+                            <div className="text-gray-700 leading-relaxed" dir={getTextDirection(guidance.description[0])}>
+                              <ReactMarkdown className="prose prose-sm max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0">
+                                {guidance.description[0]}
+                              </ReactMarkdown>
+                            </div>
                           </div>
                         )}
                         <Button
                           onClick={() => handleGuidanceClick(guidance)}
-                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 py-3 text-base font-semibold rounded-lg"
                         >
-                          {t('common.language') === 'العربية' ? 'ابدأ التعلم' : 'Start Learning'}
+                          <span className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4" />
+                            {t('common.language') === 'العربية' ? 'ابدأ التعلم' : 'Start Learning'}
+                          </span>
                         </Button>
                       </div>
                     </AccordionContent>
