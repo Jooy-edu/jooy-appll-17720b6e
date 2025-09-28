@@ -763,6 +763,7 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                       const sectionTitle = group.section.title;
                       const isMarkdownSection = sectionTitle.startsWith('## ') || sectionTitle.startsWith('### ');
                       const hasSubsections = group.subsections.length > 0;
+                      const hasDescriptions = group.section.description && Array.isArray(group.section.description) && group.section.description.length > 0 && group.section.description.some(desc => desc.trim().length > 0);
                       
                       // Clean title text by removing markdown markers and bold formatting
                       const cleanTitle = sectionTitle
@@ -851,8 +852,8 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                             </AccordionContent>
                           </AccordionItem>
                         );
-                      } else {
-                        // Standalone sections without subsections - render as simple clickable cards (no accordion/chevron)
+                      } else if (hasDescriptions) {
+                        // Sections without subsections but with descriptions - render as simple clickable cards
                         return (
                           <div 
                             key={groupIndex}
@@ -877,6 +878,17 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
                               {audioAvailable && group.section.audioName && (
                                 <Volume2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
                               )}
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        // Sections without subsections and without descriptions - render as static titles
+                        return (
+                          <div key={groupIndex} className="p-2">
+                            <div className="text-lg font-medium text-gray-900">
+                              <ReactMarkdown className="prose prose-sm max-w-none">
+                                {cleanTitle}
+                              </ReactMarkdown>
                             </div>
                           </div>
                         );
