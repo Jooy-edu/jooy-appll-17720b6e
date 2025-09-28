@@ -228,6 +228,15 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
     if (currentGuidance && currentGuidance.length > 0) {
       const navData = buildNavigationData(currentGuidance);
       setNavigationData(navData);
+      console.log('🧭 [NAVIGATION] Built navigation data with', navData.length, 'items');
+      navData.forEach((nav, index) => {
+        console.log(`🧭 [DEBUG] NavData[${index}]:`, nav.guidance.title, 'section:', nav.sectionTitle, 'subsection:', nav.subsectionTitle);
+      });
+      // Reset navigation index when guidance changes
+      setCurrentNavigationIndex(0);
+    } else {
+      setNavigationData([]);
+      setCurrentNavigationIndex(0);
     }
   }, [currentGuidance]);
 
@@ -443,10 +452,21 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       setActiveSubsectionTitle('');
     }
     
-    // Update navigation index
-    const navIndex = navigationData.findIndex(nav => nav.guidance === guidance);
+    // Update navigation index - use more reliable matching by title and audioName
+    const navIndex = navigationData.findIndex(nav => 
+      nav.guidance.title === guidance.title && 
+      nav.guidance.audioName === guidance.audioName
+    );
+    console.log('🧭 [NAVIGATION] Finding nav index for guidance:', guidance.title, 'found at index:', navIndex, 'total nav items:', navigationData.length);
     if (navIndex !== -1) {
       setCurrentNavigationIndex(navIndex);
+      console.log('🧭 [NAVIGATION] Updated navigation index to:', navIndex);
+    } else {
+      console.warn('🧭 [NAVIGATION] Could not find navigation index for guidance:', guidance.title);
+      // Debug: log all navigation data titles
+      navigationData.forEach((nav, index) => {
+        console.log(`🧭 [DEBUG] Nav[${index}]:`, nav.guidance.title, 'audioName:', nav.guidance.audioName);
+      });
     }
     
     if (videoRef.current && audioAvailable) {
@@ -469,16 +489,24 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
 
   // Navigation functions for swipe
   const navigateToPrevious = () => {
+    console.log('🧭 [NAVIGATION] Navigate to previous - current index:', currentNavigationIndex, 'total items:', navigationData.length);
     if (currentNavigationIndex > 0) {
       const prevNav = navigationData[currentNavigationIndex - 1];
+      console.log('🧭 [NAVIGATION] Moving to previous item:', prevNav.guidance.title);
       handleGuidanceClick(prevNav.guidance, prevNav.sectionTitle, prevNav.subsectionTitle);
+    } else {
+      console.log('🧭 [NAVIGATION] Already at first item, cannot go to previous');
     }
   };
 
   const navigateToNext = () => {
+    console.log('🧭 [NAVIGATION] Navigate to next - current index:', currentNavigationIndex, 'total items:', navigationData.length);
     if (currentNavigationIndex < navigationData.length - 1) {
       const nextNav = navigationData[currentNavigationIndex + 1];
+      console.log('🧭 [NAVIGATION] Moving to next item:', nextNav.guidance.title);
       handleGuidanceClick(nextNav.guidance, nextNav.sectionTitle, nextNav.subsectionTitle);
+    } else {
+      console.log('🧭 [NAVIGATION] Already at last item, cannot go to next');
     }
   };
 
