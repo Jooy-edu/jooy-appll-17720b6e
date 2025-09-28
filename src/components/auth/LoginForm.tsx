@@ -30,16 +30,16 @@ const LoginForm: React.FC = () => {
 
     // Email validation
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('auth.login.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('auth.login.emailInvalid');
     }
 
     // Password validation
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.login.passwordRequired');
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('auth.login.passwordMinLength');
     }
 
     setErrors(newErrors);
@@ -62,11 +62,11 @@ const LoginForm: React.FC = () => {
       // Provide more user-friendly error messages
       if (error.message.includes('Invalid login credentials')) {
         setErrors({ 
-          general: 'Invalid email or password. Please check your credentials and try again.' 
+          general: t('auth.login.invalidCredentials')
         });
       } else if (error.message.includes('Email not confirmed')) {
         setErrors({ 
-          general: 'Please check your email and click the confirmation link before signing in.' 
+          general: t('auth.login.emailNotConfirmed')
         });
       } else {
         setErrors({ general: error.message });
@@ -98,10 +98,10 @@ const LoginForm: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center" dir={isRTL ? 'rtl' : 'ltr'}>
           <CardTitle className="text-2xl font-bold text-gradient-clip">
-            Sign In to Jooy
+            {t('auth.login.title')}
           </CardTitle>
           <CardDescription>
-            Enter your credentials to access your account
+            {t('auth.login.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -113,13 +113,13 @@ const LoginForm: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t('auth.login.emailAddress')}</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder={t('auth.login.emailPlaceholder')}
                 className={errors.email ? 'border-red-500' : ''}
                 disabled={loading}
                 dir={getTextDirection(email)}
@@ -130,14 +130,14 @@ const LoginForm: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.login.password')}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
                   disabled={loading}
                 />
@@ -160,7 +160,7 @@ const LoginForm: React.FC = () => {
                 to="/auth/forgot-password"
                 className="text-sm text-blue-600 hover:text-blue-500"
               >
-                Forgot your password?
+                {t('auth.login.forgotPassword')}
               </Link>
             </div>
 
@@ -172,17 +172,17 @@ const LoginForm: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing In...
+                  {t('auth.login.signingIn')}
                 </>
               ) : (
-                'Sign In'
+                t('auth.login.signIn')
               )}
             </Button>
 
             {/* Divider */}
             <div className="relative flex items-center py-2">
               <div className="flex-grow border-t border-gray-300"></div>
-              <span className="flex-shrink mx-4 text-gray-500 text-sm">OR</span>
+              <span className="flex-shrink mx-4 text-gray-500 text-sm">{t('auth.login.or')}</span>
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
@@ -196,7 +196,7 @@ const LoginForm: React.FC = () => {
               {googleLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing In with Google...
+                  {t('auth.login.signingInWithGoogle')}
                 </>
               ) : (
                 <>
@@ -206,19 +206,19 @@ const LoginForm: React.FC = () => {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  Sign In with Google
+                  {t('auth.login.signInWithGoogle')}
                 </>
               )}
             </Button>
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
+                {t('auth.login.noAccount')}{' '}
                 <Link
                   to="/auth/register"
                   className="text-blue-600 hover:text-blue-500 font-medium"
                 >
-                  Sign up here
+                  {t('auth.login.signUpHere')}
                 </Link>
               </p>
             </div>
