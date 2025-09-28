@@ -54,22 +54,33 @@ const WorksheetPage: React.FC = () => {
   // Fetch worksheet data once at the page level
   const { data: worksheetData, isLoading, error } = useWorksheetData(id || '');
   
-  // Debug worksheet data for auto mode
+  // Debug worksheet mode detection
   useEffect(() => {
-    if (worksheetData?.meta?.mode === 'auto' && 'data' in worksheetData.meta) {
-      console.log('🎯 [AUTO MODE] Worksheet data loaded:', worksheetData.meta);
-      const pageIndex = parseInt(n || '1', 10);
-      const pageData = worksheetData.meta.data.find(page => page.page_number === pageIndex);
-      console.log('🎯 [AUTO MODE] Page data for page', pageIndex, ':', pageData);
-      if (pageData) {
-        console.log('🎯 [AUTO MODE] Guidance items:', pageData.guidance.map(g => ({
-          title: g.title,
-          audioName: g.audioName,
-          descriptionCount: g.description.length
-        })));
+    if (worksheetData) {
+      console.log('📊 [MODE DEBUG] Document:', id, 'Metadata:', worksheetData.meta);
+      console.log('📊 [MODE DEBUG] Mode detected:', worksheetData.meta?.mode || 'NULL (will default to regions/PDF)');
+      
+      if (worksheetData.meta?.mode === 'auto' && 'data' in worksheetData.meta) {
+        console.log('🎯 [AUTO MODE] Auto mode data loaded:', worksheetData.meta);
+        const pageIndex = parseInt(n || '1', 10);
+        const pageData = worksheetData.meta.data.find(page => page.page_number === pageIndex);
+        console.log('🎯 [AUTO MODE] Page data for page', pageIndex, ':', pageData);
+        if (pageData) {
+          console.log('🎯 [AUTO MODE] Guidance items:', pageData.guidance.map(g => ({
+            title: g.title,
+            audioName: g.audioName,
+            descriptionCount: g.description.length
+          })));
+        }
+      } else {
+        console.log('📄 [PDF MODE] Document will display as PDF because:', 
+          !worksheetData.meta ? 'metadata is null' : 
+          worksheetData.meta.mode !== 'auto' ? `mode is "${worksheetData.meta.mode}" instead of "auto"` :
+          'auto mode data is missing'
+        );
       }
     }
-  }, [worksheetData, n]);
+  }, [worksheetData, n, id]);
   
   // Enable zooming for worksheet page
   useEffect(() => {
