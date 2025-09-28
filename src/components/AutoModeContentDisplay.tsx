@@ -132,14 +132,14 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
       subsectionTitle?: string;
     }> = [];
     
-    // Same grouping logic as the main view
+    // Detect structure types
     const hasLevel2 = guidance.some(item => item.title.startsWith('## '));
     const hasLevel3 = guidance.some(item => item.title.startsWith('### '));
     const hasBoldTitles = guidance.some(item => 
       item.title.includes('**') && !item.title.startsWith('##') && !item.title.startsWith('###')
     );
     
-    let currentSection: GuidanceItem | null = null;
+    let currentSectionTitle = '';
     
     guidance.forEach((item) => {
       const title = item.title;
@@ -151,23 +151,24 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
         .replace(/^#{2,3}\s*/, '')
         .replace(/\*\*(.*?)\*\*/g, '$1');
       
+      // Determine hierarchy based on detected structure
       if (hasLevel2) {
         if (isH2) {
-          currentSection = item;
+          // This is a section header
+          currentSectionTitle = cleanTitle;
           navData.push({
             guidance: item,
             sectionTitle: cleanTitle
           });
-        } else if ((isH3 || isBoldTitle) && currentSection) {
-          const cleanSectionTitle = currentSection.title
-            .replace(/^#{2,3}\s*/, '')
-            .replace(/\*\*(.*?)\*\*/g, '$1');
+        } else if (isH3 || isBoldTitle) {
+          // This is a subsection under the current section
           navData.push({
             guidance: item,
-            sectionTitle: cleanSectionTitle,
+            sectionTitle: currentSectionTitle || cleanTitle,
             subsectionTitle: cleanTitle
           });
         } else {
+          // Regular item - treat as standalone section
           navData.push({
             guidance: item,
             sectionTitle: cleanTitle
@@ -175,43 +176,48 @@ const AutoModeContentDisplay: React.FC<AutoModeContentDisplayProps> = ({
         }
       } else if (hasLevel3) {
         if (isH3) {
-          currentSection = item;
+          // This is a section header
+          currentSectionTitle = cleanTitle;
           navData.push({
             guidance: item,
             sectionTitle: cleanTitle
           });
-        } else if (isBoldTitle && currentSection) {
-          const cleanSectionTitle = currentSection.title
-            .replace(/^#{2,3}\s*/, '')
-            .replace(/\*\*(.*?)\*\*/g, '$1');
+        } else if (isBoldTitle) {
+          // This is a subsection under the current section
           navData.push({
             guidance: item,
-            sectionTitle: cleanSectionTitle,
+            sectionTitle: currentSectionTitle || cleanTitle,
             subsectionTitle: cleanTitle
           });
         } else {
+          // Regular item - treat as standalone section
+          navData.push({
+            guidance: item,
+            sectionTitle: cleanTitle
+          });
+        }
+      } else if (hasBoldTitles) {
+        if (isBoldTitle) {
+          // This is a subsection under the current section
+          navData.push({
+            guidance: item,
+            sectionTitle: currentSectionTitle || cleanTitle,
+            subsectionTitle: cleanTitle
+          });
+        } else {
+          // This is a section header
+          currentSectionTitle = cleanTitle;
           navData.push({
             guidance: item,
             sectionTitle: cleanTitle
           });
         }
       } else {
-        if (hasBoldTitles && isBoldTitle && currentSection) {
-          const cleanSectionTitle = currentSection.title
-            .replace(/^#{2,3}\s*/, '')
-            .replace(/\*\*(.*?)\*\*/g, '$1');
-          navData.push({
-            guidance: item,
-            sectionTitle: cleanSectionTitle,
-            subsectionTitle: cleanTitle
-          });
-        } else {
-          currentSection = item;
-          navData.push({
-            guidance: item,
-            sectionTitle: cleanTitle
-          });
-        }
+        // No hierarchy detected - all items are standalone sections
+        navData.push({
+          guidance: item,
+          sectionTitle: cleanTitle
+        });
       }
     });
     
