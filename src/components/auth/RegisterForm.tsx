@@ -15,9 +15,9 @@ interface PasswordRequirement {
 }
 
 const passwordRequirements: PasswordRequirement[] = [
-  { label: 'auth.register.requirements.minLength', test: (pwd) => pwd.length >= 8 },
-  { label: 'auth.register.requirements.lowercase', test: (pwd) => /[a-z]/.test(pwd) },
-  { label: 'auth.register.requirements.number', test: (pwd) => /\d/.test(pwd) },
+  { label: 'At least 8 characters', test: (pwd) => pwd.length >= 8 },
+  { label: 'Contains lowercase letter', test: (pwd) => /[a-z]/.test(pwd) },
+  { label: 'Contains number', test: (pwd) => /\d/.test(pwd) },
 ];
 
 const RegisterForm: React.FC = () => {
@@ -48,33 +48,33 @@ const RegisterForm: React.FC = () => {
 
     // Full name validation
     if (!formData.fullName.trim()) {
-      newErrors.fullName = t('auth.register.fullNameRequired');
+      newErrors.fullName = 'Full name is required';
     } else if (formData.fullName.trim().length < 2) {
-      newErrors.fullName = t('auth.register.fullNameMinLength');
+      newErrors.fullName = 'Full name must be at least 2 characters';
     }
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = t('auth.register.emailRequired');
+      newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t('auth.register.emailInvalid');
+      newErrors.email = 'Please enter a valid email address';
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = t('auth.register.passwordRequired');
+      newErrors.password = 'Password is required';
     } else {
       const failedRequirements = passwordRequirements.filter(req => !req.test(formData.password));
       if (failedRequirements.length > 0) {
-        newErrors.password = t('auth.register.passwordRequirements');
+        newErrors.password = 'Password does not meet all requirements';
       }
     }
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = t('auth.register.confirmPasswordRequired');
+      newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = t('auth.register.passwordsNoMatch');
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
     setErrors(newErrors);
@@ -107,7 +107,7 @@ const RegisterForm: React.FC = () => {
       // Show success message and redirect to login
       navigate('/auth/login', { 
         state: { 
-          message: t('auth.register.registrationSuccess')
+          message: 'Registration successful! Please check your email to verify your account.' 
         } 
       });
     }
@@ -134,10 +134,10 @@ const RegisterForm: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center" dir={isRTL ? 'rtl' : 'ltr'}>
           <CardTitle className="text-2xl font-bold text-gradient-clip">
-            {t('auth.register.title')}
+            Create Your Account
           </CardTitle>
           <CardDescription>
-            {t('auth.register.description')}
+            Join Jooy to access interactive worksheets
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -264,17 +264,17 @@ const RegisterForm: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('auth.register.creatingAccount')}
+                  Creating Account...
                 </>
               ) : (
-                t('auth.register.createAccount')
+                'Create Account'
               )}
             </Button>
 
             {/* Divider */}
             <div className="relative flex items-center py-2">
               <div className="flex-grow border-t border-gray-300"></div>
-              <span className="flex-shrink mx-4 text-gray-500 text-sm">{t('auth.register.or')}</span>
+              <span className="flex-shrink mx-4 text-gray-500 text-sm">OR</span>
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
@@ -288,7 +288,7 @@ const RegisterForm: React.FC = () => {
               {googleLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('auth.register.signingUpWithGoogle')}
+                  Signing Up with Google...
                 </>
               ) : (
                 <>
@@ -298,19 +298,19 @@ const RegisterForm: React.FC = () => {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  {t('auth.register.signUpWithGoogle')}
+                  Sign Up with Google
                 </>
               )}
             </Button>
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                {t('auth.register.hasAccount')}{' '}
+                Already have an account?{' '}
                 <Link
                   to="/auth/login"
                   className="text-blue-600 hover:text-blue-500 font-medium"
                 >
-                  {t('auth.register.signInHere')}
+                  Sign in here
                 </Link>
               </p>
             </div>

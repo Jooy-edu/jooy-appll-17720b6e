@@ -45,9 +45,7 @@
     "student": "دليل الطالب",
     "parent": "دليل الوالدين",
     "switchToParent": "التبديل إلى دليل الوالدين",
-    "switchToStudent": "التبديل إلى دليل الطالب",
-    "noParentGuidance": "لا يوجد دليل للوالدين متاح لهذه الصفحة.",
-    "noStudentGuidance": "لا يوجد دليل للطالب متاح لهذه الصفحة."
+    "switchToStudent": "التبديل إلى دليل الطالب"
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -115,154 +113,11 @@
     "setupError": "فشل في إعداد الرقم السري. يرجى المحاولة مرة أخرى.",
     "pinRequirement": "الرقم السري يجب أن يكون 4-6 أرقام"
   },
-  "auth": {
-    "login": {
-      "title": "تسجيل الدخول إلى جوي",
-      "description": "أدخل بيانات اعتمادك للوصول إلى حسابك",
-      "emailRequired": "البريد الإلكتروني مطلوب",
-      "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
-      "passwordRequired": "كلمة المرور مطلوبة",
-      "passwordMinLength": "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
-      "invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صحيحة. يرجى التحقق من بياناتك والمحاولة مرة أخرى.",
-      "emailNotConfirmed": "يرجى التحقق من بريدك الإلكتروني والنقر على رابط التأكيد قبل تسجيل الدخول.",
-      "emailAddress": "عنوان البريد الإلكتروني",
-      "emailPlaceholder": "أدخل بريدك الإلكتروني",
-      "password": "كلمة المرور",
-      "passwordPlaceholder": "أدخل كلمة المرور",
-      "forgotPassword": "هل نسيت كلمة المرور؟",
-      "signingIn": "جاري تسجيل الدخول...",
-      "signIn": "تسجيل الدخول",
-      "or": "أو",
-      "signingInWithGoogle": "جاري تسجيل الدخول بـ Google...",
-      "signInWithGoogle": "تسجيل الدخول بـ Google",
-      "noAccount": "ليس لديك حساب؟",
-      "signUpHere": "سجل هنا"
-    },
-    "register": {
-      "title": "إنشاء حسابك",
-      "description": "انضم إلى جوي للوصول إلى أوراق العمل التفاعلية",
-      "fullNameRequired": "الاسم الكامل مطلوب",
-      "fullNameMinLength": "الاسم الكامل يجب أن يكون حرفين على الأقل",
-      "emailRequired": "البريد الإلكتروني مطلوب",
-      "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
-      "passwordRequired": "كلمة المرور مطلوبة",
-      "passwordRequirements": "كلمة المرور لا تلبي جميع المتطلبات",
-      "confirmPasswordRequired": "يرجى تأكيد كلمة المرور",
-      "passwordsNoMatch": "كلمات المرور غير متطابقة",
-      "registrationSuccess": "تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك.",
-      "fullName": "الاسم الكامل",
-      "fullNamePlaceholder": "أدخل اسمك الكامل",
-      "emailAddress": "عنوان البريد الإلكتروني",
-      "emailPlaceholder": "أدخل بريدك الإلكتروني",
-      "password": "كلمة المرور",
-      "passwordPlaceholder": "أنشئ كلمة مرور قوية",
-      "confirmPassword": "تأكيد كلمة المرور",
-      "confirmPasswordPlaceholder": "أكد كلمة المرور",
-      "creatingAccount": "جاري إنشاء الحساب...",
-      "createAccount": "إنشاء حساب",
-      "or": "أو",
-      "signingUpWithGoogle": "جاري التسجيل بـ Google...",
-      "signUpWithGoogle": "التسجيل بـ Google",
-      "hasAccount": "لديك حساب بالفعل؟",
-      "signInHere": "سجل دخولك هنا",
-      "requirements": {
-        "minLength": "8 أحرف على الأقل",
-        "lowercase": "يحتوي على حرف صغير",
-        "number": "يحتوي على رقم"
-      }
-    },
-    "forgotPassword": {
-      "title": "إعادة تعيين كلمة المرور",
-      "description": "أدخل عنوان بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور",
-      "emailSent": "تم إرسال البريد الإلكتروني!",
-      "checkEmail": "تحقق من بريدك الإلكتروني للحصول على تعليمات إعادة تعيين كلمة المرور",
-      "sentTo": "لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى",
-      "sendAnother": "إرسال بريد إلكتروني آخر",
-      "backToSignIn": "العودة إلى تسجيل الدخول",
-      "emailRequired": "البريد الإلكتروني مطلوب",
-      "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
-      "emailAddress": "عنوان البريد الإلكتروني",
-      "emailPlaceholder": "أدخل بريدك الإلكتروني",
-      "sending": "جاري الإرسال...",
-      "sendResetLink": "إرسال رابط إعادة التعيين"
-    },
-    "resetPassword": {
-      "invalidLink": "رابط إعادة تعيين غير صحيح",
-      "linkExpired": "رابط إعادة تعيين كلمة المرور هذا غير صحيح أو منتهي الصلاحية.",
-      "title": "تعيين كلمة مرور جديدة",
-      "description": "أدخل كلمة المرور الجديدة أدناه",
-      "newPassword": "كلمة المرور الجديدة",
-      "newPasswordPlaceholder": "أدخل كلمة المرور الجديدة",
-      "confirmPassword": "تأكيد كلمة المرور الجديدة",
-      "confirmPasswordPlaceholder": "أكد كلمة المرور الجديدة",
-      "passwordUpdated": "تم تحديث كلمة المرور",
-      "updateSuccess": "تم تحديث كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.",
-      "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
-      "passwordRequired": "كلمة المرور مطلوبة",
-      "passwordRequirements": "كلمة المرور لا تلبي جميع المتطلبات",
-      "confirmRequired": "يرجى تأكيد كلمة المرور",
-      "passwordsNoMatch": "كلمات المرور غير متطابقة",
-      "updatingPassword": "جاري تحديث كلمة المرور...",
-      "updatePassword": "تحديث كلمة المرور"
-    }
-  },
-  "apiKey": {
-    "title": "إدارة مفتاح Gemini API",
-    "description": "إدارة مفتاح Google Gemini API الخاص بك لوظائف المحادثة مع الذكاء الاصطناعي.",
-    "currentKey": "المفتاح الحالي",
-    "invalidKey": "مفتاح API غير صحيح",
-    "enterValidKey": "يرجى إدخال مفتاح API صحيح.",
-    "invalidFormat": "تنسيق مفتاح API غير صحيح",
-    "formatDescription": "يرجى التأكد من إدخال مفتاح Gemini API صحيح. يجب أن يبدأ بـ 'AIza' ويكون بطول 39 حرفاً.",
-    "keySaved": "تم حفظ مفتاح API",
-    "saveSuccess": "تم التحقق من صحة مفتاح Gemini API وحفظه بنجاح.",
-    "validationFailed": "فشل في التحقق من مفتاح API",
-    "keyInvalid": "يبدو أن مفتاح API غير صحيح أو منتهي الصلاحية.",
-    "keyRemoved": "تم إزالة مفتاح API",
-    "removeSuccess": "تم إزالة مفتاح Gemini API من هذا الجهاز.",
-    "hide": "إخفاء",
-    "show": "إظهار",
-    "remove": "إزالة",
-    "updateKey": "تحديث مفتاح API",
-    "enterNewKey": "إدخال مفتاح API جديد",
-    "privacyNotice": "إشعار الخصوصية:",
-    "privacyDescription": "مفتاح API الخاص بك يُحفظ محلياً على جهازك فقط. لا يتم إرساله أبداً إلى خوادمنا - فقط مباشرة إلى Google Gemini API.",
-    "validating": "جاري التحقق...",
-    "saveKey": "حفظ مفتاح API",
-    "getKey": "الحصول على مفتاح API من Google AI Studio"
-  },
-  "pwa": {
-    "install": "تثبيت جوي",
-    "description": "أضف إلى الشاشة الرئيسية للوصول السريع",
-    "installButton": "تثبيت",
-    "notNow": "ليس الآن"
-  },
-  "library": {
-    "title": "المكتبة"
-  },
-  "navigation": {
-    "profileSettings": "الإعدادات",
-    "signOut": "تسجيل الخروج"
-  },
-  "pageSelector": {
-    "pageNumber": "رقم الصفحة",
-    "availablePages": "الصفحات المتاحة: {{min}} - {{max}}",
-    "cancel": "إلغاء",
-    "goToPage": "انتقل إلى الصفحة",
-    "enterPageNumber": "أدخل رقم الصفحة",
-    "loadingPageInfo": "جاري تحميل معلومات الصفحة..."
-  },
   "common": {
     "language": "اللغة",
     "english": "English",
     "arabic": "العربية",
     "cancel": "إلغاء",
-    "back": "رجوع",
-    "loading": "جاري التحميل...",
-    "error": "خطأ",
-    "somethingWrong": "حدث خطأ ما",
-    "tryAgain": "حاول مرة أخرى لاحقاً",
-    "networkError": "خطأ في الشبكة",
-    "failedToLoad": "فشل في التحميل"
+    "back": "رجوع"
   }
 }

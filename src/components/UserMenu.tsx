@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,12 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, LogOut, Languages } from 'lucide-react';
+import { User, Settings, LogOut } from 'lucide-react';
 
 const UserMenu: React.FC = () => {
   const { user, profile, signOut, loading } = useAuth();
   const [isInitialRender, setIsInitialRender] = useState(true);
-  const { t, i18n } = useTranslation();
 
   const getInitials = (name: string) => {
     return name
@@ -30,10 +28,6 @@ const UserMenu: React.FC = () => {
 
   const handleSignOut = async () => {
     await signOut();
-  };
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
   };
 
   // Prevent flash by ensuring we don't show login buttons on initial render
@@ -97,25 +91,17 @@ const UserMenu: React.FC = () => {
                 </p>
               </div>
             </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => changeLanguage(i18n.language === 'ar' ? 'en' : 'ar')} 
-          className="cursor-pointer"
-        >
-          <Languages className="mr-2 h-4 w-4" />
-          <span>{i18n.language === 'ar' ? t('common.english') : t('common.arabic')}</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/profile" className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
-                <span>{t('navigation.profileSettings')}</span>
+                <span>Profile Settings</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
-              <span>{t('navigation.signOut')}</span>
+              <span>Sign Out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -154,24 +140,16 @@ const UserMenu: React.FC = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => changeLanguage(i18n.language === 'ar' ? 'en' : 'ar')} 
-          className="cursor-pointer"
-        >
-          <Languages className="mr-2 h-4 w-4" />
-          <span>{i18n.language === 'ar' ? t('common.english') : t('common.arabic')}</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
-            <span>{t('navigation.profileSettings')}</span>
+            <span>Profile Settings</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>{t('navigation.signOut')}</span>
+          <span>Sign Out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, BookOpen } from 'lucide-react';
 import { useRealtimeFolders } from '@/hooks/useRealtimeFolders';
-import { useTranslation } from 'react-i18next';
 
 interface LevelSelectorProps {
   onLevelSelect: (folderId: string, levelName: string) => void;
@@ -11,7 +10,6 @@ interface LevelSelectorProps {
 
 export const LevelSelector: React.FC<LevelSelectorProps> = ({ onLevelSelect }) => {
   const { data: folders, isLoading, error } = useRealtimeFolders();
-  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -47,7 +45,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({ onLevelSelect }) =
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-2">{t('library.title')}</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Library</h1>
         <p className="text-muted-foreground">Select a level to browse documents</p>
       </div>
       

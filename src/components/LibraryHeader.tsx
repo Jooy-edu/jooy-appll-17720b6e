@@ -2,7 +2,6 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookOpen, Lock, Unlock } from 'lucide-react';
 import { useLevelAccess } from '@/hooks/useLevelAccess';
-import { useTranslation } from 'react-i18next';
 
 interface Folder {
   id: string;
@@ -21,13 +20,12 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onFolderSelect 
 }) => {
   const selectedFolder = folders.find(f => f.id === selectedFolderId);
-  const { t } = useTranslation();
 
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t('library.title')}</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Library</h1>
         </div>
         <BookOpen className="h-8 w-8 text-primary" />
       </div>

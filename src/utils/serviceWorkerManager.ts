@@ -14,8 +14,8 @@ class ServiceWorkerManagerImpl implements ServiceWorkerManager {
   private pendingUpdate: ServiceWorkerRegistration | null = null;
 
   constructor() {
-    // Don't auto-register - let index.html handle registration to avoid duplicates
     this.setupMessageListener();
+    this.registerServiceWorker();
   }
 
   private setupMessageListener() {

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +15,6 @@ interface ApiKeyManagerProps {
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onClose }) => {
-  const { t } = useTranslation();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
@@ -44,8 +42,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
     
     if (!trimmedKey) {
       toast({
-        title: t('apiKey.invalidKey'),
-        description: t('apiKey.enterValidKey'),
+        title: "Invalid API Key",
+        description: "Please enter a valid API key.",
         variant: "destructive"
       });
       return;
@@ -53,8 +51,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
 
     if (!validateApiKeyFormat(trimmedKey)) {
       toast({
-        title: t('apiKey.invalidFormat'),
-        description: t('apiKey.formatDescription'),
+        title: "Invalid API Key Format",
+        description: "Please ensure you've entered a valid Gemini API key. It should start with 'AIza' and be 39 characters long.",
         variant: "destructive"
       });
       return;
@@ -76,8 +74,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
       localStorage.setItem('gemini-api-key', trimmedKey);
       
       toast({
-        title: t('apiKey.keySaved'),
-        description: t('apiKey.saveSuccess'),
+        title: "API Key Saved",
+        description: "Your Gemini API key has been validated and saved successfully.",
       });
 
       setApiKey('');
@@ -87,7 +85,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
     } catch (error: any) {
       console.error('API key validation failed:', error);
       
-      let errorMessage = t('apiKey.keyInvalid');
+      let errorMessage = "The API key appears to be invalid or expired.";
       
       if (error?.message?.includes('API_KEY_INVALID')) {
         errorMessage = "The API key is invalid. Please check your key and try again.";
@@ -98,7 +96,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
       }
       
       toast({
-        title: t('apiKey.validationFailed'),
+        title: "API Key Validation Failed",
         description: errorMessage,
         variant: "destructive"
       });
@@ -110,8 +108,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
   const handleRemoveApiKey = () => {
     localStorage.removeItem('gemini-api-key');
     toast({
-      title: t('apiKey.keyRemoved'),
-      description: t('apiKey.removeSuccess'),
+      title: "API Key Removed",
+      description: "Your Gemini API key has been removed from this device.",
     });
     onClose?.();
   };
@@ -130,10 +128,10 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
-            {t('apiKey.title')}
+            Gemini API Key Management
           </DialogTitle>
           <DialogDescription>
-            {t('apiKey.description')}
+            Manage your Google Gemini API key for AI chat functionality.
           </DialogDescription>
         </DialogHeader>
 
@@ -141,7 +139,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
           {hasApiKey && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">{t('apiKey.currentKey')}</CardTitle>
+                <CardTitle className="text-sm">Current API Key</CardTitle>
                 <CardDescription>
                   {showApiKey ? currentApiKey : maskApiKey(currentApiKey || '')}
                 </CardDescription>
@@ -154,7 +152,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
                   className="gap-2"
                 >
                   {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  {showApiKey ? t('apiKey.hide') : t('apiKey.show')}
+                  {showApiKey ? 'Hide' : 'Show'}
                 </Button>
                 <Button
                   variant="outline"
@@ -163,7 +161,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
                   className="gap-2 text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
-                  {t('apiKey.remove')}
+                  Remove
                 </Button>
               </CardContent>
             </Card>
@@ -171,7 +169,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
 
           <div className="space-y-3">
             <Label htmlFor="apiKey">
-              {hasApiKey ? t('apiKey.updateKey') : t('apiKey.enterNewKey')}
+              {hasApiKey ? 'Update API Key' : 'Enter New API Key'}
             </Label>
             <div className="relative">
               <Input
@@ -197,7 +195,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <strong>{t('apiKey.privacyNotice')}</strong> {t('apiKey.privacyDescription')}
+              <strong>Privacy Notice:</strong> Your API key is stored locally on your device only. 
+              It's never sent to our servers - only directly to Google's Gemini API.
             </AlertDescription>
           </Alert>
 
@@ -207,7 +206,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
               disabled={!apiKey.trim() || isValidating}
               className="w-full"
             >
-              {isValidating ? t('apiKey.validating') : hasApiKey ? t('apiKey.updateKey') : t('apiKey.saveKey')}
+              {isValidating ? 'Validating...' : hasApiKey ? 'Update API Key' : 'Save API Key'}
             </Button>
             
             <Button
@@ -216,7 +215,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onApiKeySet, isOpen, onCl
               className="w-full gap-2"
             >
               <ExternalLink className="h-4 w-4" />
-              {t('apiKey.getKey')}
+              Get API Key from Google AI Studio
             </Button>
           </div>
         </div>

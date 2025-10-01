@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 
@@ -13,7 +12,6 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const PWAInstallPrompt: React.FC = () => {
-  const { t } = useTranslation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -150,10 +148,10 @@ const PWAInstallPrompt: React.FC = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-medium text-gray-900">
-                {t('pwa.install')}
+                Install Jooy
               </h3>
               <p className="text-xs text-gray-500 mt-1">
-                {t('pwa.description')}
+                Add to your home screen for quick access
               </p>
             </div>
           </div>
@@ -172,14 +170,14 @@ const PWAInstallPrompt: React.FC = () => {
             onClick={handleInstallClick}
             className="flex-1 bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white text-sm h-8"
           >
-            {t('pwa.installButton')}
+            Install
           </Button>
           <Button
             variant="outline"
             onClick={handleDismiss}
             className="px-3 text-sm h-8"
           >
-            {t('pwa.notNow')}
+            Not now
           </Button>
         </div>
       </div>

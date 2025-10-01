@@ -15,9 +15,9 @@ interface PasswordRequirement {
 }
 
 const passwordRequirements: PasswordRequirement[] = [
-  { label: 'auth.register.requirements.minLength', test: (pwd) => pwd.length >= 8 },
-  { label: 'auth.register.requirements.lowercase', test: (pwd) => /[a-z]/.test(pwd) },
-  { label: 'auth.register.requirements.number', test: (pwd) => /\d/.test(pwd) },
+  { label: 'At least 8 characters', test: (pwd) => pwd.length >= 8 },
+  { label: 'Contains lowercase letter', test: (pwd) => /[a-z]/.test(pwd) },
+  { label: 'Contains number', test: (pwd) => /\d/.test(pwd) },
 ];
 
 const ResetPasswordForm: React.FC = () => {
@@ -44,8 +44,8 @@ const ResetPasswordForm: React.FC = () => {
 
     if (!accessToken || !refreshToken || type !== 'recovery') {
       toast({
-        title: t('auth.resetPassword.invalidLink'),
-        description: t('auth.resetPassword.linkExpired'),
+        title: "Invalid Reset Link",
+        description: "This password reset link is invalid or has expired.",
         variant: "destructive"
       });
       navigate('/auth/forgot-password');
@@ -57,19 +57,19 @@ const ResetPasswordForm: React.FC = () => {
 
     // Password validation
     if (!password) {
-      newErrors.password = t('auth.resetPassword.passwordRequired');
+      newErrors.password = 'Password is required';
     } else {
       const failedRequirements = passwordRequirements.filter(req => !req.test(password));
       if (failedRequirements.length > 0) {
-        newErrors.password = t('auth.resetPassword.passwordRequirements');
+        newErrors.password = 'Password does not meet all requirements';
       }
     }
 
     // Confirm password validation
     if (!confirmPassword) {
-      newErrors.confirmPassword = t('auth.resetPassword.confirmRequired');
+      newErrors.confirmPassword = 'Please confirm your password';
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = t('auth.resetPassword.passwordsNoMatch');
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
     setErrors(newErrors);
@@ -95,13 +95,13 @@ const ResetPasswordForm: React.FC = () => {
         setErrors({ general: error.message });
       } else {
         toast({
-          title: t('auth.resetPassword.passwordUpdated'),
-          description: t('auth.resetPassword.updateSuccess'),
+          title: "Password Updated",
+          description: "Your password has been successfully updated. You can now sign in with your new password.",
         });
         navigate('/auth/login');
       }
     } catch (error) {
-      setErrors({ general: t('auth.resetPassword.unexpectedError') });
+      setErrors({ general: 'An unexpected error occurred. Please try again.' });
     }
 
     setLoading(false);
@@ -114,10 +114,10 @@ const ResetPasswordForm: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center" dir={isRTL ? 'rtl' : 'ltr'}>
           <CardTitle className="text-2xl font-bold">
-            {t('auth.resetPassword.title')}
+            Set New Password
           </CardTitle>
           <CardDescription>
-            {t('auth.resetPassword.description')}
+            Enter your new password below
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -129,14 +129,14 @@ const ResetPasswordForm: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.resetPassword.newPassword')}</Label>
+              <Label htmlFor="password">New Password</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
+                  placeholder="Enter your new password"
                   className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
                   disabled={loading}
                 />
@@ -163,7 +163,7 @@ const ResetPasswordForm: React.FC = () => {
                           <X className="h-3 w-3 text-red-500" />
                         )}
                         <span className={isValid ? 'text-green-600' : 'text-red-600'}>
-                          {t(req.label)}
+                          {req.label}
                         </span>
                       </div>
                     );
@@ -177,14 +177,14 @@ const ResetPasswordForm: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('auth.resetPassword.confirmPassword')}</Label>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
+                  placeholder="Confirm your new password"
                   className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
                   disabled={loading}
                 />
@@ -210,10 +210,10 @@ const ResetPasswordForm: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('auth.resetPassword.updatingPassword')}
+                  Updating Password...
                 </>
               ) : (
-                t('auth.resetPassword.updatePassword')
+                'Update Password'
               )}
             </Button>
           </form>

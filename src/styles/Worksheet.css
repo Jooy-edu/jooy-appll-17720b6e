@@ -286,9 +286,7 @@
   .worksheet-text-display {
     max-width: 100%;
     padding: 1rem;
-    font-size: 1.3rem;
-    line-height: 1.7;
-    font-weight: 500;
+    font-size: 1rem;
   }
   
   .video-element {
@@ -308,12 +306,6 @@
 
   .chat-message {
     padding: 0.75rem;
-  }
-  
-  .chat-message p {
-    font-size: 1.25rem;
-    line-height: 1.7;
-    font-weight: 500;
   }
 }
 

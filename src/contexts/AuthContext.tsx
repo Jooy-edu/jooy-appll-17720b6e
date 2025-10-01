@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { documentStore } from '@/utils/documentStore';
 import { clearOfflineUserSession } from '@/utils/offlineAuth';
-import { useTranslation } from 'react-i18next';
 
 interface UserProfile {
   id: string;
@@ -49,7 +48,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { t } = useTranslation();
 
   // Fetch user profile
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -292,8 +290,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }
 
       toast({
-        title: t('auth.notifications.welcomeBack'),
-        description: t('auth.notifications.signInSuccess'),
+        title: "Welcome Back!",
+        description: "You have successfully signed in.",
       });
 
       return { error: null };
@@ -355,8 +353,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }
 
       toast({
-        title: t('auth.notifications.signedOut'),
-        description: t('auth.notifications.signOutSuccess'),
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
       });
 
       return { error: null };
