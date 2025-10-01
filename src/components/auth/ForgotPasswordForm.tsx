@@ -26,12 +26,12 @@ const ForgotPasswordForm: React.FC = () => {
     e.preventDefault();
     
     if (!email) {
-      setError('Email is required');
+      setError(t('auth.forgotPassword.emailRequired'));
       return;
     }
 
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError(t('auth.forgotPassword.emailInvalid'));
       return;
     }
 
@@ -57,15 +57,15 @@ const ForgotPasswordForm: React.FC = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center" dir={isRTL ? 'rtl' : 'ltr'}>
             <CardTitle className="text-2xl font-bold text-green-600">
-              Email Sent!
+              {t('auth.forgotPassword.emailSent')}
             </CardTitle>
             <CardDescription>
-              Check your email for password reset instructions
+              {t('auth.forgotPassword.checkEmail')}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center" dir={isRTL ? 'rtl' : 'ltr'}>
             <p className="text-gray-600 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>. 
+              {t('auth.forgotPassword.sentTo')} <strong>{email}</strong>. 
               Please check your email and follow the instructions to reset your password.
             </p>
             <div className="space-y-3">
@@ -74,12 +74,12 @@ const ForgotPasswordForm: React.FC = () => {
                 variant="outline"
                 className="w-full"
               >
-                Send Another Email
+                {t('auth.forgotPassword.sendAnother')}
               </Button>
               <Link to="/auth/login">
                 <Button variant="ghost" className="w-full">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Sign In
+                  {t('auth.forgotPassword.backToSignIn')}
                 </Button>
               </Link>
             </div>
@@ -94,10 +94,10 @@ const ForgotPasswordForm: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center" dir={isRTL ? 'rtl' : 'ltr'}>
           <CardTitle className="text-2xl font-bold">
-            Reset Your Password
+            {t('auth.forgotPassword.title')}
           </CardTitle>
           <CardDescription>
-            Enter your email address and we'll send you a link to reset your password
+            {t('auth.forgotPassword.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,13 +109,13 @@ const ForgotPasswordForm: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t('auth.forgotPassword.emailAddress')}</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder={t('auth.forgotPassword.emailPlaceholder')}
                 className={error ? 'border-red-500' : ''}
                 disabled={loading}
                 dir={getTextDirection(email)}
@@ -130,10 +130,10 @@ const ForgotPasswordForm: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
+                  {t('auth.forgotPassword.sending')}
                 </>
               ) : (
-                'Send Reset Link'
+                t('auth.forgotPassword.sendResetLink')
               )}
             </Button>
 
@@ -143,7 +143,7 @@ const ForgotPasswordForm: React.FC = () => {
                 className="inline-flex items-center text-sm text-blue-600 hover:text-blue-500"
               >
                 <ArrowLeft className="mr-1 h-4 w-4" />
-                Back to Sign In
+                {t('auth.forgotPassword.backToSignIn')}
               </Link>
             </div>
           </form>

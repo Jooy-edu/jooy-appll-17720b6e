@@ -49,7 +49,7 @@
             .then((registration) => {
               console.log('SW registered: ', registration);
               
-              // Check for updates
+              // Check for updates - only show prompt for genuine updates  
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 if (newWorker) {
@@ -69,14 +69,7 @@
             });
         });
 
-        // Listen for messages from service worker
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'SW_UPDATE_AVAILABLE') {
-            if (confirm('New version available! Refresh to update?')) {
-              window.location.reload();
-            }
-          }
-        });
+        // Listen for messages from service worker (removed - no longer needed)
       }
     </script>
   </body>
