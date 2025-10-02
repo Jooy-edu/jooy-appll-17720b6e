@@ -345,7 +345,10 @@ class DocumentStore {
         data: finalData,
         compressed,
         updatedAt: timestamp,
+        formatVersion: 1 // Add format version for validation
       });
+      
+      console.log(`[DocumentStore] Saved worksheet data for ${documentId} with formatVersion: 1, mode: ${data.mode}`);
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -361,7 +364,36 @@ class DocumentStore {
       const request = store.get(documentId);
 
       request.onsuccess = () => {
-        resolve(request.result?.data || null);
+        const result = request.result;
+        
+        if (!result) {
+          resolve(null);
+          return;
+        }
+        
+        // Validate cached data structure
+        if (!result.data || typeof result.data !== 'object') {
+          console.warn(`[DocumentStore] Invalid cached data structure for ${documentId}, rejecting cache`);
+          resolve(null);
+          return;
+        }
+        
+        // Check format version - reject old formats
+        if (!result.formatVersion || result.formatVersion < 1) {
+          console.warn(`[DocumentStore] Old format version for ${documentId}, rejecting cache`);
+          resolve(null);
+          return;
+        }
+        
+        // Ensure the data has a mode field (critical for display logic)
+        if (!result.data.mode) {
+          console.warn(`[DocumentStore] Missing mode field in cached data for ${documentId}, rejecting cache`);
+          resolve(null);
+          return;
+        }
+        
+        console.log(`[DocumentStore] Valid cached data for ${documentId}, mode: ${result.data.mode}`);
+        resolve(result.data);
       };
       
       request.onerror = () => reject(request.error);

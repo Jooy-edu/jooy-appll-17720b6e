@@ -16,12 +16,19 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
       try {
         const cachedData = await documentStore.getWorksheetData(worksheetId);
         if (cachedData) {
-          // Generate PDF URL for cached data
-          const pdfUrl = `/pdfs/${worksheetId}.pdf`;
-          return {
-            meta: cachedData,
-            pdfUrl
-          };
+          // Validate cached data has the required mode field
+          if (!cachedData.mode) {
+            console.warn(`[useOfflineWorksheetData] Cached data for ${worksheetId} missing mode field, fetching fresh data`);
+            // Fall through to fetch from server
+          } else {
+            console.log(`[useOfflineWorksheetData] Using valid cached data for ${worksheetId}, mode: ${cachedData.mode}`);
+            // Generate PDF URL for cached data
+            const pdfUrl = `/pdfs/${worksheetId}.pdf`;
+            return {
+              meta: cachedData,
+              pdfUrl
+            };
+          }
         }
       } catch (error) {
         console.warn('Failed to get cached worksheet data:', error);
