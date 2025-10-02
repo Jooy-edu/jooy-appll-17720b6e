@@ -37,6 +37,7 @@ class DocumentStore {
   private dbName = 'JooyOfflineStore';
   private version = 3; // Increment version for new levelActivations store
   private db: IDBDatabase | null = null;
+  private readonly CACHE_FORMAT_VERSION = 1; // Bump this to invalidate all cached worksheet data
 
   async initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -345,10 +346,10 @@ class DocumentStore {
         data: finalData,
         compressed,
         updatedAt: timestamp,
-        formatVersion: 1 // Add format version for validation
+        formatVersion: this.CACHE_FORMAT_VERSION
       });
       
-      console.log(`[DocumentStore] Saved worksheet data for ${documentId} with formatVersion: 1, mode: ${data.mode}`);
+      console.log(`[DocumentStore] Saved worksheet data for ${documentId} with formatVersion: ${this.CACHE_FORMAT_VERSION}, mode: ${data.mode}`);
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -379,8 +380,8 @@ class DocumentStore {
         }
         
         // Check format version - reject old formats
-        if (!result.formatVersion || result.formatVersion < 1) {
-          console.warn(`[DocumentStore] Old format version for ${documentId}, rejecting cache`);
+        if (!result.formatVersion || result.formatVersion < this.CACHE_FORMAT_VERSION) {
+          console.warn(`[DocumentStore] Old format version for ${documentId} (${result.formatVersion || 'none'} < ${this.CACHE_FORMAT_VERSION}), rejecting cache`);
           resolve(null);
           return;
         }
@@ -526,6 +527,41 @@ class DocumentStore {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
     });
+  }
+
+  // Clear all worksheet data - useful for format version upgrades
+  async clearAllWorksheetData(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+
+      const transaction = this.db.transaction(['worksheetData'], 'readwrite');
+      const store = transaction.objectStore('worksheetData');
+      store.clear();
+
+      transaction.oncomplete = () => {
+        console.log('[DocumentStore] Cleared all worksheet data');
+        resolve();
+      };
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  // Check and upgrade cache format version
+  async checkAndUpgradeCacheFormat(): Promise<void> {
+    const CACHE_VERSION_KEY = 'worksheetCacheVersion';
+    const storedVersion = localStorage.getItem(CACHE_VERSION_KEY);
+    
+    if (!storedVersion || parseInt(storedVersion) < this.CACHE_FORMAT_VERSION) {
+      console.log(`[DocumentStore] Cache format upgrade needed: ${storedVersion || 'none'} -> ${this.CACHE_FORMAT_VERSION}`);
+      await this.clearAllWorksheetData();
+      localStorage.setItem(CACHE_VERSION_KEY, this.CACHE_FORMAT_VERSION.toString());
+      console.log('[DocumentStore] Cache format upgraded successfully');
+    } else {
+      console.log(`[DocumentStore] Cache format is current: v${this.CACHE_FORMAT_VERSION}`);
+    }
   }
 
   async saveLevelActivations(activations: any[]): Promise<void> {
