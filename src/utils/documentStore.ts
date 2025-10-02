@@ -37,7 +37,6 @@ class DocumentStore {
   private dbName = 'JooyOfflineStore';
   private version = 3; // Increment version for new levelActivations store
   private db: IDBDatabase | null = null;
-  private readonly CACHE_FORMAT_VERSION = 1; // Bump this to invalidate all cached worksheet data
 
   async initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -346,10 +345,7 @@ class DocumentStore {
         data: finalData,
         compressed,
         updatedAt: timestamp,
-        formatVersion: this.CACHE_FORMAT_VERSION
       });
-      
-      console.log(`[DocumentStore] Saved worksheet data for ${documentId} with formatVersion: ${this.CACHE_FORMAT_VERSION}, mode: ${data.mode}`);
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -365,36 +361,7 @@ class DocumentStore {
       const request = store.get(documentId);
 
       request.onsuccess = () => {
-        const result = request.result;
-        
-        if (!result) {
-          resolve(null);
-          return;
-        }
-        
-        // Validate cached data structure
-        if (!result.data || typeof result.data !== 'object') {
-          console.warn(`[DocumentStore] Invalid cached data structure for ${documentId}, rejecting cache`);
-          resolve(null);
-          return;
-        }
-        
-        // Check format version - reject old formats
-        if (!result.formatVersion || result.formatVersion < this.CACHE_FORMAT_VERSION) {
-          console.warn(`[DocumentStore] Old format version for ${documentId} (${result.formatVersion || 'none'} < ${this.CACHE_FORMAT_VERSION}), rejecting cache`);
-          resolve(null);
-          return;
-        }
-        
-        // Ensure the data has a mode field (critical for display logic)
-        if (!result.data.mode) {
-          console.warn(`[DocumentStore] Missing mode field in cached data for ${documentId}, rejecting cache`);
-          resolve(null);
-          return;
-        }
-        
-        console.log(`[DocumentStore] Valid cached data for ${documentId}, mode: ${result.data.mode}`);
-        resolve(result.data);
+        resolve(request.result?.data || null);
       };
       
       request.onerror = () => reject(request.error);
@@ -527,41 +494,6 @@ class DocumentStore {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
     });
-  }
-
-  // Clear all worksheet data - useful for format version upgrades
-  async clearAllWorksheetData(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('Database not initialized'));
-        return;
-      }
-
-      const transaction = this.db.transaction(['worksheetData'], 'readwrite');
-      const store = transaction.objectStore('worksheetData');
-      store.clear();
-
-      transaction.oncomplete = () => {
-        console.log('[DocumentStore] Cleared all worksheet data');
-        resolve();
-      };
-      transaction.onerror = () => reject(transaction.error);
-    });
-  }
-
-  // Check and upgrade cache format version
-  async checkAndUpgradeCacheFormat(): Promise<void> {
-    const CACHE_VERSION_KEY = 'worksheetCacheVersion';
-    const storedVersion = localStorage.getItem(CACHE_VERSION_KEY);
-    
-    if (!storedVersion || parseInt(storedVersion) < this.CACHE_FORMAT_VERSION) {
-      console.log(`[DocumentStore] Cache format upgrade needed: ${storedVersion || 'none'} -> ${this.CACHE_FORMAT_VERSION}`);
-      await this.clearAllWorksheetData();
-      localStorage.setItem(CACHE_VERSION_KEY, this.CACHE_FORMAT_VERSION.toString());
-      console.log('[DocumentStore] Cache format upgraded successfully');
-    } else {
-      console.log(`[DocumentStore] Cache format is current: v${this.CACHE_FORMAT_VERSION}`);
-    }
   }
 
   async saveLevelActivations(activations: any[]): Promise<void> {

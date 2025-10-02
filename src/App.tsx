@@ -22,8 +22,6 @@ import FullscreenButton from "./components/FullscreenButton";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { setQueryClient } from "./utils/backgroundSyncService";
 import { useParams } from "react-router-dom";
-import { documentStore } from "./utils/documentStore";
-import { useEffect, useState } from "react";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,38 +54,13 @@ const AIChatPageWrapper = () => {
   );
 };
 
-const App = () => {
-  const [cacheReady, setCacheReady] = useState(false);
-
-  // Initialize documentStore and check cache format on app startup
-  useEffect(() => {
-    const initializeCache = async () => {
-      try {
-        console.log('[App] Initializing cache...');
-        await documentStore.initialize();
-        await documentStore.checkAndUpgradeCacheFormat();
-        console.log('[App] Cache initialization complete');
-      } catch (error) {
-        console.error('[App] Failed to initialize cache:', error);
-      } finally {
-        setCacheReady(true);
-      }
-    };
-    
-    initializeCache();
-  }, []);
-
-  if (!cacheReady) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <Routes>
             {/* Public routes */}
             <Route path="/qr-scanner" element={<QrScannerPage />} />
@@ -134,7 +107,6 @@ const App = () => {
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-  );
-};
+);
 
 export default App;

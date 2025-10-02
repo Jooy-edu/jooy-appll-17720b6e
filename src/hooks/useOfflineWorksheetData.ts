@@ -13,17 +13,10 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
     queryKey: ['worksheet', worksheetId],
     queryFn: async (): Promise<WorksheetDataResponse> => {
       // Try cache first (offline-first approach)
-      console.log(`[useOfflineWorksheetData] Attempting to load ${worksheetId} from cache`);
       try {
         const cachedData = await documentStore.getWorksheetData(worksheetId);
-        
-        if (!cachedData) {
-          console.log(`[useOfflineWorksheetData] No cached data found for ${worksheetId}, fetching from server`);
-        } else if (!cachedData.mode) {
-          console.warn(`[useOfflineWorksheetData] ⚠️ Cached data for ${worksheetId} missing mode field, fetching fresh data`);
-          console.log('[useOfflineWorksheetData] Cached data structure:', Object.keys(cachedData));
-        } else {
-          console.log(`[useOfflineWorksheetData] ✅ Using valid cached data for ${worksheetId}, mode: ${cachedData.mode}`);
+        if (cachedData) {
+          // Generate PDF URL for cached data
           const pdfUrl = `/pdfs/${worksheetId}.pdf`;
           return {
             meta: cachedData,
@@ -31,11 +24,10 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
           };
         }
       } catch (error) {
-        console.error('[useOfflineWorksheetData] Failed to get cached worksheet data:', error);
+        console.warn('Failed to get cached worksheet data:', error);
       }
 
       // Fallback to Supabase function when online or cache miss
-      console.log(`[useOfflineWorksheetData] 🌐 Fetching ${worksheetId} from edge function`);
       try {
         const { networkService } = await import('@/utils/networkService');
         const settings = networkService.getOptimalSettings();
@@ -49,14 +41,11 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
           }
         );
 
-        console.log(`[useOfflineWorksheetData] Edge function response status: ${response.status}`);
-
         if (!response.ok) {
           throw new Error(`Failed to fetch worksheet: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log(`[useOfflineWorksheetData] Edge function returned data with mode: ${data?.meta?.mode}`);
 
         if (!data?.meta || !data?.pdfUrl) {
           throw new Error('Invalid response from worksheet data function');
