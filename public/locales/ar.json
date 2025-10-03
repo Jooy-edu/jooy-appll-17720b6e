@@ -13,11 +13,7 @@
     "notFound": "ورقة العمل غير موجودة",
     "invalidPage": "رقم صفحة غير صالح",
     "returnToScanner": "العودة إلى الماسح الضوئي",
-    "pageInfo": "صفحة {{current}} من {{total}}",
-    "noGuidanceData": "لم يتم العثور على بيانات الإرشاد للصفحة {{page}}",
-    "autoModeNoContent": "مستند الوضع التلقائي هذا لا يحتوي على محتوى لهذه الصفحة.",
-    "pdfNotAvailable": "ملف PDF غير متاح",
-    "regionsModeRequiresPdf": "يتطلب هذا المستند ملف PDF لعرض المناطق."
+    "pageInfo": "صفحة {{current}} من {{total}}"
   },
   "virtualTutor": {
     "selectTitle": "اختر المعلم الافتراضي",

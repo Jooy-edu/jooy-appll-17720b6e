@@ -61,19 +61,13 @@ serve(async (req) => {
     // If no signed URL could be generated, pdfUrl remains null
     if (!pdfUrl) {
       console.warn(`PDF file not found in storage for worksheet: ${worksheetId}`)
-      
-      // For regions mode, PDF is required
-      if (!document.metadata || document.metadata.mode !== 'auto') {
-        return new Response(
-          JSON.stringify({ error: 'PDF file not found' }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-      // For auto mode, PDF is optional - continue with null pdfUrl
-      console.log('Auto mode document - continuing without PDF')
+      return new Response(
+        JSON.stringify({ error: 'PDF file not found' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Check if document has metadata and determine mode
@@ -82,11 +76,6 @@ serve(async (req) => {
     if (document.metadata && document.metadata.mode === 'auto') {
       // Auto Mode: Use metadata from documents table
       const autoModeData = document.metadata.data || []
-      
-      // Validate that auto mode data exists
-      if (!autoModeData || autoModeData.length === 0) {
-        console.warn(`No auto mode data found for worksheet: ${worksheetId}`)
-      }
       
       // Helper function to normalize guidance items
       const normalizeGuidance = (guidance: any[], pageNumber: number): any[] => {
