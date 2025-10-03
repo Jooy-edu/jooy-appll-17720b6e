@@ -13,7 +13,11 @@
     "notFound": "Worksheet not found",
     "invalidPage": "Invalid page number",
     "returnToScanner": "Return to Scanner",
-    "pageInfo": "Page {{current}} of {{total}}"
+    "pageInfo": "Page {{current}} of {{total}}",
+    "noGuidanceData": "No guidance data found for page {{page}}",
+    "autoModeNoContent": "This auto mode document doesn't have content for this page.",
+    "pdfNotAvailable": "PDF file not available",
+    "regionsModeRequiresPdf": "This document requires a PDF file to display regions."
   },
   "virtualTutor": {
     "selectTitle": "Select Virtual Tutor",
