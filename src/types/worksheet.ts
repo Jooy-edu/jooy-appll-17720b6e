@@ -42,7 +42,6 @@ export interface AutoModeMetadata {
   documentId: string;
   drmProtectedPages: number[] | boolean;
   data: AutoModePageData[];
-  pdfUrl?: string | null;
 }
 
 export type WorksheetMetadata = RegionsModeMetadata | AutoModeMetadata;

@@ -526,65 +526,33 @@ const WorksheetPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {worksheetData.meta.mode === 'auto' ? (
-        currentPageData ? (
-          <AutoModeContentDisplay
-            worksheetId={id}
-            pageNumber={pageIndex}
-            autoModePageData={currentPageData}
-            worksheetData={worksheetData}
-            pdfUrl={worksheetData.pdfUrl}
-            onTextModeChange={setIsTextModeActive}
-            onGuidanceStateChange={handleGuidanceStateChange}
-            onEmbeddedChatChange={handleEmbeddedChatChange}
-            initialActiveGuidance={initialActiveGuidance}
-            initialGuidanceStepIndex={initialGuidanceStepIndex}
-            allGuidanceState={allGuidanceState}
-            showEmbeddedChat={showEmbeddedChat}
-          />
-        ) : (
-          <div className="min-h-screen flex flex-col items-center justify-center p-4">
-            <div className="text-center" dir={t('common.language') === 'العربية' ? 'rtl' : 'ltr'}>
-              <h1 className="text-2xl font-bold text-red-500 mb-4">
-                {t('worksheet.noGuidanceData', { page: pageIndex })}
-              </h1>
-              <p className="text-gray-600 mb-4">
-                {t('worksheet.autoModeNoContent')}
-              </p>
-              <Button onClick={goBack} className="bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white">
-                {t('worksheet.returnToScanner')}
-              </Button>
-            </div>
-          </div>
-        )
+      {worksheetData.meta.mode === 'auto' && currentPageData ? (
+        <AutoModeContentDisplay
+          worksheetId={id}
+          pageNumber={pageIndex}
+          autoModePageData={currentPageData}
+          worksheetData={worksheetData}
+          pdfUrl={worksheetData.pdfUrl}
+          onTextModeChange={setIsTextModeActive}
+          onGuidanceStateChange={handleGuidanceStateChange}
+          onEmbeddedChatChange={handleEmbeddedChatChange}
+          initialActiveGuidance={initialActiveGuidance}
+          initialGuidanceStepIndex={initialGuidanceStepIndex}
+          allGuidanceState={allGuidanceState}
+          showEmbeddedChat={showEmbeddedChat}
+        />
       ) : (
-        worksheetData.pdfUrl ? (
-          <WorksheetViewer 
-            worksheetId={id} 
-            pageIndex={pageIndex} 
-            worksheetMeta={worksheetData.meta as any}
-            pdfUrl={worksheetData.pdfUrl}
-            onTextModeChange={setIsTextModeActive}
-            initialActiveRegion={initialActiveRegion}
-            initialCurrentStepIndex={initialCurrentStepIndex}
-            onRegionStateChange={handleRegionStateChange}
-            allRegionsState={allRegionsState}
-          />
-        ) : (
-          <div className="min-h-screen flex flex-col items-center justify-center p-4">
-            <div className="text-center" dir={t('common.language') === 'العربية' ? 'rtl' : 'ltr'}>
-              <h1 className="text-2xl font-bold text-red-500 mb-4">
-                {t('worksheet.pdfNotAvailable')}
-              </h1>
-              <p className="text-gray-600 mb-4">
-                {t('worksheet.regionsModeRequiresPdf')}
-              </p>
-              <Button onClick={goBack} className="bg-gradient-orange-magenta hover:bg-gradient-orange-magenta text-white">
-                {t('worksheet.returnToScanner')}
-              </Button>
-            </div>
-          </div>
-        )
+        <WorksheetViewer 
+          worksheetId={id} 
+          pageIndex={pageIndex} 
+          worksheetMeta={worksheetData.meta as any}
+          pdfUrl={worksheetData.pdfUrl}
+          onTextModeChange={setIsTextModeActive}
+          initialActiveRegion={initialActiveRegion}
+          initialCurrentStepIndex={initialCurrentStepIndex}
+          onRegionStateChange={handleRegionStateChange}
+          allRegionsState={allRegionsState}
+        />
       )}
       
       {/* Show AIChatButton for non-auto modes OR auto mode without active guidance AND no embedded chat */}
