@@ -5,7 +5,7 @@ import type { WorksheetMetadata } from '@/types/worksheet';
 
 interface WorksheetDataResponse {
   meta: WorksheetMetadata;
-  pdfUrl: string;
+  pdfUrl: string | null;
 }
 
 export const useOfflineWorksheetData = (worksheetId: string) => {
@@ -16,8 +16,11 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
       try {
         const cachedData = await documentStore.getWorksheetData(worksheetId);
         if (cachedData) {
-          // Generate PDF URL for cached data
-          const pdfUrl = `/pdfs/${worksheetId}.pdf`;
+          // For auto mode, PDF might not exist - return null
+          // For regions mode, generate PDF URL
+          const pdfUrl = cachedData.mode === 'auto' 
+            ? null 
+            : `/pdfs/${worksheetId}.pdf`;
           return {
             meta: cachedData,
             pdfUrl
@@ -47,8 +50,13 @@ export const useOfflineWorksheetData = (worksheetId: string) => {
 
         const data = await response.json();
 
-        if (!data?.meta || !data?.pdfUrl) {
-          throw new Error('Invalid response from worksheet data function');
+        if (!data?.meta) {
+          throw new Error('Invalid response from worksheet data function: missing metadata');
+        }
+
+        // For regions mode, pdfUrl is required
+        if (data.meta.mode !== 'auto' && !data?.pdfUrl) {
+          throw new Error('Invalid response: PDF URL is required for regions mode');
         }
 
         // Cache the fetched data for future offline use
